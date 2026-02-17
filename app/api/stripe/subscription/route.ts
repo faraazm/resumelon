@@ -54,8 +54,8 @@ export async function GET() {
           id: sub.id,
           status: sub.status,
           priceId: sub.items.data[0]?.price.id,
-          currentPeriodEnd: sub.current_period_end,
-          cancelAtPeriodEnd: sub.cancel_at_period_end,
+          currentPeriodEnd: (sub as unknown as { current_period_end: number }).current_period_end,
+          cancelAtPeriodEnd: (sub as unknown as { cancel_at_period_end: boolean }).cancel_at_period_end,
         },
       });
     }
@@ -68,8 +68,8 @@ export async function GET() {
         id: subscription.id,
         status: subscription.status,
         priceId: subscription.items.data[0]?.price.id,
-        currentPeriodEnd: subscription.current_period_end,
-        cancelAtPeriodEnd: subscription.cancel_at_period_end,
+        currentPeriodEnd: (subscription as unknown as { current_period_end: number }).current_period_end,
+        cancelAtPeriodEnd: (subscription as unknown as { cancel_at_period_end: boolean }).cancel_at_period_end,
       },
     });
   } catch (error) {

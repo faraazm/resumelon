@@ -96,7 +96,23 @@ convex/
 lib/
   stripe.ts                # Stripe client and plan config
 
-middleware.ts              # Clerk auth middleware
+components/
+  marketing/               # Landing page components
+    navbar.tsx
+    hero.tsx
+    trust-strip.tsx
+    how-it-works.tsx
+    feature-grid.tsx
+    templates-section.tsx
+    ats-explainer.tsx
+    testimonials.tsx
+    pricing-preview.tsx
+    faq.tsx
+    cta-banner.tsx
+    footer.tsx
+  ui/                      # ShadCN UI components
+
+proxy.ts                   # Clerk auth proxy (Next.js 16+)
 ```
 
 ## Environment Variables

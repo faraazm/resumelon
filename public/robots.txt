@@ -1,0 +1,10 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+
+# Disallow admin and app routes
+Disallow: /app/
+Disallow: /api/
+
+# Sitemap
+Sitemap: https://niceresume.com/sitemap.xml

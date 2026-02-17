@@ -1,0 +1,21 @@
+{
+  "name": "NiceResume - AI Resume Builder",
+  "short_name": "NiceResume",
+  "description": "Build professional, ATS-friendly resumes in minutes with our free AI-powered resume builder.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3b82f6",
+  "icons": [
+    {
+      "src": "/images/nice-resume-logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/images/nice-resume-logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
