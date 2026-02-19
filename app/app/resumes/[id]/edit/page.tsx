@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery, useMutation } from "convex/react";
+import { useUser } from "@clerk/nextjs";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,7 @@ import { WriteTab, initialSections } from "@/components/app/editor/write-tab";
 import { DesignTab } from "@/components/app/editor/design-tab";
 import { ImproveTab } from "@/components/app/editor/improve-tab";
 import { ResumePreview } from "@/components/app/editor/resume-preview";
+import { generateResumePDF } from "@/lib/pdf-generator";
 
 // Default empty resume data for initial state
 const defaultResumeData = {
@@ -80,8 +82,9 @@ const defaultResumeData = {
 
 export default function ResumeEditorPage() {
   const params = useParams();
-  const router = useRouter();
   const resumeId = params.id as Id<"resumes">;
+  const { user, isLoaded: isUserLoaded } = useUser();
+  const clerkId = user?.id;
 
   const [activeTab, setActiveTab] = useState<"write" | "design" | "improve">("write");
   const [isSaving, setIsSaving] = useState(false);
@@ -100,14 +103,28 @@ export default function ResumeEditorPage() {
   const [writeSections, setWriteSections] = useState(initialSections);
   const [activeWriteSection, setActiveWriteSection] = useState("personalDetails");
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hasInitializedRef = useRef(false);
+  const pendingUpdatesRef = useRef<Partial<typeof localData>>({});
+  const clerkIdRef = useRef(clerkId);
+  const [isDownloading, setIsDownloading] = useState(false);
 
-  // Fetch resume data from Convex
-  const resume = useQuery(api.resumes.getResume, { id: resumeId });
+  // Keep clerkId ref in sync with latest value
+  useEffect(() => {
+    clerkIdRef.current = clerkId;
+  }, [clerkId]);
+
+  // Fetch resume data from Convex (only when user is loaded)
+  const resume = useQuery(
+    api.resumes.getResume,
+    clerkId ? { id: resumeId, clerkId } : "skip"
+  );
   const updateResume = useMutation(api.resumes.updateResume);
 
-  // Sync Convex data to local state when it changes
+  // Sync Convex data to local state ONLY on initial load
+  // After that, local state is the source of truth to prevent flicker
   useEffect(() => {
-    if (resume) {
+    if (resume && !hasInitializedRef.current) {
+      hasInitializedRef.current = true;
       setLocalData({
         title: resume.title,
         jobDescription: resume.jobDescription || "",
@@ -123,69 +140,96 @@ export default function ResumeEditorPage() {
         template: resume.template,
         style: resume.style,
       });
-      if (!lastSaved) {
-        setLastSaved(new Date(resume.updatedAt));
-      }
+      setLastSaved(new Date(resume.updatedAt));
     }
   }, [resume]);
 
-  // Debounced save function
-  const debouncedSave = useCallback(
-    (updates: Partial<typeof localData>) => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
+  // Debounced save - accumulates changes and saves after 1.5s of inactivity
+  const scheduleSave = useCallback(() => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    saveTimeoutRef.current = setTimeout(async () => {
+      const updates = pendingUpdatesRef.current;
+      if (Object.keys(updates).length === 0) return;
+
+      // Get latest clerkId from ref to avoid stale closure
+      const currentClerkId = clerkIdRef.current;
+      if (!currentClerkId) {
+        // User not authenticated yet, reschedule save
+        console.log("Waiting for authentication, rescheduling save...");
+        saveTimeoutRef.current = setTimeout(() => {
+          if (Object.keys(pendingUpdatesRef.current).length > 0) {
+            scheduleSave();
+          }
+        }, 500);
+        return;
       }
 
       setIsSaving(true);
-
-      saveTimeoutRef.current = setTimeout(async () => {
-        try {
-          // Convert null to undefined for Convex compatibility
-          const convexUpdates: Record<string, unknown> = {};
-          for (const [key, value] of Object.entries(updates)) {
-            if (key === "personalDetails" && value && typeof value === "object") {
-              const pd = value as typeof localData.personalDetails;
-              convexUpdates[key] = {
-                firstName: pd.firstName,
-                lastName: pd.lastName,
-                jobTitle: pd.jobTitle,
-                photo: pd.photo ?? undefined,
-              };
-            } else {
-              convexUpdates[key] = value;
-            }
+      try {
+        // Convert null to undefined for Convex compatibility
+        const convexUpdates: Record<string, unknown> = {};
+        for (const [key, value] of Object.entries(updates)) {
+          if (key === "personalDetails" && value && typeof value === "object") {
+            const pd = value as typeof localData.personalDetails;
+            convexUpdates[key] = {
+              firstName: pd.firstName,
+              lastName: pd.lastName,
+              jobTitle: pd.jobTitle,
+              photo: pd.photo ?? undefined,
+            };
+          } else {
+            convexUpdates[key] = value;
           }
-
-          await updateResume({
-            id: resumeId,
-            updates: convexUpdates as Parameters<typeof updateResume>[0]["updates"],
-          });
-          setLastSaved(new Date());
-        } catch (error) {
-          console.error("Error saving resume:", error);
-        } finally {
-          setIsSaving(false);
         }
-      }, 500);
-    },
-    [resumeId, updateResume]
-  );
 
-  const handleTitleChange = (newTitle: string) => {
+        await updateResume({
+          id: resumeId,
+          clerkId: currentClerkId,
+          updates: convexUpdates as Parameters<typeof updateResume>[0]["updates"],
+        });
+        pendingUpdatesRef.current = {};
+        setLastSaved(new Date());
+      } catch (error) {
+        console.error("Error saving resume:", error);
+      } finally {
+        setIsSaving(false);
+      }
+    }, 1500);
+  }, [resumeId, updateResume]);
+
+  const handleTitleChange = useCallback((newTitle: string) => {
     setLocalData((prev) => ({ ...prev, title: newTitle }));
-    debouncedSave({ title: newTitle });
-  };
+    pendingUpdatesRef.current = { ...pendingUpdatesRef.current, title: newTitle };
+    scheduleSave();
+  }, [scheduleSave]);
 
-  const updateResumeData = (section: string, data: any) => {
+  const updateResumeData = useCallback((section: string, data: any) => {
     setLocalData((prev) => ({
       ...prev,
       [section]: data,
     }));
-    debouncedSave({ [section]: data });
-  };
+    pendingUpdatesRef.current = { ...pendingUpdatesRef.current, [section]: data };
+    scheduleSave();
+  }, [scheduleSave]);
 
-  // Loading state
-  if (resume === undefined) {
+  const handleDownloadPDF = useCallback(async () => {
+    setIsDownloading(true);
+    try {
+      const filename = `${localData.title || "resume"}.pdf`.replace(/[^a-z0-9.-]/gi, "_");
+      await generateResumePDF(resumeId, { filename });
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      alert("Failed to generate PDF. Please try again.");
+    } finally {
+      setIsDownloading(false);
+    }
+  }, [localData.title, resumeId]);
+
+  // Loading state - show if user or resume is not yet loaded
+  if (!isUserLoaded || (resume === undefined && !hasInitializedRef.current)) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
@@ -196,14 +240,31 @@ export default function ResumeEditorPage() {
     );
   }
 
-  // Not found state
-  if (resume === null) {
+  // Not authenticated
+  if (!clerkId) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4 text-center">
+          <h1 className="text-xl font-semibold">Please sign in</h1>
+          <p className="text-sm text-muted-foreground">
+            You need to be signed in to edit resumes.
+          </p>
+          <Button asChild>
+            <Link href="/sign-in">Sign in</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Not found state - only show if we haven't initialized and resume is null
+  if (resume === null && !hasInitializedRef.current) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4 text-center">
           <h1 className="text-xl font-semibold">Resume not found</h1>
           <p className="text-sm text-muted-foreground">
-            This resume may have been deleted or doesn't exist.
+            This resume may have been deleted or you don't have access to it.
           </p>
           <Button asChild>
             <Link href="/app/resumes">Back to resumes</Link>
@@ -308,9 +369,17 @@ export default function ResumeEditorPage() {
             <EyeIcon className="h-4 w-4" />
           </Button>
 
-          <Button className="gap-2 cursor-pointer">
-            <ArrowDownTrayIcon className="h-4 w-4" />
-            <span className="hidden md:inline">Download</span>
+          <Button
+            className="gap-2 cursor-pointer"
+            onClick={handleDownloadPDF}
+            disabled={isDownloading}
+          >
+            {isDownloading ? (
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+            ) : (
+              <ArrowDownTrayIcon className="h-4 w-4" />
+            )}
+            <span className="hidden md:inline">{isDownloading ? "Generating..." : "Download"}</span>
           </Button>
         </div>
       </motion.header>

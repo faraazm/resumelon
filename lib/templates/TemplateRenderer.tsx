@@ -1,6 +1,6 @@
 "use client";
 
-import { ResumeData, TemplateConfig } from "./types";
+import { ResumeData, TemplateConfig, getFontFamily } from "./types";
 import {
   Header,
   Section,
@@ -20,10 +20,16 @@ interface TemplateRendererProps {
   data: ResumeData;
   template: TemplateConfig;
   className?: string;
+  headingFontId?: string;  // Actual font ID like "inter", "georgia"
+  bodyFontId?: string;     // Actual font ID like "inter", "georgia"
 }
 
-export function TemplateRenderer({ data, template, className = "" }: TemplateRendererProps) {
+export function TemplateRenderer({ data, template, className = "", headingFontId, bodyFontId }: TemplateRendererProps) {
   const { spacing, sections: sectionConfig, layout, colors } = template;
+
+  // Get font family CSS values
+  const headingFontFamily = headingFontId ? getFontFamily(headingFontId) : undefined;
+  const bodyFontFamily = bodyFontId ? getFontFamily(bodyFontId) : undefined;
 
   // Check if there's any content
   const fullName = [data.personalDetails?.firstName, data.personalDetails?.lastName]
@@ -116,13 +122,19 @@ export function TemplateRenderer({ data, template, className = "" }: TemplateRen
     }
   };
 
+  // Font style object to apply to wrappers
+  const fontStyle: React.CSSProperties = {
+    ...(headingFontFamily && { "--heading-font": headingFontFamily } as React.CSSProperties),
+    ...(bodyFontFamily && { "--body-font": bodyFontFamily, fontFamily: bodyFontFamily } as React.CSSProperties),
+  };
+
   // Sidebar layout
   if (layout.sidebar) {
     const sidebarSections = sectionConfig.sidebarSections || ["contact", "skills", "education"];
     const mainSections = sectionConfig.mainSections || ["summary", "experience"];
 
     return (
-      <div className={`flex h-full ${className}`}>
+      <div className={`flex h-full ${className}`} style={fontStyle}>
         {/* Sidebar */}
         <div
           className={`${layout.sidebarWidth || "w-[180px]"} shrink-0 p-5 ${spacing.lineHeight}`}
@@ -197,12 +209,15 @@ export function TemplateRenderer({ data, template, className = "" }: TemplateRen
 
   // Standard single-column layout
   return (
-    <div className={`${spacing.pagePadding} ${spacing.lineHeight} ${className}`}>
+    <div
+      className={`${spacing.pagePadding} ${spacing.lineHeight} ${className}`}
+      style={{ ...fontStyle, maxWidth: "100%" }}
+    >
       {/* Header with optional photo */}
-      <div className={`${spacing.sectionGap} ${layout.showPhoto ? "flex items-start gap-4" : ""}`}>
+      <div className={layout.showPhoto ? "flex items-start gap-3" : ""}>
         {layout.showPhoto && (
           <div
-            className="h-16 w-16 shrink-0 rounded-full bg-gray-200 flex items-center justify-center text-xl text-gray-500 font-medium"
+            className="h-14 w-14 shrink-0 rounded-full bg-gray-200 flex items-center justify-center text-lg text-gray-500 font-medium"
           >
             {data.personalDetails?.firstName?.charAt(0) || ""}
             {data.personalDetails?.lastName?.charAt(0) || ""}

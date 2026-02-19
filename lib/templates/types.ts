@@ -119,3 +119,21 @@ export const PAGE_HEIGHT = 792;  // 11 inches * 72 DPI
 export const PAGE_PADDING = 48;  // 0.5 inch margins
 export const CONTENT_WIDTH = PAGE_WIDTH - (PAGE_PADDING * 2);
 export const CONTENT_HEIGHT = PAGE_HEIGHT - (PAGE_PADDING * 2);
+
+// Font family mapping - maps font IDs to CSS font-family values using CSS variables
+export const FONT_FAMILIES: Record<string, string> = {
+  // Sans-serif fonts
+  inter: "var(--font-inter), ui-sans-serif, system-ui, sans-serif",
+  roboto: "var(--font-roboto), ui-sans-serif, system-ui, sans-serif",
+  lato: "var(--font-lato), ui-sans-serif, system-ui, sans-serif",
+  opensans: "var(--font-opensans), ui-sans-serif, system-ui, sans-serif",
+  // Serif fonts
+  merriweather: "var(--font-merriweather), ui-serif, serif",
+  playfair: "var(--font-playfair), ui-serif, serif",
+  lora: "var(--font-lora), ui-serif, serif",
+};
+
+// Get font family from font ID
+export function getFontFamily(fontId: string): string {
+  return FONT_FAMILIES[fontId] || FONT_FAMILIES.inter;
+}

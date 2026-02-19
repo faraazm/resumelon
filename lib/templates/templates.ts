@@ -19,18 +19,18 @@ export const professionalTemplate: TemplateConfig = {
   typography: {
     headingFont: "serif",
     bodyFont: "sans",
-    nameFontSize: "text-2xl",
-    sectionFontSize: "text-xs",
-    bodyFontSize: "text-[11px]",
+    nameFontSize: "text-[24pt]",
+    sectionFontSize: "text-[11pt]",
+    bodyFontSize: "text-[10pt]",
     nameWeight: "font-bold",
     sectionWeight: "font-bold",
   },
 
   spacing: {
-    pagePadding: "p-8",
-    sectionGap: "mb-4",
-    itemGap: "mt-3",
-    lineHeight: "leading-relaxed",
+    pagePadding: "p-[0.5in]",
+    sectionGap: "mb-3",
+    itemGap: "mt-2",
+    lineHeight: "leading-snug",
   },
 
   layout: {
@@ -64,18 +64,18 @@ export const modernTemplate: TemplateConfig = {
   typography: {
     headingFont: "sans",
     bodyFont: "sans",
-    nameFontSize: "text-2xl",
-    sectionFontSize: "text-xs",
-    bodyFontSize: "text-[11px]",
+    nameFontSize: "text-[24pt]",
+    sectionFontSize: "text-[11pt]",
+    bodyFontSize: "text-[10pt]",
     nameWeight: "font-semibold",
     sectionWeight: "font-semibold",
   },
 
   spacing: {
-    pagePadding: "p-8",
-    sectionGap: "mb-4",
-    itemGap: "mt-3",
-    lineHeight: "leading-normal",
+    pagePadding: "p-[0.5in]",
+    sectionGap: "mb-3",
+    itemGap: "mt-2",
+    lineHeight: "leading-snug",
   },
 
   layout: {
@@ -109,18 +109,18 @@ export const classicTemplate: TemplateConfig = {
   typography: {
     headingFont: "serif",
     bodyFont: "serif",
-    nameFontSize: "text-xl",
-    sectionFontSize: "text-xs",
-    bodyFontSize: "text-[11px]",
+    nameFontSize: "text-[22pt]",
+    sectionFontSize: "text-[11pt]",
+    bodyFontSize: "text-[10pt]",
     nameWeight: "font-bold",
     sectionWeight: "font-bold",
   },
 
   spacing: {
-    pagePadding: "p-10",
-    sectionGap: "mb-5",
-    itemGap: "mt-3",
-    lineHeight: "leading-relaxed",
+    pagePadding: "p-[0.5in]",
+    sectionGap: "mb-3",
+    itemGap: "mt-2",
+    lineHeight: "leading-snug",
   },
 
   layout: {
@@ -154,18 +154,18 @@ export const sidebarTemplate: TemplateConfig = {
   typography: {
     headingFont: "sans",
     bodyFont: "sans",
-    nameFontSize: "text-xl",
-    sectionFontSize: "text-[10px]",
-    bodyFontSize: "text-[10px]",
+    nameFontSize: "text-[18pt]",
+    sectionFontSize: "text-[9pt]",
+    bodyFontSize: "text-[9pt]",
     nameWeight: "font-bold",
     sectionWeight: "font-semibold",
   },
 
   spacing: {
     pagePadding: "p-0",
-    sectionGap: "mb-4",
-    itemGap: "mt-2",
-    lineHeight: "leading-snug",
+    sectionGap: "mb-3",
+    itemGap: "mt-1.5",
+    lineHeight: "leading-tight",
   },
 
   layout: {
@@ -210,18 +210,18 @@ export const executiveTemplate: TemplateConfig = {
   typography: {
     headingFont: "serif",
     bodyFont: "sans",
-    nameFontSize: "text-2xl",
-    sectionFontSize: "text-xs",
-    bodyFontSize: "text-[11px]",
+    nameFontSize: "text-[26pt]",
+    sectionFontSize: "text-[11pt]",
+    bodyFontSize: "text-[10pt]",
     nameWeight: "font-bold",
     sectionWeight: "font-semibold",
   },
 
   spacing: {
-    pagePadding: "p-10",
-    sectionGap: "mb-5",
-    itemGap: "mt-4",
-    lineHeight: "leading-relaxed",
+    pagePadding: "p-[0.5in]",
+    sectionGap: "mb-4",
+    itemGap: "mt-2",
+    lineHeight: "leading-snug",
   },
 
   layout: {
@@ -255,15 +255,15 @@ export const compactTemplate: TemplateConfig = {
   typography: {
     headingFont: "sans",
     bodyFont: "sans",
-    nameFontSize: "text-lg",
-    sectionFontSize: "text-[10px]",
-    bodyFontSize: "text-[10px]",
+    nameFontSize: "text-[18pt]",
+    sectionFontSize: "text-[10pt]",
+    bodyFontSize: "text-[9pt]",
     nameWeight: "font-semibold",
     sectionWeight: "font-semibold",
   },
 
   spacing: {
-    pagePadding: "p-5",
+    pagePadding: "p-[0.4in]",
     sectionGap: "mb-2",
     itemGap: "mt-1.5",
     lineHeight: "leading-tight",
@@ -300,18 +300,18 @@ export const creativeTemplate: TemplateConfig = {
   typography: {
     headingFont: "sans",
     bodyFont: "sans",
-    nameFontSize: "text-3xl",
-    sectionFontSize: "text-xs",
-    bodyFontSize: "text-[11px]",
+    nameFontSize: "text-[28pt]",
+    sectionFontSize: "text-[11pt]",
+    bodyFontSize: "text-[10pt]",
     nameWeight: "font-black",
     sectionWeight: "font-bold",
   },
 
   spacing: {
-    pagePadding: "p-8",
-    sectionGap: "mb-4",
-    itemGap: "mt-3",
-    lineHeight: "leading-normal",
+    pagePadding: "p-[0.5in]",
+    sectionGap: "mb-3",
+    itemGap: "mt-2",
+    lineHeight: "leading-snug",
   },
 
   layout: {
@@ -345,18 +345,18 @@ export const minimalTemplate: TemplateConfig = {
   typography: {
     headingFont: "sans",
     bodyFont: "sans",
-    nameFontSize: "text-xl",
-    sectionFontSize: "text-[10px]",
-    bodyFontSize: "text-[11px]",
+    nameFontSize: "text-[22pt]",
+    sectionFontSize: "text-[10pt]",
+    bodyFontSize: "text-[10pt]",
     nameWeight: "font-medium",
     sectionWeight: "font-medium",
   },
 
   spacing: {
-    pagePadding: "p-8",
-    sectionGap: "mb-5",
-    itemGap: "mt-3",
-    lineHeight: "leading-relaxed",
+    pagePadding: "p-[0.5in]",
+    sectionGap: "mb-3",
+    itemGap: "mt-2",
+    lineHeight: "leading-snug",
   },
 
   layout: {
@@ -405,18 +405,18 @@ export function getAllTemplates(): TemplateConfig[] {
 
 // Default font mapping from font ID to serif/sans type
 export function getFontType(fontId: string): "serif" | "sans" {
-  const serifFonts = ["georgia", "merriweather", "playfair", "lora"];
+  const serifFonts = ["merriweather", "playfair", "lora"];
   return serifFonts.includes(fontId) ? "serif" : "sans";
 }
 
 // Get default heading font for a template as a font ID
 export function getTemplateDefaultHeadingFont(templateId: string): string {
   const template = getTemplate(templateId);
-  return template.typography.headingFont === "serif" ? "georgia" : "inter";
+  return template.typography.headingFont === "serif" ? "merriweather" : "inter";
 }
 
 // Get default body font for a template as a font ID
 export function getTemplateDefaultBodyFont(templateId: string): string {
   const template = getTemplate(templateId);
-  return template.typography.bodyFont === "serif" ? "georgia" : "inter";
+  return template.typography.bodyFont === "serif" ? "merriweather" : "inter";
 }

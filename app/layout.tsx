@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { Instrument_Serif } from "next/font/google";
+import { Instrument_Serif, Inter, Roboto, Lato, Open_Sans, Merriweather, Playfair_Display, Lora } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ConvexClientProvider } from "@/components/providers/convex-client-provider";
 import "./globals.css";
@@ -20,6 +20,46 @@ const instrumentSerif = Instrument_Serif({
   subsets: ["latin"],
   style: "italic",
   variable: "--font-instrument-serif",
+});
+
+// Resume fonts - Sans Serif
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+});
+
+const roboto = Roboto({
+  weight: ["400", "500", "700"],
+  variable: "--font-roboto",
+  subsets: ["latin"],
+});
+
+const lato = Lato({
+  weight: ["400", "700"],
+  variable: "--font-lato",
+  subsets: ["latin"],
+});
+
+const openSans = Open_Sans({
+  variable: "--font-opensans",
+  subsets: ["latin"],
+});
+
+// Resume fonts - Serif
+const merriweather = Merriweather({
+  weight: ["400", "700"],
+  variable: "--font-merriweather",
+  subsets: ["latin"],
+});
+
+const playfair = Playfair_Display({
+  variable: "--font-playfair",
+  subsets: ["latin"],
+});
+
+const lora = Lora({
+  variable: "--font-lora",
+  subsets: ["latin"],
 });
 
 export const viewport: Viewport = {
@@ -111,7 +151,7 @@ export default function RootLayout({
       <ConvexClientProvider>
         <html lang="en" suppressHydrationWarning>
           <body
-            className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} antialiased`}
+            className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} ${inter.variable} ${roboto.variable} ${lato.variable} ${openSans.variable} ${merriweather.variable} ${playfair.variable} ${lora.variable} antialiased`}
             suppressHydrationWarning
           >
             {children}

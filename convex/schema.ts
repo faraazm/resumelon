@@ -127,4 +127,17 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number(),
   }).index("by_user", ["userId"]),
+
+  // One-time print tokens for secure PDF generation
+  printTokens: defineTable({
+    jti: v.string(), // Unique token identifier
+    resumeId: v.id("resumes"),
+    userId: v.id("users"),
+    expiresAt: v.number(), // Timestamp when token expires
+    usedAt: v.optional(v.number()), // Timestamp when token was consumed (null if unused)
+    createdAt: v.number(),
+  })
+    .index("by_jti", ["jti"])
+    .index("by_resume", ["resumeId"])
+    .index("by_user", ["userId"]),
 });

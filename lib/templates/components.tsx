@@ -2,7 +2,12 @@
 
 import { TemplateConfig, ResumeData } from "./types";
 
-// Utility to get font class
+// The heading font style - uses CSS variable if set, otherwise falls back to class
+function getHeadingStyle(): React.CSSProperties {
+  return { fontFamily: "var(--heading-font, inherit)" };
+}
+
+// Utility to get font class (fallback when CSS variable not set)
 function getFontClass(fontType: "serif" | "sans"): string {
   return fontType === "serif" ? "font-serif" : "font-sans";
 }
@@ -38,8 +43,8 @@ export function SidebarHeader({ data, template }: SidebarHeaderProps) {
     <div className="text-center mb-4">
       {fullName && (
         <h1
-          className={`${typography.nameFontSize} ${typography.nameWeight} ${getFontClass(typography.headingFont)}`}
-          style={{ color: colors.heading }}
+          className={`${typography.nameFontSize} ${typography.nameWeight}`}
+          style={{ color: colors.heading, fontFamily: "var(--heading-font, inherit)" }}
         >
           {fullName}
         </h1>
@@ -70,7 +75,7 @@ export function SidebarSection({ title, template, children }: SidebarSectionProp
     <div className={spacing.sectionGap}>
       <h2
         className={`${typography.sectionFontSize} ${typography.sectionWeight} uppercase tracking-wider mb-2`}
-        style={{ color: colors.accent }}
+        style={{ color: colors.accent, fontFamily: "var(--heading-font, inherit)" }}
       >
         {title}
       </h2>
@@ -201,25 +206,30 @@ export function Header({ data, template }: HeaderProps) {
   const alignmentClass = layout.headerAlignment === "center" ? "text-center" : "text-left";
 
   return (
-    <header className={alignmentClass}>
+    <header className={`${alignmentClass} mb-3`}>
       {fullName && (
         <h1
-          className={`${typography.nameFontSize} ${typography.nameWeight} ${getFontClass(typography.headingFont)} tracking-tight`}
-          style={{ color: colors.heading }}
+          className={`${typography.nameFontSize} ${typography.nameWeight} tracking-tight`}
+          style={{
+            color: colors.heading,
+            fontFamily: "var(--heading-font, inherit)",
+            lineHeight: "1.1",
+            marginBottom: "2px",
+          }}
         >
           {fullName}
         </h1>
       )}
       {personalDetails.jobTitle && (
         <p
-          className={`${typography.bodyFontSize} mt-0.5`}
-          style={{ color: colors.muted }}
+          className={`${typography.bodyFontSize}`}
+          style={{ color: colors.muted, lineHeight: "1.2" }}
         >
           {personalDetails.jobTitle}
         </p>
       )}
       {contactItems.length > 0 && (
-        <p className="text-[10px] mt-1.5" style={{ color: colors.muted }}>
+        <p className="text-[9pt] mt-1" style={{ color: colors.muted }}>
           {contactItems.map((item, index) => (
             <span key={index}>
               {index > 0 && <span className="mx-1.5">|</span>}
@@ -245,15 +255,22 @@ export function SectionHeader({ title, template }: SectionHeaderProps) {
 
   if (showAccentDivider) {
     return (
-      <div className="mb-2">
+      <div
+        className="section-header mb-1.5"
+        style={{ breakAfter: "avoid", pageBreakAfter: "avoid" }}
+      >
         <h2
-          className={`${typography.sectionFontSize} ${typography.sectionWeight} ${getFontClass(typography.headingFont)} uppercase tracking-wider mb-1`}
-          style={{ color: colors.accent }}
+          className={`${typography.sectionFontSize} ${typography.sectionWeight} uppercase tracking-wider mb-0.5`}
+          style={{
+            color: colors.accent,
+            fontFamily: "var(--heading-font, inherit)",
+            lineHeight: "1.2",
+          }}
         >
           {title}
         </h2>
         <div
-          className="h-0.5 w-full"
+          className="h-[1.5px] w-full"
           style={{ backgroundColor: colors.accent }}
         />
       </div>
@@ -263,12 +280,16 @@ export function SectionHeader({ title, template }: SectionHeaderProps) {
   // For line divider or no divider, use accent color for section titles
   return (
     <h2
-      className={`${typography.sectionFontSize} ${typography.sectionWeight} ${getFontClass(typography.headingFont)} uppercase tracking-wider ${
-        showLineDivider ? "border-b pb-1" : ""
-      } mb-2`}
+      className={`section-header ${typography.sectionFontSize} ${typography.sectionWeight} uppercase tracking-wider ${
+        showLineDivider ? "border-b pb-0.5" : ""
+      } mb-1.5`}
       style={{
         color: colors.accent,
         borderColor: showLineDivider ? colors.divider : "transparent",
+        fontFamily: "var(--heading-font, inherit)",
+        lineHeight: "1.2",
+        breakAfter: "avoid",
+        pageBreakAfter: "avoid",
       }}
     >
       {title}
@@ -288,7 +309,10 @@ export function Section({ title, template, children, show = true }: SectionProps
   if (!show) return null;
 
   return (
-    <section className={template.spacing.sectionGap}>
+    <section
+      className={template.spacing.sectionGap}
+      style={{ breakInside: "avoid-page" }}
+    >
       <SectionHeader title={title} template={template} />
       {children}
     </section>
@@ -303,24 +327,33 @@ interface ExperienceItemProps {
 }
 
 export function ExperienceItem({ job, template, isFirst }: ExperienceItemProps) {
-  const { typography, spacing, layout, colors } = template;
+  const { typography, spacing, colors } = template;
 
   return (
-    <div className={!isFirst ? spacing.itemGap : ""}>
-      <div className="flex justify-between items-start">
-        <div>
+    <div
+      className={`job-block ${!isFirst ? spacing.itemGap : ""}`}
+      style={{ breakInside: "avoid", pageBreakInside: "avoid" }}
+    >
+      <div className="flex justify-between items-baseline gap-2">
+        <div className="flex-1 min-w-0">
           <p
             className={`font-semibold ${typography.bodyFontSize}`}
-            style={{ color: colors.heading }}
+            style={{ color: colors.heading, lineHeight: "1.2" }}
           >
             {job.title}
           </p>
-          <p className={typography.bodyFontSize} style={{ color: colors.muted }}>
+          <p
+            className={typography.bodyFontSize}
+            style={{ color: colors.muted, lineHeight: "1.2" }}
+          >
             {job.company}
             {job.location && ` · ${job.location}`}
           </p>
         </div>
-        <p className="text-[10px] shrink-0" style={{ color: colors.muted }}>
+        <p
+          className="text-[9pt] shrink-0 whitespace-nowrap"
+          style={{ color: colors.muted }}
+        >
           {formatDateRange(job.startDate, job.endDate, job.current)}
         </p>
       </div>
@@ -339,23 +372,32 @@ interface EducationItemProps {
 }
 
 export function EducationItem({ edu, template, isFirst }: EducationItemProps) {
-  const { typography, spacing, colors } = template;
+  const { typography, colors } = template;
 
   return (
-    <div className={!isFirst ? "mt-2" : ""}>
-      <div className="flex justify-between items-start">
-        <div>
+    <div
+      className={`education-block ${!isFirst ? "mt-1.5" : ""}`}
+      style={{ breakInside: "avoid", pageBreakInside: "avoid" }}
+    >
+      <div className="flex justify-between items-baseline gap-2">
+        <div className="flex-1 min-w-0">
           <p
             className={`font-semibold ${typography.bodyFontSize}`}
-            style={{ color: colors.heading }}
+            style={{ color: colors.heading, lineHeight: "1.2" }}
           >
             {edu.degree}
           </p>
-          <p className={typography.bodyFontSize} style={{ color: colors.muted }}>
+          <p
+            className={typography.bodyFontSize}
+            style={{ color: colors.muted, lineHeight: "1.2" }}
+          >
             {edu.school}
           </p>
         </div>
-        <p className="text-[10px] shrink-0" style={{ color: colors.muted }}>
+        <p
+          className="text-[9pt] shrink-0 whitespace-nowrap"
+          style={{ color: colors.muted }}
+        >
           {formatDateRange(edu.startDate, edu.endDate)}
         </p>
       </div>
@@ -369,26 +411,53 @@ interface BulletListProps {
   template: TemplateConfig;
 }
 
+/**
+ * Clean bullet text by removing leading bullet characters
+ * This handles cases where the data already contains bullets like "• text" or "- text"
+ */
+function cleanBulletText(text: string): string {
+  // Remove leading bullet points, dashes, or asterisks (with optional whitespace)
+  return text.replace(/^[\s]*[•\-\*\–\—][\s]+/, "").trim();
+}
+
 export function BulletList({ bullets, template }: BulletListProps) {
   const { typography, layout, colors } = template;
+
+  // Filter out empty bullets and clean text
+  const cleanedBullets = bullets
+    .map(cleanBulletText)
+    .filter((b) => b.length > 0);
+
+  if (cleanedBullets.length === 0) return null;
 
   const listStyleClass =
     layout.bulletStyle === "dash"
       ? "list-none"
       : layout.bulletStyle === "circle"
-      ? "list-[circle]"
-      : "list-disc";
+        ? "list-[circle]"
+        : "list-disc";
 
   return (
-    <ul className={`mt-1.5 space-y-0.5 ${listStyleClass} list-outside ml-4`}>
-      {bullets.map((bullet, index) => (
+    <ul
+      className={`mt-1 ${listStyleClass} list-outside`}
+      style={{
+        marginLeft: "1rem",
+        paddingLeft: "0.25rem",
+      }}
+    >
+      {cleanedBullets.map((bullet, index) => (
         <li
           key={index}
           className={typography.bodyFontSize}
-          style={{ color: colors.body }}
+          style={{
+            color: colors.body,
+            marginBottom: "1px",
+            paddingLeft: "2px",
+            lineHeight: "1.3",
+          }}
         >
           {layout.bulletStyle === "dash" && (
-            <span className="mr-2" style={{ color: colors.muted }}>
+            <span className="mr-1.5" style={{ color: colors.muted }}>
               -
             </span>
           )}
@@ -425,7 +494,10 @@ export function Summary({ summary, template }: SummaryProps) {
   const { typography, colors } = template;
 
   return (
-    <p className={typography.bodyFontSize} style={{ color: colors.body }}>
+    <p
+      className={typography.bodyFontSize}
+      style={{ color: colors.body, lineHeight: "1.35" }}
+    >
       {summary}
     </p>
   );

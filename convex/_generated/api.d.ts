@@ -10,6 +10,7 @@
 
 import type * as ai from "../ai.js";
 import type * as files from "../files.js";
+import type * as printTokens from "../printTokens.js";
 import type * as resumes from "../resumes.js";
 import type * as storage from "../storage.js";
 import type * as users from "../users.js";
@@ -23,6 +24,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   ai: typeof ai;
   files: typeof files;
+  printTokens: typeof printTokens;
   resumes: typeof resumes;
   storage: typeof storage;
   users: typeof users;

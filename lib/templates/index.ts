@@ -13,6 +13,8 @@ export {
   PAGE_PADDING,
   CONTENT_WIDTH,
   CONTENT_HEIGHT,
+  FONT_FAMILIES,
+  getFontFamily,
 } from "./types";
 
 // Export templates

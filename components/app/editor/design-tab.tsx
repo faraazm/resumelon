@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -18,7 +18,9 @@ import {
   getTemplate,
   getTemplateDefaultHeadingFont,
   getTemplateDefaultBodyFont,
+  TemplateRenderer,
   TemplateConfig,
+  ResumeData,
 } from "@/lib/templates";
 
 interface DesignTabProps {
@@ -29,6 +31,61 @@ interface DesignTabProps {
 // Get templates from our template system
 const templateOptions = getAllTemplates();
 
+// Sample resume data for template previews
+const sampleResumeData: ResumeData = {
+  personalDetails: {
+    firstName: "Sarah",
+    lastName: "Johnson",
+    jobTitle: "Senior Software Engineer",
+    photo: null,
+  },
+  contact: {
+    email: "sarah@example.com",
+    phone: "(555) 123-4567",
+    linkedin: "linkedin.com/in/sarah",
+    location: "San Francisco, CA",
+  },
+  summary: "Experienced software engineer with 8+ years building scalable web applications. Expert in React, Node.js, and cloud architecture.",
+  experience: [
+    {
+      id: "1",
+      title: "Senior Software Engineer",
+      company: "Tech Corp",
+      location: "San Francisco, CA",
+      startDate: "2020",
+      endDate: "",
+      current: true,
+      bullets: [
+        "Led development of microservices architecture",
+        "Mentored team of 5 junior developers",
+      ],
+    },
+    {
+      id: "2",
+      title: "Software Engineer",
+      company: "StartupXYZ",
+      location: "New York, NY",
+      startDate: "2017",
+      endDate: "2020",
+      current: false,
+      bullets: [
+        "Built React frontend serving 100k users",
+        "Implemented CI/CD pipeline",
+      ],
+    },
+  ],
+  education: [
+    {
+      id: "1",
+      degree: "B.S. Computer Science",
+      school: "Stanford University",
+      startDate: "2013",
+      endDate: "2017",
+    },
+  ],
+  skills: ["React", "TypeScript", "Node.js", "AWS", "Python", "PostgreSQL"],
+};
+
 const sansSerifFonts = [
   { id: "inter", name: "Inter", style: "font-sans" },
   { id: "roboto", name: "Roboto", style: "font-sans" },
@@ -37,7 +94,6 @@ const sansSerifFonts = [
 ];
 
 const serifFonts = [
-  { id: "georgia", name: "Georgia", style: "font-serif" },
   { id: "merriweather", name: "Merriweather", style: "font-serif" },
   { id: "playfair", name: "Playfair Display", style: "font-serif" },
   { id: "lora", name: "Lora", style: "font-serif" },
@@ -60,9 +116,16 @@ const accentColors = [
   { id: "#ea580c", name: "Orange" },
 ];
 
+import {
+  LETTER_WIDTH_PX,
+  LETTER_HEIGHT_PX,
+} from "@/lib/pdf-constants";
+
 export function DesignTab({ resumeData, onUpdate }: DesignTabProps) {
   const currentTemplate = resumeData.template || "professional";
   const template = getTemplate(currentTemplate);
+  const templateGridRef = useRef<HTMLDivElement>(null);
+  const [previewScale, setPreviewScale] = useState(0.25);
 
   const currentStyle = resumeData.style || {
     font: "inter",
@@ -78,6 +141,28 @@ export function DesignTab({ resumeData, onUpdate }: DesignTabProps) {
     onUpdate("style", { ...currentStyle, [field]: value });
   };
 
+  // Calculate preview scale based on container width
+  useEffect(() => {
+    const calculateScale = () => {
+      if (templateGridRef.current) {
+        const gridWidth = templateGridRef.current.clientWidth;
+        // For 4-column grid, each cell is roughly gridWidth/4 - gaps
+        // For 2-column grid (mobile), each cell is roughly gridWidth/2 - gaps
+        const isMobile = window.innerWidth < 768;
+        const columns = isMobile ? 2 : 4;
+        const gap = 12; // gap-3 = 12px
+        const cellWidth = (gridWidth - gap * (columns - 1)) / columns;
+        // Scale to fit the cell width
+        const scale = cellWidth / LETTER_WIDTH_PX;
+        setPreviewScale(scale);
+      }
+    };
+
+    calculateScale();
+    window.addEventListener("resize", calculateScale);
+    return () => window.removeEventListener("resize", calculateScale);
+  }, []);
+
   // When template changes, update the fonts to match template defaults (unless user has overridden)
   useEffect(() => {
     // Only update if user hasn't explicitly set fonts
@@ -85,96 +170,6 @@ export function DesignTab({ resumeData, onUpdate }: DesignTabProps) {
       // Don't update - let the defaults flow through
     }
   }, [currentTemplate]);
-
-  // Render mini preview showing actual template structure
-  const renderTemplatePreview = (tmpl: TemplateConfig) => {
-    const isCenter = tmpl.layout.headerAlignment === "center";
-    const showDivider = tmpl.layout.sectionDivider !== "none";
-    const hasSidebar = tmpl.layout.sidebar;
-    const showPhoto = tmpl.layout.showPhoto;
-
-    if (hasSidebar) {
-      return (
-        <div className="h-full w-full flex rounded bg-white shadow-sm overflow-hidden">
-          {/* Sidebar */}
-          <div className="w-1/3 bg-gray-700 p-1.5">
-            {/* Photo circle */}
-            {showPhoto && (
-              <div className="w-4 h-4 rounded-full bg-gray-500 mx-auto mb-1.5" />
-            )}
-            {/* Name */}
-            <div className="h-1.5 w-full bg-gray-400 rounded mb-0.5" />
-            <div className="h-1 w-2/3 bg-gray-500 rounded mx-auto mb-2" />
-            {/* Contact section */}
-            <div className="h-1 w-full bg-gray-500 rounded mb-0.5" />
-            <div className="h-0.5 w-full bg-gray-600 rounded mb-0.5" />
-            <div className="h-0.5 w-3/4 bg-gray-600 rounded mb-1.5" />
-            {/* Skills section */}
-            <div className="h-1 w-full bg-gray-500 rounded mb-0.5" />
-            <div className="flex flex-wrap gap-0.5">
-              <div className="h-1.5 w-3 bg-gray-600 rounded" />
-              <div className="h-1.5 w-4 bg-gray-600 rounded" />
-              <div className="h-1.5 w-3 bg-gray-600 rounded" />
-            </div>
-          </div>
-          {/* Main content */}
-          <div className="flex-1 p-1.5">
-            <div className="h-1 w-1/3 bg-gray-800 rounded mb-0.5" />
-            <div className="h-0.5 w-full bg-gray-200 rounded mb-0.5" />
-            <div className="h-0.5 w-full bg-gray-200 rounded mb-0.5" />
-            <div className="h-0.5 w-2/3 bg-gray-200 rounded mb-1.5" />
-            <div className="h-1 w-1/3 bg-gray-800 rounded mb-0.5" />
-            <div className="h-0.5 w-full bg-gray-200 rounded mb-0.5" />
-            <div className="h-0.5 w-3/4 bg-gray-200 rounded" />
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div className="h-full w-full rounded bg-white p-2 shadow-sm">
-        <div className="space-y-1.5">
-          {/* Header with optional photo */}
-          <div className={`flex items-start gap-1.5 ${isCenter ? "justify-center" : ""}`}>
-            {showPhoto && (
-              <div className="w-4 h-4 rounded-full bg-gray-300 shrink-0" />
-            )}
-            <div className={isCenter && !showPhoto ? "text-center" : ""}>
-              <div
-                className={`h-2 ${isCenter && !showPhoto ? "mx-auto" : ""} rounded bg-gray-800`}
-                style={{ width: showPhoto ? "60%" : isCenter ? "50%" : "50%" }}
-              />
-              <div
-                className={`mt-0.5 h-1 ${isCenter && !showPhoto ? "mx-auto" : ""} rounded bg-gray-400`}
-                style={{ width: showPhoto ? "40%" : isCenter ? "33%" : "33%" }}
-              />
-            </div>
-          </div>
-
-          {/* Section 1 */}
-          <div className="mt-2 space-y-0.5">
-            <div className="flex items-center gap-1">
-              <div className="h-1 w-1/4 rounded bg-gray-800" />
-              {showDivider && <div className="flex-1 h-px bg-gray-300" />}
-            </div>
-            <div className="h-0.5 w-full rounded bg-gray-200" />
-            <div className="h-0.5 w-full rounded bg-gray-200" />
-            <div className="h-0.5 w-2/3 rounded bg-gray-200" />
-          </div>
-
-          {/* Section 2 */}
-          <div className="mt-1.5 space-y-0.5">
-            <div className="flex items-center gap-1">
-              <div className="h-1 w-1/4 rounded bg-gray-800" />
-              {showDivider && <div className="flex-1 h-px bg-gray-300" />}
-            </div>
-            <div className="h-0.5 w-full rounded bg-gray-200" />
-            <div className="h-0.5 w-3/4 rounded bg-gray-200" />
-          </div>
-        </div>
-      </div>
-    );
-  };
 
   return (
     <div className="flex-1 overflow-hidden">
@@ -191,7 +186,7 @@ export function DesignTab({ resumeData, onUpdate }: DesignTabProps) {
               </p>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div ref={templateGridRef} className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {templateOptions.map((tmpl) => {
                 const isSelected = currentTemplate === tmpl.id;
 
@@ -199,15 +194,27 @@ export function DesignTab({ resumeData, onUpdate }: DesignTabProps) {
                   <button
                     key={tmpl.id}
                     onClick={() => onUpdate("template", tmpl.id)}
-                    className={`group relative overflow-hidden rounded-lg border-2 transition-all cursor-pointer ${
+                    className={`group relative overflow-hidden rounded-lg border-2 cursor-pointer ${
                       isSelected
                         ? "border-primary ring-2 ring-primary/20"
                         : "border-border hover:border-primary/50"
                     }`}
                   >
-                    {/* Template Preview */}
-                    <div className="aspect-[8.5/11] bg-gray-50 p-2">
-                      {renderTemplatePreview(tmpl)}
+                    {/* Actual Template Preview - Scaled to fit container */}
+                    <div className="aspect-[8.5/11] bg-white overflow-hidden relative w-full">
+                      <div
+                        className="absolute top-0 left-0 origin-top-left"
+                        style={{
+                          width: LETTER_WIDTH_PX,
+                          height: LETTER_HEIGHT_PX,
+                          transform: `scale(${previewScale})`,
+                        }}
+                      >
+                        <TemplateRenderer
+                          data={sampleResumeData}
+                          template={tmpl}
+                        />
+                      </div>
                     </div>
 
                     {/* Selected Check */}
@@ -288,7 +295,7 @@ export function DesignTab({ resumeData, onUpdate }: DesignTabProps) {
               </p>
             </div>
 
-            <div className="space-y-4">
+            <div className="flex flex-wrap gap-4">
               <div className="space-y-2">
                 <Label>Heading Font</Label>
                 <Select
@@ -361,7 +368,7 @@ export function DesignTab({ resumeData, onUpdate }: DesignTabProps) {
                   <button
                     key={option.id}
                     onClick={() => updateStyle("spacing", option.id)}
-                    className={`flex-1 rounded-lg border-2 px-3 md:px-4 py-2 md:py-3 text-sm font-medium transition-all cursor-pointer ${
+                    className={`flex-1 rounded-lg border-2 px-3 md:px-4 py-2 md:py-3 text-sm font-medium cursor-pointer ${
                       isSelected
                         ? "border-primary bg-primary/5 text-primary"
                         : "border-border text-muted-foreground hover:border-primary/50"
@@ -394,7 +401,7 @@ export function DesignTab({ resumeData, onUpdate }: DesignTabProps) {
                   <button
                     key={color.id}
                     onClick={() => updateStyle("accentColor", color.id)}
-                    className={`relative w-10 h-10 rounded-full transition-all cursor-pointer ${
+                    className={`relative w-10 h-10 rounded-full cursor-pointer ${
                       isSelected
                         ? "ring-2 ring-offset-2 ring-primary"
                         : "hover:scale-110"

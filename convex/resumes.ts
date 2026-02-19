@@ -110,9 +110,24 @@ export const createResume = mutation({
 });
 
 export const getResume = query({
-  args: { id: v.id("resumes") },
+  args: { id: v.id("resumes"), clerkId: v.string() },
   handler: async (ctx, args) => {
-    return await ctx.db.get(args.id);
+    const resume = await ctx.db.get(args.id);
+    if (!resume) {
+      return null;
+    }
+
+    // Verify ownership
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
+      .first();
+
+    if (!user || resume.userId !== user._id) {
+      throw new Error("Access denied: You do not own this resume");
+    }
+
+    return resume;
   },
 });
 
@@ -138,6 +153,7 @@ export const getResumesByUser = query({
 export const updateResume = mutation({
   args: {
     id: v.id("resumes"),
+    clerkId: v.string(),
     updates: v.object({
       title: v.optional(v.string()),
       personalDetails: v.optional(
@@ -251,7 +267,22 @@ export const updateResume = mutation({
     }),
   },
   handler: async (ctx, args) => {
-    const { id, updates } = args;
+    const { id, clerkId, updates } = args;
+
+    // Verify ownership
+    const resume = await ctx.db.get(id);
+    if (!resume) {
+      throw new Error("Resume not found");
+    }
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", clerkId))
+      .first();
+
+    if (!user || resume.userId !== user._id) {
+      throw new Error("Access denied: You do not own this resume");
+    }
 
     await ctx.db.patch(id, {
       ...updates,
@@ -263,8 +294,23 @@ export const updateResume = mutation({
 });
 
 export const deleteResume = mutation({
-  args: { id: v.id("resumes") },
+  args: { id: v.id("resumes"), clerkId: v.string() },
   handler: async (ctx, args) => {
+    // Verify ownership
+    const resume = await ctx.db.get(args.id);
+    if (!resume) {
+      throw new Error("Resume not found");
+    }
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
+      .first();
+
+    if (!user || resume.userId !== user._id) {
+      throw new Error("Access denied: You do not own this resume");
+    }
+
     await ctx.db.delete(args.id);
   },
 });

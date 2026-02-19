@@ -1,10 +1,16 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
-import { Card } from "@/components/ui/card";
+import { useState, useRef, useEffect, useCallback, forwardRef, useImperativeHandle } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
-import { TemplateRenderer, getTemplate, ResumeData, TemplateConfig } from "@/lib/templates";
+import { TemplateRenderer, getTemplate, ResumeData, TemplateConfig, getTemplateDefaultHeadingFont, getTemplateDefaultBodyFont } from "@/lib/templates";
+import {
+  LETTER_WIDTH_PX,
+  LETTER_HEIGHT_PX,
+  LETTER_ASPECT_RATIO,
+  DEFAULT_VERTICAL_PADDING_PX,
+  TYPOGRAPHY,
+} from "@/lib/pdf-constants";
 
 interface ResumePreviewProps {
   data: {
@@ -53,17 +59,28 @@ interface ResumePreviewProps {
   sectionOrder?: string[];
 }
 
-// A4 dimensions at 72 DPI
-const A4_WIDTH = 595;
-const A4_HEIGHT = 842;
-const ASPECT_RATIO = A4_WIDTH / A4_HEIGHT;
+export interface ResumePreviewHandle {
+  getContentElement: () => HTMLDivElement | null;
+  getTotalPages: () => number;
+  getPageHeight: () => number;
+}
 
-export function ResumePreview({ data, sectionOrder }: ResumePreviewProps) {
+// Use shared constants for consistency with PDF generation
+
+export const ResumePreview = forwardRef<ResumePreviewHandle, ResumePreviewProps>(
+  function ResumePreview({ data, sectionOrder }, ref) {
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+
+  // Expose methods to parent for PDF generation
+  useImperativeHandle(ref, () => ({
+    getContentElement: () => contentRef.current,
+    getTotalPages: () => totalPages,
+    getPageHeight: () => LETTER_HEIGHT_PX,
+  }));
 
   // Get the template configuration
   const template = getTemplate(data.template || "professional");
@@ -76,7 +93,7 @@ export function ResumePreview({ data, sectionOrder }: ResumePreviewProps) {
 
   // Map font IDs to font types
   const getFontType = (fontId: string): "serif" | "sans" => {
-    const serifFonts = ["georgia", "merriweather", "playfair", "lora"];
+    const serifFonts = ["merriweather", "playfair", "lora"];
     return serifFonts.includes(fontId) ? "serif" : "sans";
   };
 
@@ -97,7 +114,13 @@ export function ResumePreview({ data, sectionOrder }: ResumePreviewProps) {
   // Get accent color from user style or fallback to template
   const accentColor = data.style?.accentColor || template.colors.accent;
 
+  // Get actual font IDs for rendering (not just serif/sans type)
+  const templateId = data.template || "professional";
+  const headingFontId = data.style?.headingFont || getTemplateDefaultHeadingFont(templateId);
+  const bodyFontId = data.style?.bodyFont || getTemplateDefaultBodyFont(templateId);
+
   // Apply spacing and typography overrides from user style and custom section order
+  // IMPORTANT: These values MUST match the print page (app/print/[id]/page.tsx) exactly
   const adjustedTemplate: TemplateConfig = {
     ...template,
     typography: {
@@ -116,30 +139,31 @@ export function ResumePreview({ data, sectionOrder }: ResumePreviewProps) {
     },
     spacing: {
       ...template.spacing,
+      // Tighter spacing optimized for print - matches print page exactly
       sectionGap:
         data.style?.spacing === "compact"
           ? "mb-2"
           : data.style?.spacing === "spacious"
-          ? "mb-6"
-          : "mb-4",
+            ? "mb-4"
+            : "mb-3",
       itemGap:
         data.style?.spacing === "compact"
-          ? "mt-1.5"
+          ? "mt-1"
           : data.style?.spacing === "spacious"
-          ? "mt-4"
-          : "mt-3",
+            ? "mt-2.5"
+            : "mt-2",
       pagePadding:
         data.style?.spacing === "compact"
-          ? "p-5"
+          ? "p-[0.4in]"
           : data.style?.spacing === "spacious"
-          ? "p-10"
-          : template.spacing.pagePadding,
+            ? "p-[0.6in]"
+            : "p-[0.5in]",
       lineHeight:
         data.style?.spacing === "compact"
           ? "leading-tight"
           : data.style?.spacing === "spacious"
-          ? "leading-relaxed"
-          : template.spacing.lineHeight,
+            ? "leading-snug"
+            : "leading-snug",
     },
     layout: {
       ...template.layout,
@@ -188,17 +212,17 @@ export function ResumePreview({ data, sectionOrder }: ResumePreviewProps) {
     const containerWidth = containerRef.current.clientWidth;
     const containerHeight = containerRef.current.clientHeight;
 
-    // Calculate the maximum size that fits while maintaining A4 aspect ratio
+    // Calculate the maximum size that fits while maintaining Letter aspect ratio
     let newWidth = containerWidth;
-    let newHeight = newWidth / ASPECT_RATIO;
+    let newHeight = newWidth / LETTER_ASPECT_RATIO;
 
     if (newHeight > containerHeight) {
       newHeight = containerHeight;
-      newWidth = newHeight * ASPECT_RATIO;
+      newWidth = newHeight * LETTER_ASPECT_RATIO;
     }
 
-    // Scale relative to A4 dimensions
-    const newScale = newWidth / A4_WIDTH;
+    // Scale relative to Letter dimensions
+    const newScale = newWidth / LETTER_WIDTH_PX;
     setScale(newScale);
   }, []);
 
@@ -207,7 +231,8 @@ export function ResumePreview({ data, sectionOrder }: ResumePreviewProps) {
     if (!contentRef.current) return;
 
     const contentHeight = contentRef.current.scrollHeight;
-    const pageContentHeight = A4_HEIGHT - 96; // Account for padding (48px top + 48px bottom)
+    // The actual content area is the page height minus the vertical padding (margins)
+    const pageContentHeight = LETTER_HEIGHT_PX - DEFAULT_VERTICAL_PADDING_PX;
     const pages = Math.max(1, Math.ceil(contentHeight / pageContentHeight));
 
     setTotalPages(pages);
@@ -243,7 +268,7 @@ export function ResumePreview({ data, sectionOrder }: ResumePreviewProps) {
     }
   };
 
-  const pageContentHeight = A4_HEIGHT - 96;
+  const pageContentHeight = LETTER_HEIGHT_PX - DEFAULT_VERTICAL_PADDING_PX;
 
   return (
     <div
@@ -254,8 +279,8 @@ export function ResumePreview({ data, sectionOrder }: ResumePreviewProps) {
       <div
         className="relative bg-white shadow-lg overflow-hidden"
         style={{
-          width: A4_WIDTH * scale,
-          height: A4_HEIGHT * scale,
+          width: LETTER_WIDTH_PX * scale,
+          height: LETTER_HEIGHT_PX * scale,
           transform: `scale(1)`,
           transformOrigin: "top center",
         }}
@@ -263,8 +288,8 @@ export function ResumePreview({ data, sectionOrder }: ResumePreviewProps) {
         {/* Content wrapper - scaled to fit */}
         <div
           style={{
-            width: A4_WIDTH,
-            height: A4_HEIGHT,
+            width: LETTER_WIDTH_PX,
+            height: LETTER_HEIGHT_PX,
             transform: `scale(${scale})`,
             transformOrigin: "top left",
             overflow: "hidden",
@@ -276,11 +301,15 @@ export function ResumePreview({ data, sectionOrder }: ResumePreviewProps) {
             className="bg-white"
             style={{
               transform: `translateY(-${currentPage * pageContentHeight}px)`,
+              fontSize: TYPOGRAPHY.body,
+              lineHeight: TYPOGRAPHY.lineHeight,
             }}
           >
             <TemplateRenderer
               data={resumeData}
               template={adjustedTemplate}
+              headingFontId={headingFontId}
+              bodyFontId={bodyFontId}
             />
           </div>
         </div>
@@ -312,4 +341,4 @@ export function ResumePreview({ data, sectionOrder }: ResumePreviewProps) {
       </div>
     </div>
   );
-}
+});

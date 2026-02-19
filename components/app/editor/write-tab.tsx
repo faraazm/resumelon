@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { DatePicker, MonthYearPicker } from "@/components/ui/date-picker";
 import {
   UserIcon,
   PhoneIcon,
@@ -48,6 +49,41 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+// Input sanitization utilities
+const sanitizeText = (value: string, maxLength: number = 500): string => {
+  // Remove potentially dangerous characters and limit length
+  return value
+    .replace(/<[^>]*>/g, "") // Remove HTML tags
+    .replace(/[<>]/g, "") // Remove < and > characters
+    .slice(0, maxLength)
+    .trim();
+};
+
+const sanitizeEmail = (value: string): string => {
+  // Basic email sanitization - remove spaces and dangerous chars
+  return value
+    .replace(/[<>'"]/g, "")
+    .replace(/\s/g, "")
+    .toLowerCase()
+    .slice(0, 254); // Max email length per RFC
+};
+
+const sanitizePhone = (value: string): string => {
+  // Allow only digits, spaces, dashes, parentheses, and plus
+  return value
+    .replace(/[^0-9\s\-\(\)\+\.]/g, "")
+    .slice(0, 20);
+};
+
+const sanitizeUrl = (value: string): string => {
+  // Basic URL sanitization
+  return value
+    .replace(/[<>'"]/g, "")
+    .replace(/javascript:/gi, "")
+    .replace(/data:/gi, "")
+    .slice(0, 500);
+};
+
 // Animation variants for content transitions
 const contentVariants = {
   initial: { opacity: 0, y: 8 },
@@ -59,42 +95,47 @@ const contentVariants = {
 function SectionHeader({
   title,
   description,
+  icon: Icon,
   onEdit,
   onDelete,
 }: {
   title: string;
   description: string;
+  icon?: React.ComponentType<{ className?: string }>;
   onEdit?: () => void;
   onDelete?: () => void;
 }) {
   return (
-    <div className="flex items-start justify-between gap-4">
-      <div>
-        <h2 className="text-xl font-semibold text-foreground">{title}</h2>
-        <p className="text-sm text-muted-foreground">{description}</p>
+    <div className="mb-6">
+      <div className="flex items-start justify-between gap-2">
+        <h2 className="text-lg sm:text-xl font-semibold text-foreground flex items-center gap-2 min-w-0">
+          {Icon && <Icon className="h-5 w-5 text-primary shrink-0" />}
+          <span className="break-words">{title}</span>
+        </h2>
+        <div className="flex items-center gap-0.5 shrink-0">
+          {onEdit && (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="text-muted-foreground hover:text-primary"
+              onClick={onEdit}
+            >
+              <PencilSquareIcon className="h-4 w-4" />
+            </Button>
+          )}
+          {onDelete && (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="text-muted-foreground hover:text-destructive"
+              onClick={onDelete}
+            >
+              <TrashIcon className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
       </div>
-      <div className="flex items-center gap-1 shrink-0">
-        {onEdit && (
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className="text-muted-foreground hover:text-primary"
-            onClick={onEdit}
-          >
-            <PencilSquareIcon className="h-4 w-4" />
-          </Button>
-        )}
-        {onDelete && (
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className="text-muted-foreground hover:text-destructive"
-            onClick={onDelete}
-          >
-            <TrashIcon className="h-4 w-4" />
-          </Button>
-        )}
-      </div>
+      <p className="text-sm text-muted-foreground mt-1">{description}</p>
     </div>
   );
 }
@@ -323,9 +364,9 @@ export function WriteTab({
   return (
     <div className="flex flex-1 overflow-hidden flex-col md:flex-row">
       {/* Left Sidebar - Section Navigation (hidden on mobile, shown in hamburger menu instead) */}
-      <div className="hidden md:block w-56 shrink-0 border-r border-border bg-muted/20">
+      <div className="hidden md:block w-48 shrink-0 border-r border-border bg-muted/20">
         <ScrollArea className="h-full">
-          <div className="p-3 space-y-1">
+          <div className="p-1.5 space-y-0.5">
             {sections.map((section, index) => {
               const isActive = activeSection === section.id;
               const isDragging = draggedIndex === index;
@@ -337,7 +378,7 @@ export function WriteTab({
                   onDragOver={(e) => handleSidebarDragOver(e, index)}
                   onDragEnd={handleSidebarDragEnd}
                   onClick={() => setActiveSection(section.id)}
-                  className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors cursor-pointer ${
+                  className={`group flex w-full items-center gap-2 rounded-md px-2 py-2 text-xs font-medium transition-colors cursor-pointer ${
                     isDragging
                       ? "opacity-50 border border-dashed border-primary"
                       : ""
@@ -347,19 +388,21 @@ export function WriteTab({
                       : "text-gray-600 hover:bg-gray-50 hover:text-foreground"
                   }`}
                 >
-                  <Bars3Icon className="h-3 w-3 shrink-0 text-gray-400 cursor-grab" />
-                  <section.icon className="h-4 w-4 shrink-0" />
+                  <div className="relative h-4 w-4 shrink-0">
+                    <section.icon className="h-4 w-4 absolute inset-0 transition-opacity group-hover:opacity-0" />
+                    <Bars3Icon className="h-4 w-4 absolute inset-0 text-gray-400 cursor-grab opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
                   <span className="truncate">{section.label}</span>
                 </div>
               );
             })}
 
-            <Separator className="my-3" />
+            <Separator className="my-2" />
 
             {/* Job Description - Fixed section */}
             <div
               onClick={() => setActiveSection("jobDescription")}
-              className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors cursor-pointer ${
+              className={`flex w-full items-center gap-2 rounded-md px-2 py-2 text-xs font-medium transition-colors cursor-pointer ${
                 activeSection === "jobDescription"
                   ? "bg-gray-100 text-foreground"
                   : "text-gray-600 hover:bg-gray-50 hover:text-foreground"
@@ -372,10 +415,10 @@ export function WriteTab({
             <Button
               variant="ghost"
               size="sm"
-              className="w-full justify-start gap-2 text-gray-600 font-medium cursor-pointer"
+              className="w-full justify-start gap-2 text-gray-600 font-medium cursor-pointer text-xs px-2 py-2 h-auto"
               onClick={() => setShowAddSectionDialog(true)}
             >
-              <PlusIcon className="h-4 w-4" />
+              <PlusIcon className="h-4 w-4 shrink-0" />
               Add Section
             </Button>
           </div>
@@ -383,9 +426,9 @@ export function WriteTab({
       </div>
 
       {/* Center Panel - Form Editor */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-hidden @container">
         <ScrollArea className="h-full">
-          <div className="max-w-2xl p-4 md:p-6">
+          <div className="max-w-2xl p-4 @md:p-6">
 
             <AnimatePresence mode="wait">
               <motion.div
@@ -700,6 +743,7 @@ function JobDescriptionForm({
       <SectionHeader
         title={sectionLabel}
         description="Paste the job description you're applying for"
+        icon={ClipboardDocumentListIcon}
         onEdit={onEdit}
         onDelete={onDelete}
       />
@@ -787,18 +831,19 @@ function PersonalDetailsForm({
       <SectionHeader
         title={sectionLabel}
         description="Basic information that appears at the top of your resume"
+        icon={UserIcon}
         onEdit={onEdit}
         onDelete={onDelete}
       />
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 @sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="firstName">First Name</Label>
           <Input
             id="firstName"
             placeholder="John"
             value={data?.firstName || ""}
-            onChange={(e) => handleChange("firstName", e.target.value)}
+            onChange={(e) => handleChange("firstName", sanitizeText(e.target.value, 50))}
           />
         </div>
         <div className="space-y-2">
@@ -807,7 +852,7 @@ function PersonalDetailsForm({
             id="lastName"
             placeholder="Doe"
             value={data?.lastName || ""}
-            onChange={(e) => handleChange("lastName", e.target.value)}
+            onChange={(e) => handleChange("lastName", sanitizeText(e.target.value, 50))}
           />
         </div>
       </div>
@@ -818,7 +863,7 @@ function PersonalDetailsForm({
           id="jobTitle"
           placeholder="Software Engineer"
           value={data?.jobTitle || ""}
-          onChange={(e) => handleChange("jobTitle", e.target.value)}
+          onChange={(e) => handleChange("jobTitle", sanitizeText(e.target.value, 100))}
         />
         <p className="text-xs text-muted-foreground">
           The role you're applying for
@@ -827,14 +872,15 @@ function PersonalDetailsForm({
 
       {/* Optional Fields */}
       {(hasNationality || hasDriverLicense || hasBirthDate) && (
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 @sm:grid-cols-2">
           {hasNationality && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="nationality">Nationality</Label>
                 <button
+                  type="button"
                   onClick={() => toggleOptionalField("nationality")}
-                  className="text-xs text-muted-foreground hover:text-destructive"
+                  className="text-xs text-muted-foreground hover:text-destructive cursor-pointer"
                 >
                   Remove
                 </button>
@@ -843,7 +889,7 @@ function PersonalDetailsForm({
                 id="nationality"
                 placeholder="e.g., American"
                 value={data?.nationality || ""}
-                onChange={(e) => handleChange("nationality", e.target.value)}
+                onChange={(e) => handleChange("nationality", sanitizeText(e.target.value, 50))}
               />
             </div>
           )}
@@ -852,8 +898,9 @@ function PersonalDetailsForm({
               <div className="flex items-center justify-between">
                 <Label htmlFor="driverLicense">Driver License</Label>
                 <button
+                  type="button"
                   onClick={() => toggleOptionalField("driverLicense")}
-                  className="text-xs text-muted-foreground hover:text-destructive"
+                  className="text-xs text-muted-foreground hover:text-destructive cursor-pointer"
                 >
                   Remove
                 </button>
@@ -862,7 +909,7 @@ function PersonalDetailsForm({
                 id="driverLicense"
                 placeholder="e.g., Class B"
                 value={data?.driverLicense || ""}
-                onChange={(e) => handleChange("driverLicense", e.target.value)}
+                onChange={(e) => handleChange("driverLicense", sanitizeText(e.target.value, 30))}
               />
             </div>
           )}
@@ -871,17 +918,17 @@ function PersonalDetailsForm({
               <div className="flex items-center justify-between">
                 <Label htmlFor="birthDate">Date of Birth</Label>
                 <button
+                  type="button"
                   onClick={() => toggleOptionalField("birthDate")}
-                  className="text-xs text-muted-foreground hover:text-destructive"
+                  className="text-xs text-muted-foreground hover:text-destructive cursor-pointer"
                 >
                   Remove
                 </button>
               </div>
-              <Input
-                id="birthDate"
-                placeholder="e.g., January 1, 1990"
+              <DatePicker
                 value={data?.birthDate || ""}
-                onChange={(e) => handleChange("birthDate", e.target.value)}
+                onChange={(value) => handleChange("birthDate", value)}
+                placeholder="Select date of birth"
               />
             </div>
           )}
@@ -891,8 +938,9 @@ function PersonalDetailsForm({
       {/* Add Optional Fields Dropdown */}
       <div className="relative">
         <button
+          type="button"
           onClick={() => setShowOptionalFields(!showOptionalFields)}
-          className="flex items-center gap-2 text-sm text-primary hover:text-primary/80"
+          className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 cursor-pointer"
         >
           <PlusIcon className="h-4 w-4" />
           Add optional fields
@@ -902,17 +950,18 @@ function PersonalDetailsForm({
         </button>
 
         {showOptionalFields && (
-          <div className="mt-2 rounded-lg border border-border bg-background p-2 shadow-lg">
+          <div className="absolute left-0 top-full z-10 mt-2 min-w-[200px] rounded-lg border border-border bg-background p-2 shadow-lg">
             {optionalFieldOptions
               .filter((f) => !f.enabled)
               .map((field) => (
                 <button
+                  type="button"
                   key={field.id}
                   onClick={() => {
                     toggleOptionalField(field.id);
                     setShowOptionalFields(false);
                   }}
-                  className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+                  className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
                 >
                   <PlusIcon className="h-4 w-4" />
                   {field.label}
@@ -970,11 +1019,12 @@ function ContactForm({
       <SectionHeader
         title={sectionLabel}
         description="How employers can reach you"
+        icon={PhoneIcon}
         onEdit={onEdit}
         onDelete={onDelete}
       />
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 @sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
           <Input
@@ -982,7 +1032,7 @@ function ContactForm({
             type="email"
             placeholder="john@example.com"
             value={data?.email || ""}
-            onChange={(e) => handleChange("email", e.target.value)}
+            onChange={(e) => handleChange("email", sanitizeEmail(e.target.value))}
           />
         </div>
         <div className="space-y-2">
@@ -992,7 +1042,7 @@ function ContactForm({
             type="tel"
             placeholder="+1 (555) 123-4567"
             value={data?.phone || ""}
-            onChange={(e) => handleChange("phone", e.target.value)}
+            onChange={(e) => handleChange("phone", sanitizePhone(e.target.value))}
           />
         </div>
       </div>
@@ -1003,7 +1053,7 @@ function ContactForm({
           id="linkedin"
           placeholder="linkedin.com/in/johndoe"
           value={data?.linkedin || ""}
-          onChange={(e) => handleChange("linkedin", e.target.value)}
+          onChange={(e) => handleChange("linkedin", sanitizeUrl(e.target.value))}
         />
       </div>
 
@@ -1013,7 +1063,7 @@ function ContactForm({
           id="location"
           placeholder="San Francisco, CA"
           value={data?.location || ""}
-          onChange={(e) => handleChange("location", e.target.value)}
+          onChange={(e) => handleChange("location", sanitizeText(e.target.value, 100))}
         />
         <p className="text-xs text-muted-foreground">
           City and state/country is usually enough
@@ -1042,6 +1092,7 @@ function SummaryForm({
       <SectionHeader
         title={sectionLabel}
         description="A brief overview of your experience and goals"
+        icon={DocumentTextIcon}
         onEdit={onEdit}
         onDelete={onDelete}
       />
@@ -1132,6 +1183,7 @@ function ExperienceForm({
       <SectionHeader
         title={sectionLabel}
         description="Add your work experience, starting with the most recent"
+        icon={BriefcaseIcon}
         onEdit={onEdit}
         onDelete={onDelete}
       />
@@ -1143,7 +1195,7 @@ function ExperienceForm({
               onClick={() =>
                 setExpandedId(expandedId === exp.id ? null : exp.id)
               }
-              className="flex w-full items-center justify-between px-4 py-3 text-left"
+              className="flex w-full items-center justify-between px-4 py-3 text-left cursor-pointer"
             >
               <div>
                 <p className="font-medium text-foreground leading-snug">
@@ -1170,93 +1222,89 @@ function ExperienceForm({
                   transition={{ duration: 0.2, ease: "easeInOut" }}
                 >
                   <CardContent className="border-t px-4 py-4 space-y-4">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>Job Title</Label>
-                    <Input
-                      placeholder="Software Engineer"
-                      value={exp.title || ""}
-                      onChange={(e) =>
-                        updateExperience(index, "title", e.target.value)
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Company</Label>
-                    <Input
-                      placeholder="Acme Inc."
-                      value={exp.company || ""}
-                      onChange={(e) =>
-                        updateExperience(index, "company", e.target.value)
-                      }
-                    />
-                  </div>
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-3">
-                  <div className="space-y-2">
-                    <Label>Location</Label>
-                    <Input
-                      placeholder="San Francisco, CA"
-                      value={exp.location || ""}
-                      onChange={(e) =>
-                        updateExperience(index, "location", e.target.value)
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Start Date</Label>
-                    <Input
-                      placeholder="Jan 2020"
-                      value={exp.startDate || ""}
-                      onChange={(e) =>
-                        updateExperience(index, "startDate", e.target.value)
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>End Date</Label>
-                    <Input
-                      placeholder="Present"
-                      value={exp.endDate || ""}
-                      onChange={(e) =>
-                        updateExperience(index, "endDate", e.target.value)
-                      }
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Description</Label>
-                  <Textarea
-                    placeholder="• Led development of..."
-                    value={exp.bullets?.join("\n") || ""}
-                    onChange={(e) =>
-                      updateExperience(
-                        index,
-                        "bullets",
-                        e.target.value.split("\n")
-                      )
-                    }
-                    className="min-h-[100px]"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Use bullet points to describe your achievements
-                  </p>
-                </div>
-
-                <div className="flex justify-end">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-destructive hover:text-destructive"
-                    onClick={() => removeExperience(index)}
-                  >
-                    <TrashIcon className="mr-2 h-4 w-4" />
-                    Remove
-                  </Button>
-                </div>
-              </CardContent>
+                    <div className="space-y-2">
+                      <Label>Job Title</Label>
+                      <Input
+                        placeholder="Software Engineer"
+                        value={exp.title || ""}
+                        onChange={(e) =>
+                          updateExperience(index, "title", e.target.value)
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Company</Label>
+                      <Input
+                        placeholder="Acme Inc."
+                        value={exp.company || ""}
+                        onChange={(e) =>
+                          updateExperience(index, "company", e.target.value)
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Location</Label>
+                      <Input
+                        placeholder="San Francisco, CA"
+                        value={exp.location || ""}
+                        onChange={(e) =>
+                          updateExperience(index, "location", e.target.value)
+                        }
+                      />
+                    </div>
+                    <div className="grid gap-4 @sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label>Start Date</Label>
+                        <MonthYearPicker
+                          value={exp.startDate || ""}
+                          onChange={(value) =>
+                            updateExperience(index, "startDate", value)
+                          }
+                          placeholder="Select start date"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>End Date</Label>
+                        <MonthYearPicker
+                          value={exp.endDate || ""}
+                          onChange={(value) =>
+                            updateExperience(index, "endDate", value)
+                          }
+                          placeholder="Present"
+                          disabled={exp.current}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Description</Label>
+                      <Textarea
+                        placeholder="• Led development of..."
+                        value={exp.bullets?.join("\n") || ""}
+                        onChange={(e) =>
+                          updateExperience(
+                            index,
+                            "bullets",
+                            e.target.value.split("\n")
+                          )
+                        }
+                        className="min-h-[100px]"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Use bullet points to describe your achievements
+                      </p>
+                    </div>
+                    <div className="flex justify-end">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => removeExperience(index)}
+                      >
+                        <TrashIcon className="mr-2 h-4 w-4" />
+                        Remove
+                      </Button>
+                    </div>
+                  </CardContent>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -1321,6 +1369,7 @@ function EducationForm({
       <SectionHeader
         title={sectionLabel}
         description="Add your educational background"
+        icon={AcademicCapIcon}
         onEdit={onEdit}
         onDelete={onDelete}
       />
@@ -1332,7 +1381,7 @@ function EducationForm({
               onClick={() =>
                 setExpandedId(expandedId === edu.id ? null : edu.id)
               }
-              className="flex w-full items-center justify-between px-4 py-3 text-left"
+              className="flex w-full items-center justify-between px-4 py-3 text-left cursor-pointer"
             >
               <div>
                 <p className="font-medium text-foreground leading-snug">
@@ -1359,74 +1408,70 @@ function EducationForm({
                   transition={{ duration: 0.2, ease: "easeInOut" }}
                 >
                   <CardContent className="border-t px-4 py-4 space-y-4">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>Degree</Label>
-                    <Input
-                      placeholder="Bachelor of Science in Computer Science"
-                      value={edu.degree || ""}
-                      onChange={(e) =>
-                        updateEducation(index, "degree", e.target.value)
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>School</Label>
-                    <Input
-                      placeholder="University of California"
-                      value={edu.school || ""}
-                      onChange={(e) =>
-                        updateEducation(index, "school", e.target.value)
-                      }
-                    />
-                  </div>
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-3">
-                  <div className="space-y-2">
-                    <Label>Location</Label>
-                    <Input
-                      placeholder="Berkeley, CA"
-                      value={edu.location || ""}
-                      onChange={(e) =>
-                        updateEducation(index, "location", e.target.value)
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Start Date</Label>
-                    <Input
-                      placeholder="Sep 2016"
-                      value={edu.startDate || ""}
-                      onChange={(e) =>
-                        updateEducation(index, "startDate", e.target.value)
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>End Date</Label>
-                    <Input
-                      placeholder="May 2020"
-                      value={edu.endDate || ""}
-                      onChange={(e) =>
-                        updateEducation(index, "endDate", e.target.value)
-                      }
-                    />
-                  </div>
-                </div>
-
-                <div className="flex justify-end">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-destructive hover:text-destructive"
-                    onClick={() => removeEducation(index)}
-                  >
-                    <TrashIcon className="mr-2 h-4 w-4" />
-                    Remove
-                  </Button>
-                </div>
-              </CardContent>
+                    <div className="space-y-2">
+                      <Label>Degree</Label>
+                      <Input
+                        placeholder="Bachelor of Science in Computer Science"
+                        value={edu.degree || ""}
+                        onChange={(e) =>
+                          updateEducation(index, "degree", e.target.value)
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>School</Label>
+                      <Input
+                        placeholder="University of California"
+                        value={edu.school || ""}
+                        onChange={(e) =>
+                          updateEducation(index, "school", e.target.value)
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Location</Label>
+                      <Input
+                        placeholder="Berkeley, CA"
+                        value={edu.location || ""}
+                        onChange={(e) =>
+                          updateEducation(index, "location", sanitizeText(e.target.value, 100))
+                        }
+                      />
+                    </div>
+                    <div className="grid gap-4 @sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label>Start Date</Label>
+                        <MonthYearPicker
+                          value={edu.startDate || ""}
+                          onChange={(value) =>
+                            updateEducation(index, "startDate", value)
+                          }
+                          placeholder="Select start date"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>End Date</Label>
+                        <MonthYearPicker
+                          value={edu.endDate || ""}
+                          onChange={(value) =>
+                            updateEducation(index, "endDate", value)
+                          }
+                          placeholder="Select end date"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex justify-end">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => removeEducation(index)}
+                      >
+                        <TrashIcon className="mr-2 h-4 w-4" />
+                        Remove
+                      </Button>
+                    </div>
+                  </CardContent>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -1492,6 +1537,7 @@ function SkillsForm({
       <SectionHeader
         title={sectionLabel}
         description="Add skills relevant to the job you're applying for"
+        icon={WrenchScrewdriverIcon}
         onEdit={onEdit}
         onDelete={onDelete}
       />
@@ -1614,6 +1660,7 @@ function InternshipsForm({
       <SectionHeader
         title={sectionLabel}
         description="Add your internship experience"
+        icon={BuildingOfficeIcon}
         onEdit={onEdit}
         onDelete={onDelete}
       />
@@ -1625,7 +1672,7 @@ function InternshipsForm({
               onClick={() =>
                 setExpandedId(expandedId === internship.id ? null : internship.id)
               }
-              className="flex w-full items-center justify-between px-4 py-3 text-left"
+              className="flex w-full items-center justify-between px-4 py-3 text-left cursor-pointer"
             >
               <div>
                 <p className="font-medium text-foreground leading-snug">
@@ -1652,90 +1699,85 @@ function InternshipsForm({
                   transition={{ duration: 0.2, ease: "easeInOut" }}
                 >
                   <CardContent className="border-t px-4 py-4 space-y-4">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>Job Title</Label>
-                    <Input
-                      placeholder="Software Engineer Intern"
-                      value={internship.title || ""}
-                      onChange={(e) =>
-                        updateInternship(index, "title", e.target.value)
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Company</Label>
-                    <Input
-                      placeholder="Acme Inc."
-                      value={internship.company || ""}
-                      onChange={(e) =>
-                        updateInternship(index, "company", e.target.value)
-                      }
-                    />
-                  </div>
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-3">
-                  <div className="space-y-2">
-                    <Label>Location</Label>
-                    <Input
-                      placeholder="San Francisco, CA"
-                      value={internship.location || ""}
-                      onChange={(e) =>
-                        updateInternship(index, "location", e.target.value)
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Start Date</Label>
-                    <Input
-                      placeholder="Jun 2022"
-                      value={internship.startDate || ""}
-                      onChange={(e) =>
-                        updateInternship(index, "startDate", e.target.value)
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>End Date</Label>
-                    <Input
-                      placeholder="Aug 2022"
-                      value={internship.endDate || ""}
-                      onChange={(e) =>
-                        updateInternship(index, "endDate", e.target.value)
-                      }
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Description</Label>
-                  <Textarea
-                    placeholder="• Assisted with..."
-                    value={internship.bullets?.join("\n") || ""}
-                    onChange={(e) =>
-                      updateInternship(
-                        index,
-                        "bullets",
-                        e.target.value.split("\n")
-                      )
-                    }
-                    className="min-h-[100px]"
-                  />
-                </div>
-
-                <div className="flex justify-end">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-destructive hover:text-destructive"
-                    onClick={() => removeInternship(index)}
-                  >
-                    <TrashIcon className="mr-2 h-4 w-4" />
-                    Remove
-                  </Button>
-                </div>
-              </CardContent>
+                    <div className="space-y-2">
+                      <Label>Job Title</Label>
+                      <Input
+                        placeholder="Software Engineer Intern"
+                        value={internship.title || ""}
+                        onChange={(e) =>
+                          updateInternship(index, "title", e.target.value)
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Company</Label>
+                      <Input
+                        placeholder="Acme Inc."
+                        value={internship.company || ""}
+                        onChange={(e) =>
+                          updateInternship(index, "company", e.target.value)
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Location</Label>
+                      <Input
+                        placeholder="San Francisco, CA"
+                        value={internship.location || ""}
+                        onChange={(e) =>
+                          updateInternship(index, "location", sanitizeText(e.target.value, 100))
+                        }
+                      />
+                    </div>
+                    <div className="grid gap-4 @sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label>Start Date</Label>
+                        <MonthYearPicker
+                          value={internship.startDate || ""}
+                          onChange={(value) =>
+                            updateInternship(index, "startDate", value)
+                          }
+                          placeholder="Select start date"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>End Date</Label>
+                        <MonthYearPicker
+                          value={internship.endDate || ""}
+                          onChange={(value) =>
+                            updateInternship(index, "endDate", value)
+                          }
+                          placeholder="Select end date"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Description</Label>
+                      <Textarea
+                        placeholder="• Assisted with..."
+                        value={internship.bullets?.join("\n") || ""}
+                        onChange={(e) =>
+                          updateInternship(
+                            index,
+                            "bullets",
+                            e.target.value.split("\n")
+                          )
+                        }
+                        className="min-h-[100px]"
+                      />
+                    </div>
+                    <div className="flex justify-end">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => removeInternship(index)}
+                      >
+                        <TrashIcon className="mr-2 h-4 w-4" />
+                        Remove
+                      </Button>
+                    </div>
+                  </CardContent>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -1798,6 +1840,7 @@ function CoursesForm({
       <SectionHeader
         title={sectionLabel}
         description="Add relevant courses and certifications"
+        icon={BookOpenIcon}
         onEdit={onEdit}
         onDelete={onDelete}
       />
@@ -1809,7 +1852,7 @@ function CoursesForm({
               onClick={() =>
                 setExpandedId(expandedId === course.id ? null : course.id)
               }
-              className="flex w-full items-center justify-between px-4 py-3 text-left"
+              className="flex w-full items-center justify-between px-4 py-3 text-left cursor-pointer"
             >
               <div>
                 <p className="font-medium text-foreground leading-snug">
@@ -1836,48 +1879,44 @@ function CoursesForm({
                   transition={{ duration: 0.2, ease: "easeInOut" }}
                 >
                   <CardContent className="border-t px-4 py-4 space-y-4">
-                <div className="space-y-2">
-                  <Label>Course / Certificate Name</Label>
-                  <Input
-                    placeholder="AWS Solutions Architect"
-                    value={course.name || ""}
-                    onChange={(e) => updateCourse(index, "name", e.target.value)}
-                  />
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>Institution</Label>
-                    <Input
-                      placeholder="Amazon Web Services"
-                      value={course.institution || ""}
-                      onChange={(e) =>
-                        updateCourse(index, "institution", e.target.value)
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Date</Label>
-                    <Input
-                      placeholder="Mar 2023"
-                      value={course.date || ""}
-                      onChange={(e) => updateCourse(index, "date", e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex justify-end">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-destructive hover:text-destructive"
-                    onClick={() => removeCourse(index)}
-                  >
-                    <TrashIcon className="mr-2 h-4 w-4" />
-                    Remove
-                  </Button>
-                </div>
-              </CardContent>
+                    <div className="space-y-2">
+                      <Label>Course / Certificate Name</Label>
+                      <Input
+                        placeholder="AWS Solutions Architect"
+                        value={course.name || ""}
+                        onChange={(e) => updateCourse(index, "name", e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Institution</Label>
+                      <Input
+                        placeholder="Amazon Web Services"
+                        value={course.institution || ""}
+                        onChange={(e) =>
+                          updateCourse(index, "institution", sanitizeText(e.target.value, 100))
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Date</Label>
+                      <MonthYearPicker
+                        value={course.date || ""}
+                        onChange={(value) => updateCourse(index, "date", value)}
+                        placeholder="Select date"
+                      />
+                    </div>
+                    <div className="flex justify-end">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => removeCourse(index)}
+                      >
+                        <TrashIcon className="mr-2 h-4 w-4" />
+                        Remove
+                      </Button>
+                    </div>
+                  </CardContent>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -1942,6 +1981,7 @@ function ReferencesForm({
       <SectionHeader
         title={sectionLabel}
         description="Add professional references"
+        icon={UserGroupIcon}
         onEdit={onEdit}
         onDelete={onDelete}
       />
@@ -1953,7 +1993,7 @@ function ReferencesForm({
               onClick={() =>
                 setExpandedId(expandedId === reference.id ? null : reference.id)
               }
-              className="flex w-full items-center justify-between px-4 py-3 text-left"
+              className="flex w-full items-center justify-between px-4 py-3 text-left cursor-pointer"
             >
               <div>
                 <p className="font-medium text-foreground leading-snug">
@@ -1980,75 +2020,70 @@ function ReferencesForm({
                   transition={{ duration: 0.2, ease: "easeInOut" }}
                 >
                   <CardContent className="border-t px-4 py-4 space-y-4">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>Full Name</Label>
-                    <Input
-                      placeholder="Jane Smith"
-                      value={reference.name || ""}
-                      onChange={(e) =>
-                        updateReference(index, "name", e.target.value)
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Title</Label>
-                    <Input
-                      placeholder="Engineering Manager"
-                      value={reference.title || ""}
-                      onChange={(e) =>
-                        updateReference(index, "title", e.target.value)
-                      }
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Company</Label>
-                  <Input
-                    placeholder="Tech Corp"
-                    value={reference.company || ""}
-                    onChange={(e) =>
-                      updateReference(index, "company", e.target.value)
-                    }
-                  />
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>Email</Label>
-                    <Input
-                      placeholder="jane@company.com"
-                      value={reference.email || ""}
-                      onChange={(e) =>
-                        updateReference(index, "email", e.target.value)
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Phone</Label>
-                    <Input
-                      placeholder="+1 (555) 123-4567"
-                      value={reference.phone || ""}
-                      onChange={(e) =>
-                        updateReference(index, "phone", e.target.value)
-                      }
-                    />
-                  </div>
-                </div>
-
-                <div className="flex justify-end">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-destructive hover:text-destructive"
-                    onClick={() => removeReference(index)}
-                  >
-                    <TrashIcon className="mr-2 h-4 w-4" />
-                    Remove
-                  </Button>
-                </div>
-              </CardContent>
+                    <div className="space-y-2">
+                      <Label>Full Name</Label>
+                      <Input
+                        placeholder="Jane Smith"
+                        value={reference.name || ""}
+                        onChange={(e) =>
+                          updateReference(index, "name", e.target.value)
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Title</Label>
+                      <Input
+                        placeholder="Engineering Manager"
+                        value={reference.title || ""}
+                        onChange={(e) =>
+                          updateReference(index, "title", e.target.value)
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Company</Label>
+                      <Input
+                        placeholder="Tech Corp"
+                        value={reference.company || ""}
+                        onChange={(e) =>
+                          updateReference(index, "company", e.target.value)
+                        }
+                      />
+                    </div>
+                    <div className="grid gap-4 @sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label>Email</Label>
+                        <Input
+                          placeholder="jane@company.com"
+                          value={reference.email || ""}
+                          onChange={(e) =>
+                            updateReference(index, "email", e.target.value)
+                          }
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Phone</Label>
+                        <Input
+                          placeholder="+1 (555) 123-4567"
+                          value={reference.phone || ""}
+                          onChange={(e) =>
+                            updateReference(index, "phone", e.target.value)
+                          }
+                        />
+                      </div>
+                    </div>
+                    <div className="flex justify-end">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => removeReference(index)}
+                      >
+                        <TrashIcon className="mr-2 h-4 w-4" />
+                        Remove
+                      </Button>
+                    </div>
+                  </CardContent>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -2110,6 +2145,7 @@ function LanguagesForm({
       <SectionHeader
         title={sectionLabel}
         description="Languages you speak and your proficiency"
+        icon={LanguageIcon}
         onEdit={onEdit}
         onDelete={onDelete}
       />
@@ -2196,6 +2232,7 @@ function LinksForm({
       <SectionHeader
         title={sectionLabel}
         description="Portfolio, GitHub, or other relevant links"
+        icon={LinkIcon}
         onEdit={onEdit}
         onDelete={onDelete}
       />
@@ -2259,6 +2296,7 @@ function HobbiesForm({
       <SectionHeader
         title={sectionLabel}
         description="Personal interests that show your personality"
+        icon={HeartIcon}
         onEdit={onEdit}
         onDelete={onDelete}
       />
@@ -2297,6 +2335,7 @@ function CustomSectionForm({
       <SectionHeader
         title={sectionLabel}
         description="Create your own section with custom content"
+        icon={PencilSquareIcon}
         onEdit={onEdit}
         onDelete={onDelete}
       />

@@ -277,8 +277,12 @@ export default function ResumesPage() {
   }, [convexUser, router]);
 
   const handleDeleteResume = async (id: Id<"resumes">) => {
+    if (!user?.id) {
+      console.error("Not authenticated");
+      return;
+    }
     try {
-      await deleteResume({ id });
+      await deleteResume({ id, clerkId: user.id });
     } catch (error) {
       console.error("Error deleting resume:", error);
     }
