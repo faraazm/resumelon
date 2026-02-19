@@ -4,7 +4,12 @@ export interface ResumeData {
     firstName: string;
     lastName: string;
     jobTitle: string;
-    photo?: string | null;
+    photo?: string | null;        // Storage ID
+    photoUrl?: string | null;     // Resolved URL for rendering
+    // Optional fields
+    nationality?: string;
+    driverLicense?: string;
+    birthDate?: string;
   };
   contact: {
     email: string;

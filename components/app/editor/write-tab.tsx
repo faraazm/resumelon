@@ -1,7 +1,27 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAction, useQuery, useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { Id } from "@/convex/_generated/dataModel";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  rectSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,6 +51,7 @@ import {
   ClipboardDocumentListIcon,
 } from "@heroicons/react/24/outline";
 import { Card, CardContent } from "@/components/ui/card";
+import { RichTextEditor, ToneType } from "@/components/ui/rich-text-editor";
 import {
   Dialog,
   DialogContent,
@@ -141,6 +162,7 @@ function SectionHeader({
 }
 
 interface WriteTabProps {
+  resumeId: Id<"resumes">;
   resumeData: any;
   onUpdate: (section: string, data: any) => void;
   onSectionOrderChange?: (sectionOrder: string[]) => void;
@@ -196,6 +218,7 @@ export const sectionIcons = {
 };
 
 export function WriteTab({
+  resumeId,
   resumeData,
   onUpdate,
   onSectionOrderChange,
@@ -468,6 +491,7 @@ export function WriteTab({
                 )}
                 {activeSection === "summary" && (
                   <SummaryForm
+                    resumeId={resumeId}
                     data={resumeData.summary}
                     onUpdate={(data) => onUpdate("summary", data)}
                     sectionLabel={currentSectionInfo?.label || "Professional Summary"}
@@ -477,6 +501,7 @@ export function WriteTab({
                 )}
                 {activeSection === "experience" && (
                   <ExperienceForm
+                    resumeId={resumeId}
                     data={resumeData.experience}
                     onUpdate={(data) => onUpdate("experience", data)}
                     sectionLabel={currentSectionInfo?.label || "Employment History"}
@@ -504,6 +529,7 @@ export function WriteTab({
                 )}
                 {activeSection === "internships" && (
                   <InternshipsForm
+                    resumeId={resumeId}
                     data={resumeData.internships || []}
                     onUpdate={(data) => onUpdate("internships", data)}
                     sectionLabel={currentSectionInfo?.label || "Internships"}
@@ -549,6 +575,7 @@ export function WriteTab({
                 )}
                 {activeSection === "hobbies" && (
                   <HobbiesForm
+                    resumeId={resumeId}
                     data={resumeData.hobbies || ""}
                     onUpdate={(data) => onUpdate("hobbies", data)}
                     sectionLabel={currentSectionInfo?.label || "Hobbies & Interests"}
@@ -558,6 +585,7 @@ export function WriteTab({
                 )}
                 {activeSection === "custom" && (
                   <CustomSectionForm
+                    resumeId={resumeId}
                     data={resumeData.custom || { title: "", content: "" }}
                     onUpdate={(data) => onUpdate("custom", data)}
                     sectionLabel={currentSectionInfo?.label || "Custom Section"}
@@ -782,6 +810,34 @@ function JobDescriptionForm({
   );
 }
 
+// Photo Preview Component - fetches and displays image from Convex storage
+function PhotoPreview({ storageId }: { storageId: string }) {
+  const [error, setError] = useState(false);
+
+  // Use Convex query to get the file URL
+  const imageUrl = useQuery(
+    api.storage.getUrl,
+    storageId ? { storageId: storageId as Id<"_storage"> } : "skip"
+  );
+
+  if (error || !imageUrl) {
+    return (
+      <div className="h-full w-full flex items-center justify-center bg-muted">
+        <UserIcon className="h-8 w-8 text-muted-foreground" />
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={imageUrl}
+      alt="Profile photo"
+      className="h-full w-full object-cover"
+      onError={() => setError(true)}
+    />
+  );
+}
+
 // Personal Details Form
 function PersonalDetailsForm({
   data,
@@ -797,15 +853,85 @@ function PersonalDetailsForm({
   onDelete: () => void;
 }) {
   const [showOptionalFields, setShowOptionalFields] = useState(false);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Convex mutations for file upload
+  const generateUploadUrl = useMutation(api.storage.generateUploadUrl);
+
+  // Track which optional fields are enabled (shown) - check if key exists in data, not just truthy value
+  const [enabledOptionalFields, setEnabledOptionalFields] = useState<Set<string>>(() => {
+    const enabled = new Set<string>();
+    if (data && "nationality" in data) enabled.add("nationality");
+    if (data && "driverLicense" in data) enabled.add("driverLicense");
+    if (data && "birthDate" in data) enabled.add("birthDate");
+    return enabled;
+  });
 
   const handleChange = (field: string, value: string) => {
     onUpdate({ ...data, [field]: value });
   };
 
-  // Check which optional fields are already filled
-  const hasNationality = !!data?.nationality;
-  const hasDriverLicense = !!data?.driverLicense;
-  const hasBirthDate = !!data?.birthDate;
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      alert("Please select an image file (JPG, PNG, etc.)");
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      alert("Image must be less than 2MB");
+      return;
+    }
+
+    setIsUploadingPhoto(true);
+    try {
+      // Get upload URL from Convex
+      const uploadUrl = await generateUploadUrl();
+
+      // Upload the file
+      const response = await fetch(uploadUrl, {
+        method: "POST",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to upload image");
+      }
+
+      const { storageId } = await response.json();
+
+      // Get the public URL for the uploaded file
+      // Convex storage URLs are formatted as: https://<deployment>.convex.cloud/api/storage/<storageId>
+      const photoUrl = `${process.env.NEXT_PUBLIC_CONVEX_URL?.replace(".cloud/", ".site/")}/getImage?storageId=${storageId}`;
+
+      // For now, store the storageId directly - we'll use a query to get the URL
+      onUpdate({ ...data, photo: storageId });
+    } catch (error) {
+      console.error("Error uploading photo:", error);
+      alert("Failed to upload photo. Please try again.");
+    } finally {
+      setIsUploadingPhoto(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  const handleRemovePhoto = () => {
+    onUpdate({ ...data, photo: null });
+  };
+
+  // Check which optional fields are enabled (shown)
+  const hasNationality = enabledOptionalFields.has("nationality");
+  const hasDriverLicense = enabledOptionalFields.has("driverLicense");
+  const hasBirthDate = enabledOptionalFields.has("birthDate");
 
   const optionalFieldOptions = [
     { id: "nationality", label: "Nationality", enabled: hasNationality },
@@ -814,15 +940,21 @@ function PersonalDetailsForm({
   ];
 
   const toggleOptionalField = (fieldId: string) => {
-    const field = optionalFieldOptions.find((f) => f.id === fieldId);
-    if (field?.enabled) {
+    const isEnabled = enabledOptionalFields.has(fieldId);
+    if (isEnabled) {
       // Remove the field
       const newData = { ...data };
       delete newData[fieldId];
       onUpdate(newData);
+      setEnabledOptionalFields((prev) => {
+        const next = new Set(prev);
+        next.delete(fieldId);
+        return next;
+      });
     } else {
       // Add the field with empty value
       onUpdate({ ...data, [fieldId]: "" });
+      setEnabledOptionalFields((prev) => new Set(prev).add(fieldId));
     }
   };
 
@@ -841,7 +973,7 @@ function PersonalDetailsForm({
           <Label htmlFor="firstName">First Name</Label>
           <Input
             id="firstName"
-            placeholder="John"
+            placeholder="First name"
             value={data?.firstName || ""}
             onChange={(e) => handleChange("firstName", sanitizeText(e.target.value, 50))}
           />
@@ -850,7 +982,7 @@ function PersonalDetailsForm({
           <Label htmlFor="lastName">Last Name</Label>
           <Input
             id="lastName"
-            placeholder="Doe"
+            placeholder="Last name"
             value={data?.lastName || ""}
             onChange={(e) => handleChange("lastName", sanitizeText(e.target.value, 50))}
           />
@@ -861,7 +993,7 @@ function PersonalDetailsForm({
         <Label htmlFor="jobTitle">Desired Job Title</Label>
         <Input
           id="jobTitle"
-          placeholder="Software Engineer"
+          placeholder="e.g., Product Manager"
           value={data?.jobTitle || ""}
           onChange={(e) => handleChange("jobTitle", sanitizeText(e.target.value, 100))}
         />
@@ -979,15 +1111,53 @@ function PersonalDetailsForm({
       <div className="space-y-2">
         <Label>Photo (Optional)</Label>
         <div className="flex items-center gap-4">
-          <div className="flex h-20 w-20 items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted/50">
-            <UserIcon className="h-8 w-8 text-muted-foreground" />
+          {/* Photo preview or placeholder */}
+          <div className="relative">
+            {data?.photo ? (
+              <div className="h-20 w-20 rounded-lg overflow-hidden border-2 border-border">
+                <PhotoPreview storageId={data.photo} />
+              </div>
+            ) : (
+              <div className="flex h-20 w-20 items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted/50">
+                <UserIcon className="h-8 w-8 text-muted-foreground" />
+              </div>
+            )}
+            {isUploadingPhoto && (
+              <div className="absolute inset-0 flex items-center justify-center bg-background/80 rounded-lg">
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              </div>
+            )}
           </div>
-          <div>
-            <Button variant="outline" size="sm">
-              Upload Photo
-            </Button>
-            <p className="mt-1 text-xs text-muted-foreground">
-              JPG or PNG, max 2MB
+          <div className="space-y-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={handlePhotoUpload}
+              className="hidden"
+            />
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploadingPhoto}
+              >
+                {isUploadingPhoto ? "Uploading..." : data?.photo ? "Change Photo" : "Upload Photo"}
+              </Button>
+              {data?.photo && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleRemovePhoto}
+                  className="text-destructive hover:text-destructive"
+                >
+                  Remove
+                </Button>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              JPG, PNG or WebP, max 2MB
             </p>
           </div>
         </div>
@@ -1030,7 +1200,7 @@ function ContactForm({
           <Input
             id="email"
             type="email"
-            placeholder="john@example.com"
+            placeholder="you@email.com"
             value={data?.email || ""}
             onChange={(e) => handleChange("email", sanitizeEmail(e.target.value))}
           />
@@ -1040,7 +1210,7 @@ function ContactForm({
           <Input
             id="phone"
             type="tel"
-            placeholder="+1 (555) 123-4567"
+            placeholder="Your phone number"
             value={data?.phone || ""}
             onChange={(e) => handleChange("phone", sanitizePhone(e.target.value))}
           />
@@ -1051,7 +1221,7 @@ function ContactForm({
         <Label htmlFor="linkedin">LinkedIn (Optional)</Label>
         <Input
           id="linkedin"
-          placeholder="linkedin.com/in/johndoe"
+          placeholder="linkedin.com/in/yourprofile"
           value={data?.linkedin || ""}
           onChange={(e) => handleChange("linkedin", sanitizeUrl(e.target.value))}
         />
@@ -1061,7 +1231,7 @@ function ContactForm({
         <Label htmlFor="location">Location</Label>
         <Input
           id="location"
-          placeholder="San Francisco, CA"
+          placeholder="City, State"
           value={data?.location || ""}
           onChange={(e) => handleChange("location", sanitizeText(e.target.value, 100))}
         />
@@ -1073,20 +1243,157 @@ function ContactForm({
   );
 }
 
-// Summary Form
+// Summary Form with Rich Text Editor and AI
 function SummaryForm({
+  resumeId,
   data,
   onUpdate,
   sectionLabel,
   onEdit,
   onDelete,
 }: {
+  resumeId: Id<"resumes">;
   data: string;
   onUpdate: (data: string) => void;
   sectionLabel: string;
   onEdit: () => void;
   onDelete: () => void;
 }) {
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [localGenerations, setLocalGenerations] = useState<Array<{
+    content: string;
+    tone: string;
+    prompt?: string;
+    createdAt: number;
+  }>>([]);
+  const hasTriggeredAutoGen = useRef(false);
+  // Track the initial content on mount - only auto-generate for pre-existing content
+  const initialContentRef = useRef<string | null>(null);
+
+  // Capture initial content on first render only
+  useEffect(() => {
+    if (initialContentRef.current === null) {
+      initialContentRef.current = data || "";
+    }
+  }, []);
+
+  // Convex hooks
+  const generateContent = useAction(api.ai.generateImprovedContent);
+  const saveGeneration = useMutation(api.aiGenerations.saveGeneration);
+  const existingGenerations = useQuery(api.aiGenerations.getGenerations, {
+    resumeId,
+    fieldType: "summary",
+    fieldId: undefined,
+  });
+
+  // Sync existing generations from DB
+  useEffect(() => {
+    if (existingGenerations?.generations) {
+      setLocalGenerations(existingGenerations.generations);
+    }
+  }, [existingGenerations]);
+
+  // Auto-generate ONLY if there was pre-existing content on mount (not user-typed)
+  useEffect(() => {
+    const initialContent = initialContentRef.current;
+    // Only auto-generate if:
+    // 1. Initial content existed and was substantial (> 20 chars)
+    // 2. Haven't already triggered auto-gen
+    // 3. DB says no auto-gen has happened yet
+    const hadPreExistingContent = initialContent && initialContent.trim().length > 20;
+    const shouldAutoGenerate =
+      hadPreExistingContent &&
+      !hasTriggeredAutoGen.current &&
+      !existingGenerations?.hasAutoGenerated &&
+      existingGenerations !== undefined;
+
+    if (shouldAutoGenerate) {
+      hasTriggeredAutoGen.current = true;
+      handleGenerate("expert", true);
+    }
+  }, [existingGenerations]);
+
+  const handleGenerate = useCallback(async (tone: ToneType, isAutoGen = false) => {
+    if (!data || data.trim().length < 10) return;
+
+    setIsGenerating(true);
+    try {
+      const result = await generateContent({
+        content: data,
+        fieldType: "summary",
+        tone,
+      });
+
+      if (result?.content) {
+        const newGeneration = {
+          content: result.content,
+          tone,
+          createdAt: Date.now(),
+        };
+
+        setLocalGenerations((prev) => [...prev, newGeneration]);
+
+        // Save to database
+        await saveGeneration({
+          resumeId,
+          fieldType: "summary",
+          fieldId: undefined,
+          originalContent: data,
+          generatedContent: result.content,
+          tone,
+          isAutoGenerated: isAutoGen,
+        });
+      }
+    } catch (error) {
+      console.error("Failed to generate content:", error);
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [data, generateContent, saveGeneration, resumeId]);
+
+  const handleCustomPrompt = useCallback(async (prompt: string) => {
+    if (!data || data.trim().length < 10) return;
+
+    setIsGenerating(true);
+    try {
+      const result = await generateContent({
+        content: data,
+        fieldType: "summary",
+        tone: "custom",
+        customPrompt: prompt,
+      });
+
+      if (result?.content) {
+        const newGeneration = {
+          content: result.content,
+          tone: "custom",
+          prompt,
+          createdAt: Date.now(),
+        };
+
+        setLocalGenerations((prev) => [...prev, newGeneration]);
+
+        await saveGeneration({
+          resumeId,
+          fieldType: "summary",
+          fieldId: undefined,
+          originalContent: data,
+          generatedContent: result.content,
+          tone: "custom",
+          prompt,
+        });
+      }
+    } catch (error) {
+      console.error("Failed to generate content:", error);
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [data, generateContent, saveGeneration, resumeId]);
+
+  const handleUseGeneration = useCallback((content: string) => {
+    onUpdate(content);
+  }, [onUpdate]);
+
   return (
     <div className="space-y-6">
       <SectionHeader
@@ -1098,48 +1405,232 @@ function SummaryForm({
       />
 
       <div className="space-y-2">
-        <Textarea
-          placeholder="Experienced software engineer with 5+ years of expertise in building scalable web applications..."
-          value={data || ""}
-          onChange={(e) => onUpdate(e.target.value)}
-          className="min-h-[150px] resize-none"
+        <RichTextEditor
+          content={data || ""}
+          onChange={onUpdate}
+          placeholder="Write a brief overview of your experience and career goals..."
+          minHeight="150px"
+          resumeId={resumeId as string}
+          fieldType="summary"
+          aiGenerations={localGenerations}
+          isGenerating={isGenerating}
+          onGenerate={handleGenerate}
+          onCustomPrompt={handleCustomPrompt}
+          onUseGeneration={handleUseGeneration}
+          showAI={true}
         />
         <p className="text-xs text-muted-foreground">
           Aim for 2-4 sentences highlighting your key qualifications
         </p>
       </div>
+    </div>
+  );
+}
 
-      {/* AI Suggestion Card */}
-      <Card className="border-primary/20 bg-primary/5">
-        <CardContent className="flex items-start gap-3 p-4">
-          <div className="rounded-full bg-primary/10 p-2">
-            <SparklesIcon className="h-4 w-4 text-primary" />
-          </div>
-          <div className="flex-1">
-            <p className="text-sm font-medium text-foreground">
-              AI Writing Assistant
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Get help writing a compelling summary based on your experience
-            </p>
-            <Button size="sm" variant="outline" className="mt-2">
-              Generate Summary
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+
+// Experience Bullets Editor with AI (sub-component for each experience item)
+function ExperienceBulletsEditor({
+  resumeId,
+  experienceId,
+  bullets,
+  onUpdate,
+}: {
+  resumeId: Id<"resumes">;
+  experienceId: string;
+  bullets: string[];
+  onUpdate: (bullets: string[]) => void;
+}) {
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [localGenerations, setLocalGenerations] = useState<Array<{
+    content: string;
+    tone: string;
+    prompt?: string;
+    createdAt: number;
+  }>>([]);
+  const hasTriggeredAutoGen = useRef(false);
+  // Track the initial content on mount - only auto-generate for pre-existing content
+  const initialBulletsRef = useRef<string[] | null>(null);
+
+  // Capture initial content on first render only
+  useEffect(() => {
+    if (initialBulletsRef.current === null) {
+      initialBulletsRef.current = bullets || [];
+    }
+  }, []);
+
+  const generateContent = useAction(api.ai.generateImprovedContent);
+  const saveGeneration = useMutation(api.aiGenerations.saveGeneration);
+  const existingGenerations = useQuery(api.aiGenerations.getGenerations, {
+    resumeId,
+    fieldType: "experience_bullets",
+    fieldId: experienceId,
+  });
+
+  // Convert bullets array to HTML for editor
+  const bulletsToHtml = (bulletArr: string[]) => {
+    if (!bulletArr || bulletArr.length === 0 || (bulletArr.length === 1 && !bulletArr[0])) {
+      return "";
+    }
+    return `<ul>${bulletArr.map((b) => `<li>${b}</li>`).join("")}</ul>`;
+  };
+
+  // Convert HTML back to bullets array
+  const htmlToBullets = (html: string) => {
+    // Extract text from list items
+    const matches = html.match(/<li[^>]*>(.*?)<\/li>/gi);
+    if (matches) {
+      return matches.map((li) => li.replace(/<\/?li[^>]*>/gi, "").replace(/<[^>]*>/g, "").trim());
+    }
+    // Fallback: just strip all HTML and split by newlines
+    const text = html.replace(/<[^>]*>/g, "").trim();
+    return text ? text.split("\n").filter(Boolean) : [""];
+  };
+
+  useEffect(() => {
+    if (existingGenerations?.generations) {
+      setLocalGenerations(existingGenerations.generations);
+    }
+  }, [existingGenerations]);
+
+  // Auto-generate ONLY if there was pre-existing content on mount (not user-typed)
+  useEffect(() => {
+    const initialBullets = initialBulletsRef.current;
+    const initialContent = initialBullets?.join(" ") || "";
+    // Only auto-generate if initial content existed and was substantial
+    const hadPreExistingContent = initialContent.trim().length > 20;
+    const shouldAutoGenerate =
+      hadPreExistingContent &&
+      !hasTriggeredAutoGen.current &&
+      !existingGenerations?.hasAutoGenerated &&
+      existingGenerations !== undefined;
+
+    if (shouldAutoGenerate) {
+      hasTriggeredAutoGen.current = true;
+      handleGenerate("expert", true);
+    }
+  }, [existingGenerations]);
+
+  const handleGenerate = useCallback(async (tone: ToneType, isAutoGen = false) => {
+    const bulletContent = bullets?.join("\n") || "";
+    if (bulletContent.trim().length < 10) return;
+
+    setIsGenerating(true);
+    try {
+      const result = await generateContent({
+        content: bulletContent,
+        fieldType: "experience_bullets",
+        tone,
+      });
+
+      if (result?.content) {
+        const newGeneration = {
+          content: result.content,
+          tone,
+          createdAt: Date.now(),
+        };
+
+        setLocalGenerations((prev) => [...prev, newGeneration]);
+
+        await saveGeneration({
+          resumeId,
+          fieldType: "experience_bullets",
+          fieldId: experienceId,
+          originalContent: bulletContent,
+          generatedContent: result.content,
+          tone,
+          isAutoGenerated: isAutoGen,
+        });
+      }
+    } catch (error) {
+      console.error("Failed to generate content:", error);
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [bullets, generateContent, saveGeneration, resumeId, experienceId]);
+
+  const handleCustomPrompt = useCallback(async (prompt: string) => {
+    const bulletContent = bullets?.join("\n") || "";
+    if (bulletContent.trim().length < 10) return;
+
+    setIsGenerating(true);
+    try {
+      const result = await generateContent({
+        content: bulletContent,
+        fieldType: "experience_bullets",
+        tone: "custom",
+        customPrompt: prompt,
+      });
+
+      if (result?.content) {
+        const newGeneration = {
+          content: result.content,
+          tone: "custom",
+          prompt,
+          createdAt: Date.now(),
+        };
+
+        setLocalGenerations((prev) => [...prev, newGeneration]);
+
+        await saveGeneration({
+          resumeId,
+          fieldType: "experience_bullets",
+          fieldId: experienceId,
+          originalContent: bulletContent,
+          generatedContent: result.content,
+          tone: "custom",
+          prompt,
+        });
+      }
+    } catch (error) {
+      console.error("Failed to generate content:", error);
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [bullets, generateContent, saveGeneration, resumeId, experienceId]);
+
+  const handleUseGeneration = useCallback((content: string) => {
+    onUpdate(htmlToBullets(content));
+  }, [onUpdate]);
+
+  const handleChange = useCallback((html: string) => {
+    onUpdate(htmlToBullets(html));
+  }, [onUpdate]);
+
+  return (
+    <div className="space-y-2">
+      <Label>Description</Label>
+      <RichTextEditor
+        content={bulletsToHtml(bullets)}
+        onChange={handleChange}
+        placeholder="Describe your responsibilities and achievements..."
+        minHeight="100px"
+        resumeId={resumeId as string}
+        fieldType="experience_bullets"
+        fieldId={experienceId}
+        aiGenerations={localGenerations}
+        isGenerating={isGenerating}
+        onGenerate={handleGenerate}
+        onCustomPrompt={handleCustomPrompt}
+        onUseGeneration={handleUseGeneration}
+        showAI={true}
+      />
+      <p className="text-xs text-muted-foreground">
+        Use bullet points to describe your achievements
+      </p>
     </div>
   );
 }
 
 // Experience Form
 function ExperienceForm({
+  resumeId,
   data,
   onUpdate,
   sectionLabel,
   onEdit,
   onDelete,
 }: {
+  resumeId: Id<"resumes">;
   data: any[];
   onUpdate: (data: any[]) => void;
   sectionLabel: string;
@@ -1225,7 +1716,7 @@ function ExperienceForm({
                     <div className="space-y-2">
                       <Label>Job Title</Label>
                       <Input
-                        placeholder="Software Engineer"
+                        placeholder="Your job title"
                         value={exp.title || ""}
                         onChange={(e) =>
                           updateExperience(index, "title", e.target.value)
@@ -1235,7 +1726,7 @@ function ExperienceForm({
                     <div className="space-y-2">
                       <Label>Company</Label>
                       <Input
-                        placeholder="Acme Inc."
+                        placeholder="Company name"
                         value={exp.company || ""}
                         onChange={(e) =>
                           updateExperience(index, "company", e.target.value)
@@ -1245,7 +1736,7 @@ function ExperienceForm({
                     <div className="space-y-2">
                       <Label>Location</Label>
                       <Input
-                        placeholder="San Francisco, CA"
+                        placeholder="City, State"
                         value={exp.location || ""}
                         onChange={(e) =>
                           updateExperience(index, "location", e.target.value)
@@ -1275,24 +1766,12 @@ function ExperienceForm({
                         />
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label>Description</Label>
-                      <Textarea
-                        placeholder="• Led development of..."
-                        value={exp.bullets?.join("\n") || ""}
-                        onChange={(e) =>
-                          updateExperience(
-                            index,
-                            "bullets",
-                            e.target.value.split("\n")
-                          )
-                        }
-                        className="min-h-[100px]"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Use bullet points to describe your achievements
-                      </p>
-                    </div>
+                    <ExperienceBulletsEditor
+                      resumeId={resumeId}
+                      experienceId={exp.id}
+                      bullets={exp.bullets || [""]}
+                      onUpdate={(bullets) => updateExperience(index, "bullets", bullets)}
+                    />
                     <div className="flex justify-end">
                       <Button
                         variant="ghost"
@@ -1411,7 +1890,7 @@ function EducationForm({
                     <div className="space-y-2">
                       <Label>Degree</Label>
                       <Input
-                        placeholder="Bachelor of Science in Computer Science"
+                        placeholder="Degree and field of study"
                         value={edu.degree || ""}
                         onChange={(e) =>
                           updateEducation(index, "degree", e.target.value)
@@ -1421,7 +1900,7 @@ function EducationForm({
                     <div className="space-y-2">
                       <Label>School</Label>
                       <Input
-                        placeholder="University of California"
+                        placeholder="School or university name"
                         value={edu.school || ""}
                         onChange={(e) =>
                           updateEducation(index, "school", e.target.value)
@@ -1431,7 +1910,7 @@ function EducationForm({
                     <div className="space-y-2">
                       <Label>Location</Label>
                       <Input
-                        placeholder="Berkeley, CA"
+                        placeholder="City, State"
                         value={edu.location || ""}
                         onChange={(e) =>
                           updateEducation(index, "location", sanitizeText(e.target.value, 100))
@@ -1487,6 +1966,79 @@ function EducationForm({
   );
 }
 
+// Sortable Skill Badge Component
+function SortableSkillBadge({
+  skill,
+  onRemove,
+}: {
+  skill: string;
+  onRemove: () => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: skill });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <span
+      ref={setNodeRef}
+      style={style}
+      className={`inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700 select-none ${
+        isDragging ? "opacity-50 shadow-lg ring-2 ring-primary/20" : ""
+      }`}
+    >
+      <span
+        {...attributes}
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing mr-1 text-gray-400 hover:text-gray-600"
+        title="Drag to reorder"
+      >
+        <svg
+          className="h-3 w-3"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M4 8h16M4 16h16"
+          />
+        </svg>
+      </span>
+      {skill}
+      <button
+        onClick={onRemove}
+        className="ml-1 rounded-full p-0.5 hover:bg-gray-200"
+      >
+        <svg
+          className="h-3 w-3"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M6 18L18 6M6 6l12 12"
+          />
+        </svg>
+      </button>
+    </span>
+  );
+}
+
 // Skills Form
 function SkillsForm({
   data,
@@ -1502,6 +2054,27 @@ function SkillsForm({
   onDelete: () => void;
 }) {
   const [inputValue, setInputValue] = useState("");
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = data.indexOf(active.id as string);
+      const newIndex = data.indexOf(over.id as string);
+      onUpdate(arrayMove(data, oldIndex, newIndex));
+    }
+  };
 
   const addSkill = () => {
     if (inputValue.trim() && !data?.includes(inputValue.trim())) {
@@ -1522,14 +2095,14 @@ function SkillsForm({
   };
 
   const suggestedSkills = [
-    "JavaScript",
-    "React",
-    "Node.js",
-    "TypeScript",
-    "Python",
-    "SQL",
-    "Git",
-    "AWS",
+    "Communication",
+    "Leadership",
+    "Problem Solving",
+    "Project Management",
+    "Teamwork",
+    "Time Management",
+    "Critical Thinking",
+    "Adaptability",
   ];
 
   return (
@@ -1553,35 +2126,29 @@ function SkillsForm({
           <Button onClick={addSkill}>Add</Button>
         </div>
 
-        {/* Skills chips */}
+        {/* Skills chips - Draggable */}
         {data && data.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {data.map((skill) => (
-              <span
-                key={skill}
-                className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700"
-              >
-                {skill}
-                <button
-                  onClick={() => removeSkill(skill)}
-                  className="ml-1 rounded-full p-0.5 hover:bg-gray-200"
-                >
-                  <svg
-                    className="h-3 w-3"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
+          <div>
+            <p className="mb-2 text-xs text-muted-foreground">
+              Drag skills to reorder:
+            </p>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext items={data} strategy={rectSortingStrategy}>
+                <div className="flex flex-wrap gap-2">
+                  {data.map((skill) => (
+                    <SortableSkillBadge
+                      key={skill}
+                      skill={skill}
+                      onRemove={() => removeSkill(skill)}
                     />
-                  </svg>
-                </button>
-              </span>
-            ))}
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
           </div>
         )}
 
@@ -1610,14 +2177,202 @@ function SkillsForm({
   );
 }
 
+// Internship Bullets Editor with AI (reuses same pattern as ExperienceBulletsEditor)
+function InternshipBulletsEditor({
+  resumeId,
+  internshipId,
+  bullets,
+  onUpdate,
+}: {
+  resumeId: Id<"resumes">;
+  internshipId: string;
+  bullets: string[];
+  onUpdate: (bullets: string[]) => void;
+}) {
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [localGenerations, setLocalGenerations] = useState<Array<{
+    content: string;
+    tone: string;
+    prompt?: string;
+    createdAt: number;
+  }>>([]);
+  const hasTriggeredAutoGen = useRef(false);
+  // Track the initial content on mount - only auto-generate for pre-existing content
+  const initialBulletsRef = useRef<string[] | null>(null);
+
+  // Capture initial content on first render only
+  useEffect(() => {
+    if (initialBulletsRef.current === null) {
+      initialBulletsRef.current = bullets || [];
+    }
+  }, []);
+
+  const generateContent = useAction(api.ai.generateImprovedContent);
+  const saveGeneration = useMutation(api.aiGenerations.saveGeneration);
+  const existingGenerations = useQuery(api.aiGenerations.getGenerations, {
+    resumeId,
+    fieldType: "internship_bullets",
+    fieldId: internshipId,
+  });
+
+  const bulletsToHtml = (bulletArr: string[]) => {
+    if (!bulletArr || bulletArr.length === 0 || (bulletArr.length === 1 && !bulletArr[0])) {
+      return "";
+    }
+    return `<ul>${bulletArr.map((b) => `<li>${b}</li>`).join("")}</ul>`;
+  };
+
+  const htmlToBullets = (html: string) => {
+    const matches = html.match(/<li[^>]*>(.*?)<\/li>/gi);
+    if (matches) {
+      return matches.map((li) => li.replace(/<\/?li[^>]*>/gi, "").replace(/<[^>]*>/g, "").trim());
+    }
+    const text = html.replace(/<[^>]*>/g, "").trim();
+    return text ? text.split("\n").filter(Boolean) : [""];
+  };
+
+  useEffect(() => {
+    if (existingGenerations?.generations) {
+      setLocalGenerations(existingGenerations.generations);
+    }
+  }, [existingGenerations]);
+
+  // Auto-generate ONLY if there was pre-existing content on mount (not user-typed)
+  useEffect(() => {
+    const initialBullets = initialBulletsRef.current;
+    const initialContent = initialBullets?.join(" ") || "";
+    // Only auto-generate if initial content existed and was substantial
+    const hadPreExistingContent = initialContent.trim().length > 20;
+    const shouldAutoGenerate =
+      hadPreExistingContent &&
+      !hasTriggeredAutoGen.current &&
+      !existingGenerations?.hasAutoGenerated &&
+      existingGenerations !== undefined;
+
+    if (shouldAutoGenerate) {
+      hasTriggeredAutoGen.current = true;
+      handleGenerate("expert", true);
+    }
+  }, [existingGenerations]);
+
+  const handleGenerate = useCallback(async (tone: ToneType, isAutoGen = false) => {
+    const bulletContent = bullets?.join("\n") || "";
+    if (bulletContent.trim().length < 10) return;
+
+    setIsGenerating(true);
+    try {
+      const result = await generateContent({
+        content: bulletContent,
+        fieldType: "internship_bullets",
+        tone,
+      });
+
+      if (result?.content) {
+        const newGeneration = {
+          content: result.content,
+          tone,
+          createdAt: Date.now(),
+        };
+
+        setLocalGenerations((prev) => [...prev, newGeneration]);
+
+        await saveGeneration({
+          resumeId,
+          fieldType: "internship_bullets",
+          fieldId: internshipId,
+          originalContent: bulletContent,
+          generatedContent: result.content,
+          tone,
+          isAutoGenerated: isAutoGen,
+        });
+      }
+    } catch (error) {
+      console.error("Failed to generate content:", error);
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [bullets, generateContent, saveGeneration, resumeId, internshipId]);
+
+  const handleCustomPrompt = useCallback(async (prompt: string) => {
+    const bulletContent = bullets?.join("\n") || "";
+    if (bulletContent.trim().length < 10) return;
+
+    setIsGenerating(true);
+    try {
+      const result = await generateContent({
+        content: bulletContent,
+        fieldType: "internship_bullets",
+        tone: "custom",
+        customPrompt: prompt,
+      });
+
+      if (result?.content) {
+        const newGeneration = {
+          content: result.content,
+          tone: "custom",
+          prompt,
+          createdAt: Date.now(),
+        };
+
+        setLocalGenerations((prev) => [...prev, newGeneration]);
+
+        await saveGeneration({
+          resumeId,
+          fieldType: "internship_bullets",
+          fieldId: internshipId,
+          originalContent: bulletContent,
+          generatedContent: result.content,
+          tone: "custom",
+          prompt,
+        });
+      }
+    } catch (error) {
+      console.error("Failed to generate content:", error);
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [bullets, generateContent, saveGeneration, resumeId, internshipId]);
+
+  const handleUseGeneration = useCallback((content: string) => {
+    onUpdate(htmlToBullets(content));
+  }, [onUpdate]);
+
+  const handleChange = useCallback((html: string) => {
+    onUpdate(htmlToBullets(html));
+  }, [onUpdate]);
+
+  return (
+    <div className="space-y-2">
+      <Label>Description</Label>
+      <RichTextEditor
+        content={bulletsToHtml(bullets)}
+        onChange={handleChange}
+        placeholder="Describe your responsibilities and achievements..."
+        minHeight="100px"
+        resumeId={resumeId as string}
+        fieldType="internship_bullets"
+        fieldId={internshipId}
+        aiGenerations={localGenerations}
+        isGenerating={isGenerating}
+        onGenerate={handleGenerate}
+        onCustomPrompt={handleCustomPrompt}
+        onUseGeneration={handleUseGeneration}
+        showAI={true}
+      />
+    </div>
+  );
+}
+
 // Internships Form (similar to Experience)
 function InternshipsForm({
+  resumeId,
   data,
   onUpdate,
   sectionLabel,
   onEdit,
   onDelete,
 }: {
+  resumeId: Id<"resumes">;
   data: any[];
   onUpdate: (data: any[]) => void;
   sectionLabel: string;
@@ -1702,7 +2457,7 @@ function InternshipsForm({
                     <div className="space-y-2">
                       <Label>Job Title</Label>
                       <Input
-                        placeholder="Software Engineer Intern"
+                        placeholder="Your internship title"
                         value={internship.title || ""}
                         onChange={(e) =>
                           updateInternship(index, "title", e.target.value)
@@ -1712,7 +2467,7 @@ function InternshipsForm({
                     <div className="space-y-2">
                       <Label>Company</Label>
                       <Input
-                        placeholder="Acme Inc."
+                        placeholder="Company name"
                         value={internship.company || ""}
                         onChange={(e) =>
                           updateInternship(index, "company", e.target.value)
@@ -1722,7 +2477,7 @@ function InternshipsForm({
                     <div className="space-y-2">
                       <Label>Location</Label>
                       <Input
-                        placeholder="San Francisco, CA"
+                        placeholder="City, State"
                         value={internship.location || ""}
                         onChange={(e) =>
                           updateInternship(index, "location", sanitizeText(e.target.value, 100))
@@ -1751,21 +2506,12 @@ function InternshipsForm({
                         />
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label>Description</Label>
-                      <Textarea
-                        placeholder="• Assisted with..."
-                        value={internship.bullets?.join("\n") || ""}
-                        onChange={(e) =>
-                          updateInternship(
-                            index,
-                            "bullets",
-                            e.target.value.split("\n")
-                          )
-                        }
-                        className="min-h-[100px]"
-                      />
-                    </div>
+                    <InternshipBulletsEditor
+                      resumeId={resumeId}
+                      internshipId={internship.id}
+                      bullets={internship.bullets || [""]}
+                      onUpdate={(bullets) => updateInternship(index, "bullets", bullets)}
+                    />
                     <div className="flex justify-end">
                       <Button
                         variant="ghost"
@@ -1882,7 +2628,7 @@ function CoursesForm({
                     <div className="space-y-2">
                       <Label>Course / Certificate Name</Label>
                       <Input
-                        placeholder="AWS Solutions Architect"
+                        placeholder="Certificate or course name"
                         value={course.name || ""}
                         onChange={(e) => updateCourse(index, "name", e.target.value)}
                       />
@@ -1890,7 +2636,7 @@ function CoursesForm({
                     <div className="space-y-2">
                       <Label>Institution</Label>
                       <Input
-                        placeholder="Amazon Web Services"
+                        placeholder="Issuing organization"
                         value={course.institution || ""}
                         onChange={(e) =>
                           updateCourse(index, "institution", sanitizeText(e.target.value, 100))
@@ -2023,7 +2769,7 @@ function ReferencesForm({
                     <div className="space-y-2">
                       <Label>Full Name</Label>
                       <Input
-                        placeholder="Jane Smith"
+                        placeholder="Reference's full name"
                         value={reference.name || ""}
                         onChange={(e) =>
                           updateReference(index, "name", e.target.value)
@@ -2033,7 +2779,7 @@ function ReferencesForm({
                     <div className="space-y-2">
                       <Label>Title</Label>
                       <Input
-                        placeholder="Engineering Manager"
+                        placeholder="Their job title"
                         value={reference.title || ""}
                         onChange={(e) =>
                           updateReference(index, "title", e.target.value)
@@ -2043,7 +2789,7 @@ function ReferencesForm({
                     <div className="space-y-2">
                       <Label>Company</Label>
                       <Input
-                        placeholder="Tech Corp"
+                        placeholder="Their company"
                         value={reference.company || ""}
                         onChange={(e) =>
                           updateReference(index, "company", e.target.value)
@@ -2054,7 +2800,7 @@ function ReferencesForm({
                       <div className="space-y-2">
                         <Label>Email</Label>
                         <Input
-                          placeholder="jane@company.com"
+                          placeholder="Their email"
                           value={reference.email || ""}
                           onChange={(e) =>
                             updateReference(index, "email", e.target.value)
@@ -2064,7 +2810,7 @@ function ReferencesForm({
                       <div className="space-y-2">
                         <Label>Phone</Label>
                         <Input
-                          placeholder="+1 (555) 123-4567"
+                          placeholder="Their phone number"
                           value={reference.phone || ""}
                           onChange={(e) =>
                             updateReference(index, "phone", e.target.value)
@@ -2277,20 +3023,151 @@ function LinksForm({
   );
 }
 
-// Hobbies Form
+// Hobbies Form with AI
 function HobbiesForm({
+  resumeId,
   data,
   onUpdate,
   sectionLabel,
   onEdit,
   onDelete,
 }: {
+  resumeId: Id<"resumes">;
   data: string;
   onUpdate: (data: string) => void;
   sectionLabel: string;
   onEdit: () => void;
   onDelete: () => void;
 }) {
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [localGenerations, setLocalGenerations] = useState<Array<{
+    content: string;
+    tone: string;
+    prompt?: string;
+    createdAt: number;
+  }>>([]);
+  const hasTriggeredAutoGen = useRef(false);
+  // Track the initial content on mount - only auto-generate for pre-existing content
+  const initialContentRef = useRef<string | null>(null);
+
+  // Capture initial content on first render only
+  useEffect(() => {
+    if (initialContentRef.current === null) {
+      initialContentRef.current = data || "";
+    }
+  }, []);
+
+  const generateContent = useAction(api.ai.generateImprovedContent);
+  const saveGeneration = useMutation(api.aiGenerations.saveGeneration);
+  const existingGenerations = useQuery(api.aiGenerations.getGenerations, {
+    resumeId,
+    fieldType: "hobbies",
+    fieldId: undefined,
+  });
+
+  useEffect(() => {
+    if (existingGenerations?.generations) {
+      setLocalGenerations(existingGenerations.generations);
+    }
+  }, [existingGenerations]);
+
+  // Auto-generate ONLY if there was pre-existing content on mount (not user-typed)
+  useEffect(() => {
+    const initialContent = initialContentRef.current;
+    // Only auto-generate if initial content existed and was substantial
+    const hadPreExistingContent = initialContent && initialContent.trim().length > 20;
+    const shouldAutoGenerate =
+      hadPreExistingContent &&
+      !hasTriggeredAutoGen.current &&
+      !existingGenerations?.hasAutoGenerated &&
+      existingGenerations !== undefined;
+
+    if (shouldAutoGenerate) {
+      hasTriggeredAutoGen.current = true;
+      handleGenerate("expert", true);
+    }
+  }, [existingGenerations]);
+
+  const handleGenerate = useCallback(async (tone: ToneType, isAutoGen = false) => {
+    if (!data || data.trim().length < 10) return;
+
+    setIsGenerating(true);
+    try {
+      const result = await generateContent({
+        content: data,
+        fieldType: "hobbies",
+        tone,
+      });
+
+      if (result?.content) {
+        const newGeneration = {
+          content: result.content,
+          tone,
+          createdAt: Date.now(),
+        };
+
+        setLocalGenerations((prev) => [...prev, newGeneration]);
+
+        await saveGeneration({
+          resumeId,
+          fieldType: "hobbies",
+          fieldId: undefined,
+          originalContent: data,
+          generatedContent: result.content,
+          tone,
+          isAutoGenerated: isAutoGen,
+        });
+      }
+    } catch (error) {
+      console.error("Failed to generate content:", error);
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [data, generateContent, saveGeneration, resumeId]);
+
+  const handleCustomPrompt = useCallback(async (prompt: string) => {
+    if (!data || data.trim().length < 10) return;
+
+    setIsGenerating(true);
+    try {
+      const result = await generateContent({
+        content: data,
+        fieldType: "hobbies",
+        tone: "custom",
+        customPrompt: prompt,
+      });
+
+      if (result?.content) {
+        const newGeneration = {
+          content: result.content,
+          tone: "custom",
+          prompt,
+          createdAt: Date.now(),
+        };
+
+        setLocalGenerations((prev) => [...prev, newGeneration]);
+
+        await saveGeneration({
+          resumeId,
+          fieldType: "hobbies",
+          fieldId: undefined,
+          originalContent: data,
+          generatedContent: result.content,
+          tone: "custom",
+          prompt,
+        });
+      }
+    } catch (error) {
+      console.error("Failed to generate content:", error);
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [data, generateContent, saveGeneration, resumeId]);
+
+  const handleUseGeneration = useCallback((content: string) => {
+    onUpdate(content);
+  }, [onUpdate]);
+
   return (
     <div className="space-y-6">
       <SectionHeader
@@ -2302,11 +3179,19 @@ function HobbiesForm({
       />
 
       <div className="space-y-2">
-        <Textarea
-          placeholder="Photography, hiking, open-source contributions, chess..."
-          value={data || ""}
-          onChange={(e) => onUpdate(e.target.value)}
-          className="min-h-[100px] resize-none"
+        <RichTextEditor
+          content={data || ""}
+          onChange={onUpdate}
+          placeholder="List your hobbies and interests..."
+          minHeight="100px"
+          resumeId={resumeId as string}
+          fieldType="hobbies"
+          aiGenerations={localGenerations}
+          isGenerating={isGenerating}
+          onGenerate={handleGenerate}
+          onCustomPrompt={handleCustomPrompt}
+          onUseGeneration={handleUseGeneration}
+          showAI={true}
         />
         <p className="text-xs text-muted-foreground">
           Keep it brief and relevant
@@ -2316,20 +3201,155 @@ function HobbiesForm({
   );
 }
 
-// Custom Section Form
+// Custom Section Form with AI
 function CustomSectionForm({
+  resumeId,
   data,
   onUpdate,
   sectionLabel,
   onEdit,
   onDelete,
 }: {
+  resumeId: Id<"resumes">;
   data: { title: string; content: string };
   onUpdate: (data: { title: string; content: string }) => void;
   sectionLabel: string;
   onEdit: () => void;
   onDelete: () => void;
 }) {
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [localGenerations, setLocalGenerations] = useState<Array<{
+    content: string;
+    tone: string;
+    prompt?: string;
+    createdAt: number;
+  }>>([]);
+  const hasTriggeredAutoGen = useRef(false);
+  // Track the initial content on mount - only auto-generate for pre-existing content
+  const initialContentRef = useRef<string | null>(null);
+
+  // Capture initial content on first render only
+  useEffect(() => {
+    if (initialContentRef.current === null) {
+      initialContentRef.current = data?.content || "";
+    }
+  }, []);
+
+  const generateContent = useAction(api.ai.generateImprovedContent);
+  const saveGeneration = useMutation(api.aiGenerations.saveGeneration);
+  const existingGenerations = useQuery(api.aiGenerations.getGenerations, {
+    resumeId,
+    fieldType: "custom",
+    fieldId: undefined,
+  });
+
+  useEffect(() => {
+    if (existingGenerations?.generations) {
+      setLocalGenerations(existingGenerations.generations);
+    }
+  }, [existingGenerations]);
+
+  // Auto-generate ONLY if there was pre-existing content on mount (not user-typed)
+  useEffect(() => {
+    const initialContent = initialContentRef.current;
+    // Only auto-generate if initial content existed and was substantial
+    const hadPreExistingContent = initialContent && initialContent.trim().length > 20;
+    const shouldAutoGenerate =
+      hadPreExistingContent &&
+      !hasTriggeredAutoGen.current &&
+      !existingGenerations?.hasAutoGenerated &&
+      existingGenerations !== undefined;
+
+    if (shouldAutoGenerate) {
+      hasTriggeredAutoGen.current = true;
+      handleGenerate("expert", true);
+    }
+  }, [existingGenerations]);
+
+  const handleGenerate = useCallback(async (tone: ToneType, isAutoGen = false) => {
+    if (!data?.content || data.content.trim().length < 10) return;
+
+    setIsGenerating(true);
+    try {
+      const result = await generateContent({
+        content: data.content,
+        fieldType: "custom",
+        tone,
+      });
+
+      if (result?.content) {
+        const newGeneration = {
+          content: result.content,
+          tone,
+          createdAt: Date.now(),
+        };
+
+        setLocalGenerations((prev) => [...prev, newGeneration]);
+
+        await saveGeneration({
+          resumeId,
+          fieldType: "custom",
+          fieldId: undefined,
+          originalContent: data.content,
+          generatedContent: result.content,
+          tone,
+          isAutoGenerated: isAutoGen,
+        });
+      }
+    } catch (error) {
+      console.error("Failed to generate content:", error);
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [data?.content, generateContent, saveGeneration, resumeId]);
+
+  const handleCustomPrompt = useCallback(async (prompt: string) => {
+    if (!data?.content || data.content.trim().length < 10) return;
+
+    setIsGenerating(true);
+    try {
+      const result = await generateContent({
+        content: data.content,
+        fieldType: "custom",
+        tone: "custom",
+        customPrompt: prompt,
+      });
+
+      if (result?.content) {
+        const newGeneration = {
+          content: result.content,
+          tone: "custom",
+          prompt,
+          createdAt: Date.now(),
+        };
+
+        setLocalGenerations((prev) => [...prev, newGeneration]);
+
+        await saveGeneration({
+          resumeId,
+          fieldType: "custom",
+          fieldId: undefined,
+          originalContent: data.content,
+          generatedContent: result.content,
+          tone: "custom",
+          prompt,
+        });
+      }
+    } catch (error) {
+      console.error("Failed to generate content:", error);
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [data?.content, generateContent, saveGeneration, resumeId]);
+
+  const handleUseGeneration = useCallback((content: string) => {
+    onUpdate({ ...data, content });
+  }, [onUpdate, data]);
+
+  const handleContentChange = useCallback((content: string) => {
+    onUpdate({ ...data, content });
+  }, [onUpdate, data]);
+
   return (
     <div className="space-y-6">
       <SectionHeader
@@ -2345,7 +3365,7 @@ function CustomSectionForm({
           <Label htmlFor="sectionTitle">Section Title</Label>
           <Input
             id="sectionTitle"
-            placeholder="e.g., Publications, Awards, Volunteer Work"
+            placeholder="Section title"
             value={data?.title || ""}
             onChange={(e) => onUpdate({ ...data, title: e.target.value })}
           />
@@ -2353,12 +3373,19 @@ function CustomSectionForm({
 
         <div className="space-y-2">
           <Label htmlFor="sectionContent">Content</Label>
-          <Textarea
-            id="sectionContent"
-            placeholder="Enter your content here..."
-            value={data?.content || ""}
-            onChange={(e) => onUpdate({ ...data, content: e.target.value })}
-            className="min-h-[150px]"
+          <RichTextEditor
+            content={data?.content || ""}
+            onChange={handleContentChange}
+            placeholder="Add your content here..."
+            minHeight="150px"
+            resumeId={resumeId as string}
+            fieldType="custom"
+            aiGenerations={localGenerations}
+            isGenerating={isGenerating}
+            onGenerate={handleGenerate}
+            onCustomPrompt={handleCustomPrompt}
+            onUseGeneration={handleUseGeneration}
+            showAI={true}
           />
         </div>
       </div>

@@ -4,6 +4,22 @@ import { v } from "convex/values";
 import { action } from "./_generated/server";
 import OpenAI from "openai";
 
+// Tone prompts for AI rewriting
+const TONE_PROMPTS: Record<string, string> = {
+  "results-oriented":
+    "Rewrite this content to focus on measurable achievements, metrics, and concrete outcomes. Use strong action verbs and quantify results where possible. Keep the same general meaning but emphasize impact and results.",
+  innovative:
+    "Rewrite this content to emphasize creativity, innovation, and forward-thinking approaches. Highlight unique methods, pioneering work, and cutting-edge techniques. Keep the professional tone.",
+  collaborative:
+    "Rewrite this content to showcase teamwork, cross-functional collaboration, and leadership skills. Emphasize working with others, mentoring, and building relationships. Maintain professionalism.",
+  expert:
+    "Rewrite this content to demonstrate deep technical expertise and industry knowledge. Use precise professional terminology and showcase mastery. Keep it accessible but authoritative.",
+  enthusiastic:
+    "Rewrite this content to convey passion, energy, and genuine excitement. Make it engaging and dynamic while maintaining professionalism. Show authentic enthusiasm for the work.",
+  random:
+    "Rewrite this content with a professional tone that best fits the subject matter. Improve clarity, impact, and professionalism while preserving the core message.",
+};
+
 // Define the resume schema for structured outputs
 const resumeSchema = {
   type: "object" as const,
@@ -155,3 +171,90 @@ The extracted text may have formatting issues from PDF extraction - intelligentl
     }
   },
 });
+
+// Generate improved content for a resume field
+export const generateImprovedContent = action({
+  args: {
+    content: v.string(),
+    fieldType: v.string(),
+    tone: v.string(),
+    customPrompt: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+
+    // Get the appropriate prompt based on tone
+    let instructions: string;
+    if (args.tone === "custom" && args.customPrompt) {
+      instructions = `You are an expert resume writer. ${args.customPrompt}
+
+IMPORTANT GUIDELINES:
+1. Maintain professional resume language
+2. Keep the output concise and impactful
+3. PRESERVE THE EXACT STRUCTURE of the original content:
+   - If the input is bullet points, output bullet points using <ul><li> tags
+   - If the input is a paragraph, output a paragraph using <p> tags
+   - If the input is numbered list, output numbered list using <ol><li> tags
+4. Do NOT use <strong>, <b>, <em>, or <i> tags - keep text plain without bold or italic formatting
+5. Do not include any explanations, just the improved content
+6. Keep the same number of items/bullets as the original`;
+    } else {
+      const tonePrompt = TONE_PROMPTS[args.tone] || TONE_PROMPTS["random"];
+      instructions = `You are an expert resume writer. ${tonePrompt}
+
+IMPORTANT GUIDELINES:
+1. This is for a ${args.fieldType.replace("_", " ")} section of a resume
+2. Keep the output concise and impactful
+3. PRESERVE THE EXACT STRUCTURE of the original content:
+   - If the input is bullet points, output bullet points using <ul><li> tags
+   - If the input is a paragraph, output a paragraph using <p> tags
+   - If the input is numbered list, output numbered list using <ol><li> tags
+4. Do NOT use <strong>, <b>, <em>, or <i> tags - keep text plain without bold or italic formatting
+5. Do not include any explanations, just the improved content
+6. Keep the same number of items/bullets as the original
+7. Preserve the general length unless the content is very short`;
+    }
+
+    const userInput = `Please improve the following ${args.fieldType.replace("_", " ")} content:\n\n${args.content}`;
+
+    try {
+      // Use the Responses API with gpt-5-nano
+      const response = await openai.responses.create({
+        model: "gpt-5-nano",
+        instructions: instructions,
+        input: userInput,
+      });
+
+      const improvedContent = response.output_text;
+      if (!improvedContent) {
+        throw new Error("No response from AI");
+      }
+
+      // Clean up the response - remove markdown code blocks if present
+      let cleanedContent = improvedContent
+        .replace(/```html\n?/g, "")
+        .replace(/```\n?/g, "")
+        .trim();
+
+      // Remove any bold/italic tags that might have slipped through
+      cleanedContent = cleanedContent
+        .replace(/<\/?strong>/g, "")
+        .replace(/<\/?b>/g, "")
+        .replace(/<\/?em>/g, "")
+        .replace(/<\/?i>/g, "");
+
+      // If it's plain text without HTML tags, wrap in paragraph
+      if (!cleanedContent.includes("<") && !cleanedContent.includes(">")) {
+        cleanedContent = `<p>${cleanedContent}</p>`;
+      }
+
+      return { content: cleanedContent };
+    } catch (error) {
+      console.error("AI generation error:", error);
+      throw new Error("Failed to generate improved content. Please try again.");
+    }
+  },
+});
+

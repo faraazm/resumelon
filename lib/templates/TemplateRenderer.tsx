@@ -45,11 +45,7 @@ export function TemplateRenderer({ data, template, className = "", headingFontId
     (data.skills && data.skills.length > 0);
 
   if (!hasContent) {
-    return (
-      <div className={`h-full ${className}`}>
-        <EmptyState />
-      </div>
-    );
+    return <EmptyState />;
   }
 
   // Render sections in the order specified by template
@@ -140,14 +136,22 @@ export function TemplateRenderer({ data, template, className = "", headingFontId
           className={`${layout.sidebarWidth || "w-[180px]"} shrink-0 p-5 ${spacing.lineHeight}`}
           style={{ backgroundColor: colors.sidebar }}
         >
-          {/* Photo placeholder */}
+          {/* Photo */}
           {layout.showPhoto && (
             <div className="mb-4 flex justify-center">
-              <div
-                className="h-20 w-20 rounded-full bg-slate-600 flex items-center justify-center text-2xl text-white font-medium"
-              >
-                {data.personalDetails?.firstName?.charAt(0) || ""}
-                {data.personalDetails?.lastName?.charAt(0) || ""}
+              <div className="h-20 w-20 rounded-full overflow-hidden bg-slate-600 flex items-center justify-center text-2xl text-white font-medium">
+                {data.personalDetails?.photoUrl ? (
+                  <img
+                    src={data.personalDetails.photoUrl}
+                    alt={`${data.personalDetails?.firstName || ""} ${data.personalDetails?.lastName || ""}`}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <>
+                    {data.personalDetails?.firstName?.charAt(0) || ""}
+                    {data.personalDetails?.lastName?.charAt(0) || ""}
+                  </>
+                )}
               </div>
             </div>
           )}
@@ -216,11 +220,19 @@ export function TemplateRenderer({ data, template, className = "", headingFontId
       {/* Header with optional photo */}
       <div className={layout.showPhoto ? "flex items-start gap-3" : ""}>
         {layout.showPhoto && (
-          <div
-            className="h-14 w-14 shrink-0 rounded-full bg-gray-200 flex items-center justify-center text-lg text-gray-500 font-medium"
-          >
-            {data.personalDetails?.firstName?.charAt(0) || ""}
-            {data.personalDetails?.lastName?.charAt(0) || ""}
+          <div className="h-14 w-14 shrink-0 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center text-lg text-gray-500 font-medium">
+            {data.personalDetails?.photoUrl ? (
+              <img
+                src={data.personalDetails.photoUrl}
+                alt={`${data.personalDetails?.firstName || ""} ${data.personalDetails?.lastName || ""}`}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <>
+                {data.personalDetails?.firstName?.charAt(0) || ""}
+                {data.personalDetails?.lastName?.charAt(0) || ""}
+              </>
+            )}
           </div>
         )}
         <Header data={data} template={template} />

@@ -99,7 +99,17 @@ export const getResumeForPrint = query({
       return { error: "Resume not found", resume: null };
     }
 
-    return { error: null, resume, resumeId: tokenRecord.resumeId };
+    // Resolve photo URL if photo exists
+    let photoUrl: string | null = null;
+    if (resume.personalDetails?.photo) {
+      try {
+        photoUrl = await ctx.storage.getUrl(resume.personalDetails.photo as Id<"_storage">);
+      } catch {
+        // Photo may have been deleted, continue without it
+      }
+    }
+
+    return { error: null, resume, resumeId: tokenRecord.resumeId, photoUrl };
   },
 });
 

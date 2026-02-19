@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback, forwardRef, useImperativeHandle } from "react";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 import { TemplateRenderer, getTemplate, ResumeData, TemplateConfig, getTemplateDefaultHeadingFont, getTemplateDefaultBodyFont } from "@/lib/templates";
@@ -19,6 +22,10 @@ interface ResumePreviewProps {
       lastName: string;
       jobTitle: string;
       photo: string | null;
+      // Optional fields
+      nationality?: string;
+      driverLicense?: string;
+      birthDate?: string;
     };
     contact: {
       email: string;
@@ -74,6 +81,14 @@ export const ResumePreview = forwardRef<ResumePreviewHandle, ResumePreviewProps>
   const [scale, setScale] = useState(1);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+
+  // Fetch photo URL from Convex storage if photo exists
+  const photoUrl = useQuery(
+    api.storage.getUrl,
+    data.personalDetails?.photo
+      ? { storageId: data.personalDetails.photo as Id<"_storage"> }
+      : "skip"
+  );
 
   // Expose methods to parent for PDF generation
   useImperativeHandle(ref, () => ({
@@ -192,6 +207,11 @@ export const ResumePreview = forwardRef<ResumePreviewHandle, ResumePreviewProps>
       lastName: data.personalDetails?.lastName || "",
       jobTitle: data.personalDetails?.jobTitle || "",
       photo: data.personalDetails?.photo,
+      photoUrl: photoUrl || undefined, // Resolved URL from Convex storage
+      // Optional fields
+      nationality: data.personalDetails?.nationality,
+      driverLicense: data.personalDetails?.driverLicense,
+      birthDate: data.personalDetails?.birthDate,
     },
     contact: {
       email: data.contact?.email || "",

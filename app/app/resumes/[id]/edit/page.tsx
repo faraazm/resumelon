@@ -46,6 +46,14 @@ const defaultResumeData = {
     lastName: "",
     jobTitle: "",
     photo: null as string | null,
+  } as {
+    firstName: string;
+    lastName: string;
+    jobTitle: string;
+    photo: string | null;
+    nationality?: string;
+    driverLicense?: string;
+    birthDate?: string;
   },
   contact: {
     email: "",
@@ -563,6 +571,7 @@ export default function ResumeEditorPage() {
         <div className={`flex flex-1 overflow-hidden ${showMobilePreview ? 'hidden lg:flex' : ''}`}>
           {activeTab === "write" && (
             <WriteTab
+              resumeId={resumeId}
               resumeData={localData}
               onUpdate={updateResumeData}
               onSectionOrderChange={setSectionOrder}
@@ -595,7 +604,7 @@ export default function ResumeEditorPage() {
           w-full lg:w-[45%]
           shrink-0
           border-l border-border
-          bg-background lg:bg-muted/30
+          bg-background lg:bg-gray-100
           overflow-hidden
           flex-col
         `}>

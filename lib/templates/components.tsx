@@ -1,6 +1,7 @@
 "use client";
 
 import { TemplateConfig, ResumeData } from "./types";
+import { LETTER_HEIGHT_PX } from "@/lib/pdf-constants";
 
 // The heading font style - uses CSS variable if set, otherwise falls back to class
 function getHeadingStyle(): React.CSSProperties {
@@ -39,6 +40,18 @@ export function SidebarHeader({ data, template }: SidebarHeaderProps) {
     .filter(Boolean)
     .join(" ");
 
+  // Build optional personal details items for sidebar
+  const optionalItems: string[] = [];
+  if (personalDetails.nationality) {
+    optionalItems.push(personalDetails.nationality);
+  }
+  if (personalDetails.driverLicense) {
+    optionalItems.push(`License: ${personalDetails.driverLicense}`);
+  }
+  if (personalDetails.birthDate) {
+    optionalItems.push(`DOB: ${personalDetails.birthDate}`);
+  }
+
   return (
     <div className="text-center mb-4">
       {fullName && (
@@ -55,6 +68,14 @@ export function SidebarHeader({ data, template }: SidebarHeaderProps) {
           style={{ color: colors.muted }}
         >
           {personalDetails.jobTitle}
+        </p>
+      )}
+      {optionalItems.length > 0 && (
+        <p
+          className="text-[9px] mt-1"
+          style={{ color: colors.muted, opacity: 0.8 }}
+        >
+          {optionalItems.join(" • ")}
         </p>
       )}
     </div>
@@ -203,6 +224,18 @@ export function Header({ data, template }: HeaderProps) {
     contact.linkedin,
   ].filter(Boolean);
 
+  // Build optional personal details items
+  const optionalItems: string[] = [];
+  if (personalDetails.nationality) {
+    optionalItems.push(personalDetails.nationality);
+  }
+  if (personalDetails.driverLicense) {
+    optionalItems.push(`Driver License: ${personalDetails.driverLicense}`);
+  }
+  if (personalDetails.birthDate) {
+    optionalItems.push(`DOB: ${personalDetails.birthDate}`);
+  }
+
   const alignmentClass = layout.headerAlignment === "center" ? "text-center" : "text-left";
 
   return (
@@ -231,6 +264,16 @@ export function Header({ data, template }: HeaderProps) {
       {contactItems.length > 0 && (
         <p className="text-[9pt] mt-1" style={{ color: colors.muted }}>
           {contactItems.map((item, index) => (
+            <span key={index}>
+              {index > 0 && <span className="mx-1.5">|</span>}
+              {item}
+            </span>
+          ))}
+        </p>
+      )}
+      {optionalItems.length > 0 && (
+        <p className="text-[9pt] mt-0.5" style={{ color: colors.muted }}>
+          {optionalItems.map((item, index) => (
             <span key={index}>
               {index > 0 && <span className="mx-1.5">|</span>}
               {item}
@@ -420,13 +463,40 @@ function cleanBulletText(text: string): string {
   return text.replace(/^[\s]*[•\-\*\–\—][\s]+/, "").trim();
 }
 
+/**
+ * Strip HTML tags and get plain text for bullet detection
+ */
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]+>/g, "").trim();
+}
+
+/**
+ * Check if content contains HTML tags
+ */
+function containsHtml(text: string): boolean {
+  return /<[^>]+>/.test(text);
+}
+
 export function BulletList({ bullets, template }: BulletListProps) {
   const { typography, layout, colors } = template;
 
   // Filter out empty bullets and clean text
   const cleanedBullets = bullets
-    .map(cleanBulletText)
-    .filter((b) => b.length > 0);
+    .map((b) => {
+      // For HTML content, strip tags to clean bullet prefix, but keep original HTML
+      if (containsHtml(b)) {
+        const plainText = stripHtml(b);
+        const cleanedPlain = cleanBulletText(plainText);
+        // If the plain text was modified (had bullet prefix), we need to handle it
+        // But generally, HTML content from TipTap won't have bullet prefixes
+        return cleanedPlain.length > 0 ? b : "";
+      }
+      return cleanBulletText(b);
+    })
+    .filter((b) => {
+      const text = containsHtml(b) ? stripHtml(b) : b;
+      return text.length > 0;
+    });
 
   if (cleanedBullets.length === 0) return null;
 
@@ -445,25 +515,33 @@ export function BulletList({ bullets, template }: BulletListProps) {
         paddingLeft: "0.25rem",
       }}
     >
-      {cleanedBullets.map((bullet, index) => (
-        <li
-          key={index}
-          className={typography.bodyFontSize}
-          style={{
-            color: colors.body,
-            marginBottom: "1px",
-            paddingLeft: "2px",
-            lineHeight: "1.3",
-          }}
-        >
-          {layout.bulletStyle === "dash" && (
-            <span className="mr-1.5" style={{ color: colors.muted }}>
-              -
-            </span>
-          )}
-          {bullet}
-        </li>
-      ))}
+      {cleanedBullets.map((bullet, index) => {
+        const hasHtml = containsHtml(bullet);
+
+        return (
+          <li
+            key={index}
+            className={typography.bodyFontSize}
+            style={{
+              color: colors.body,
+              marginBottom: "1px",
+              paddingLeft: "2px",
+              lineHeight: "1.3",
+            }}
+          >
+            {layout.bulletStyle === "dash" && (
+              <span className="mr-1.5" style={{ color: colors.muted }}>
+                -
+              </span>
+            )}
+            {hasHtml ? (
+              <span dangerouslySetInnerHTML={{ __html: bullet }} />
+            ) : (
+              bullet
+            )}
+          </li>
+        );
+      })}
     </ul>
   );
 }
@@ -493,6 +571,25 @@ interface SummaryProps {
 export function Summary({ summary, template }: SummaryProps) {
   const { typography, colors } = template;
 
+  // Check if summary contains HTML tags
+  const containsHtml = /<[^>]+>/.test(summary);
+
+  if (containsHtml) {
+    return (
+      <div
+        className={`${typography.bodyFontSize} prose prose-sm max-w-none`}
+        style={{
+          color: colors.body,
+          lineHeight: "1.35",
+          // Reset prose styles to match resume styling
+          "--tw-prose-body": colors.body,
+          "--tw-prose-headings": colors.heading,
+        } as React.CSSProperties}
+        dangerouslySetInnerHTML={{ __html: summary }}
+      />
+    );
+  }
+
   return (
     <p
       className={typography.bodyFontSize}
@@ -504,12 +601,16 @@ export function Summary({ summary, template }: SummaryProps) {
 }
 
 // Empty State Component
+// Uses fixed height matching Letter paper size for proper centering
 export function EmptyState() {
   return (
-    <div className="h-full flex flex-col items-center justify-center text-center px-8">
-      <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+    <div
+      className="w-full flex flex-col items-center justify-center text-center px-6"
+      style={{ height: LETTER_HEIGHT_PX }}
+    >
+      <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mb-6">
         <svg
-          className="w-8 h-8 text-gray-400"
+          className="w-10 h-10 text-gray-400"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -522,8 +623,10 @@ export function EmptyState() {
           />
         </svg>
       </div>
-      <p className="text-sm font-medium text-gray-900">Your resume preview</p>
-      <p className="text-xs text-gray-500 mt-1">
+      <h3 className="text-2xl font-semibold text-gray-900 mb-3">
+        Your Resume Preview
+      </h3>
+      <p className="text-base text-gray-500 max-w-sm">
         Start filling in your details to see your resume come to life
       </p>
     </div>

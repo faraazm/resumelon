@@ -175,6 +175,11 @@ export default async function PrintResumePage({ params, searchParams }: PrintPag
       lastName: resume.personalDetails?.lastName || "",
       jobTitle: resume.personalDetails?.jobTitle || "",
       photo: resume.personalDetails?.photo,
+      photoUrl: result.photoUrl || undefined, // Resolved URL from Convex storage
+      // Optional fields
+      nationality: resume.personalDetails?.nationality,
+      driverLicense: resume.personalDetails?.driverLicense,
+      birthDate: resume.personalDetails?.birthDate,
     },
     contact: {
       email: resume.contact?.email || "",
