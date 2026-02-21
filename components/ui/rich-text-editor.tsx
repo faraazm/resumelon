@@ -151,11 +151,14 @@ export function RichTextEditor({
   // Keep track of generations and update index when new ones arrive
   useEffect(() => {
     if (aiGenerations.length > 0) {
-      setCurrentGenerationIndex(aiGenerations.length - 1);
-      const latestGen = aiGenerations[aiGenerations.length - 1];
+      const latestIndex = aiGenerations.length - 1;
+      setCurrentGenerationIndex(latestIndex);
+      const latestGen = aiGenerations[latestIndex];
       setSelectedTone(latestGen.tone);
-      // When new generations arrive, reset the "used" state to show AI section again
-      setHasUsedAI(false);
+      // If already used, apply the new generation directly to the editor
+      if (hasUsedAI && onUseGeneration) {
+        onUseGeneration(latestGen.content);
+      }
     }
   }, [aiGenerations.length]);
 
@@ -270,18 +273,29 @@ export function RichTextEditor({
   const handleRevertToOriginal = useCallback(() => {
     if (originalContent !== null && onChange) {
       onChange(originalContent);
-      setHasUsedAI(false);
       setOriginalContent(null);
     }
   }, [originalContent, onChange]);
 
   const handlePrevGeneration = useCallback(() => {
-    setCurrentGenerationIndex((i) => Math.max(0, i - 1));
-  }, []);
+    setCurrentGenerationIndex((prev) => {
+      const newIndex = Math.max(0, prev - 1);
+      if (hasUsedAI && onUseGeneration && aiGenerations[newIndex]) {
+        onUseGeneration(aiGenerations[newIndex].content);
+      }
+      return newIndex;
+    });
+  }, [hasUsedAI, onUseGeneration, aiGenerations]);
 
   const handleNextGeneration = useCallback(() => {
-    setCurrentGenerationIndex((i) => Math.min(aiGenerations.length - 1, i + 1));
-  }, [aiGenerations.length]);
+    setCurrentGenerationIndex((prev) => {
+      const newIndex = Math.min(aiGenerations.length - 1, prev + 1);
+      if (hasUsedAI && onUseGeneration && aiGenerations[newIndex]) {
+        onUseGeneration(aiGenerations[newIndex].content);
+      }
+      return newIndex;
+    });
+  }, [hasUsedAI, onUseGeneration, aiGenerations]);
 
   const currentGeneration = aiGenerations[currentGenerationIndex];
   const hasGenerations = aiGenerations.length > 0;
@@ -466,76 +480,61 @@ export function RichTextEditor({
             )}
           </AnimatePresence>
 
-          {/* AI Controls Footer - White background */}
+          {/* AI Controls Footer */}
           <div className="flex items-center justify-between px-4 py-2 border-t border-border bg-background rounded-b-md">
-            {/* Left: Tone Badge (only show when not hasUsedAI) or Revert button */}
+            {/* Left side */}
             <div className="flex items-center gap-2 min-h-[32px]">
-              <AnimatePresence mode="wait" initial={false}>
-                {hasUsedAI ? (
-                  <motion.div
-                    key="revert"
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -10 }}
-                    transition={{ duration: 0.2, ease: "easeOut" }}
+              {hasUsedAI ? (
+                originalContent !== null && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground"
+                    onClick={handleRevertToOriginal}
                   >
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={handleRevertToOriginal}
-                    >
-                      <Undo2 className="mr-1 h-3.5 w-3.5" />
-                      Revert
-                    </Button>
-                  </motion.div>
-                ) : (
-                  selectedTone && (
-                    <motion.span
-                      key="tone-badge"
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -10 }}
-                      transition={{ duration: 0.2, ease: "easeOut" }}
-                      className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary"
-                    >
-                      <Check className="h-3 w-3" />
-                      {TONE_OPTIONS.find((t) => t.id === selectedTone)?.label ||
-                        selectedTone}
-                    </motion.span>
-                  )
-                )}
-              </AnimatePresence>
+                    <Undo2 className="mr-1 h-3.5 w-3.5" />
+                    Revert
+                  </Button>
+                )
+              ) : (
+                selectedTone && (
+                  <span className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                    <Check className="h-3 w-3" />
+                    {TONE_OPTIONS.find((t) => t.id === selectedTone)?.label || selectedTone}
+                  </span>
+                )
+              )}
             </div>
 
-            {/* Right: Pagination, Rewrite, Use */}
+            {/* Right side */}
             <div className="flex items-center gap-2">
-              {/* Pagination - only show when AI content visible */}
-              {!hasUsedAI && hasGenerations && aiGenerations.length > 1 && (
+              {/* Pagination */}
+              {hasGenerations && aiGenerations.length > 1 && (
                 <div className="flex items-center gap-1">
                   <button
                     type="button"
                     onClick={handlePrevGeneration}
                     disabled={currentGenerationIndex === 0}
-                    className="rounded p-1 hover:bg-muted disabled:opacity-50"
+                    className="rounded p-1 text-muted-foreground hover:bg-muted disabled:opacity-30"
                   >
-                    <ChevronLeft className="h-4 w-4" />
+                    <ChevronLeft className="h-3.5 w-3.5" />
                   </button>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-xs tabular-nums text-muted-foreground">
                     {currentGenerationIndex + 1}/{aiGenerations.length}
                   </span>
                   <button
                     type="button"
                     onClick={handleNextGeneration}
                     disabled={currentGenerationIndex === aiGenerations.length - 1}
-                    className="rounded p-1 hover:bg-muted disabled:opacity-50"
+                    className="rounded p-1 text-muted-foreground hover:bg-muted disabled:opacity-30"
                   >
-                    <ChevronRight className="h-4 w-4" />
+                    <ChevronRight className="h-3.5 w-3.5" />
                   </button>
                 </div>
               )}
 
-              {/* Rewrite Dropdown Menu - only show when custom prompt popover is closed */}
-              {!customPromptOpen && (
+              {/* Rewrite Dropdown */}
+              {!hasUsedAI && !customPromptOpen && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="sm" disabled={isGenerating}>
@@ -567,8 +566,8 @@ export function RichTextEditor({
                 </DropdownMenu>
               )}
 
-              {/* Custom Prompt Popover - shows independently when open */}
-              {customPromptOpen && (
+              {/* Custom Prompt Popover */}
+              {!hasUsedAI && customPromptOpen && (
                 <Popover
                   open={customPromptOpen}
                   onOpenChange={setCustomPromptOpen}
@@ -626,7 +625,7 @@ export function RichTextEditor({
                 </Popover>
               )}
 
-              {/* Use Button - only show when AI content visible and not used yet */}
+              {/* Use Button - only before using */}
               {!hasUsedAI && hasGenerations && (
                 <Button
                   size="sm"

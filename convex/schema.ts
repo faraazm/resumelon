@@ -9,6 +9,10 @@ export default defineSchema({
     lastName: v.optional(v.string()),
     imageUrl: v.optional(v.string()),
     hasCompletedOnboarding: v.boolean(),
+    primaryResumeId: v.optional(v.id("resumes")),
+    optimizationCount: v.optional(v.number()),
+    monthlyGenerationCount: v.optional(v.number()),
+    lastGenerationMonth: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
   }).index("by_clerk_id", ["clerkId"]),
@@ -103,8 +107,21 @@ export default defineSchema({
       title: v.string(),
       content: v.string(),
     })),
+    // How the resume was created: "scratch", "upload", "ai_generated", "optimized"
+    source: v.optional(v.string()),
     // Job description for tailoring
     jobDescription: v.optional(v.string()),
+    // Primary/Optimized resume fields
+    isPrimary: v.optional(v.boolean()),
+    parentResumeId: v.optional(v.id("resumes")),
+    optimizationData: v.optional(v.object({
+      jobTitle: v.string(),
+      companyName: v.string(),
+      matchScore: v.number(),
+      missingSkills: v.array(v.string()),
+      presentSkills: v.array(v.string()),
+      optimizedAt: v.number(),
+    })),
     template: v.string(),
     style: v.object({
       font: v.string(),
@@ -117,7 +134,8 @@ export default defineSchema({
     }),
     createdAt: v.number(),
     updatedAt: v.number(),
-  }).index("by_user", ["userId"]),
+  }).index("by_user", ["userId"])
+    .index("by_user_primary", ["userId", "isPrimary"]),
 
   coverLetters: defineTable({
     userId: v.id("users"),
@@ -126,7 +144,8 @@ export default defineSchema({
     content: v.string(),
     createdAt: v.number(),
     updatedAt: v.number(),
-  }).index("by_user", ["userId"]),
+  }).index("by_user", ["userId"])
+    .index("by_resume", ["resumeId"]),
 
   // One-time print tokens for secure PDF generation
   printTokens: defineTable({

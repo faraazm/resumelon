@@ -109,6 +109,71 @@ export const parseDocument = action({
   },
 });
 
+// Extract raw text from a file without AI parsing (for multi-file generation flow)
+export const extractTextFromFile = action({
+  args: {
+    storageId: v.id("_storage"),
+    fileType: v.string(),
+    fileName: v.string(),
+  },
+  handler: async (ctx, args): Promise<string> => {
+    const fileUrl = await ctx.storage.getUrl(args.storageId);
+    if (!fileUrl) {
+      throw new Error("File not found in storage");
+    }
+
+    const response = await fetch(fileUrl);
+    if (!response.ok) {
+      throw new Error("Failed to download file from storage");
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    let text = "";
+
+    if (args.fileType === "application/pdf" || args.fileName.endsWith(".pdf")) {
+      const pdfParse = require("pdf-parse/lib/pdf-parse.js");
+      try {
+        const pdfData = await pdfParse(buffer);
+        text = pdfData.text;
+      } catch (error) {
+        console.error("PDF parsing error:", error);
+        throw new Error("Failed to parse PDF. The file may be corrupted or password-protected.");
+      }
+    } else if (
+      args.fileType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+      args.fileName.endsWith(".docx")
+    ) {
+      const mammoth = require("mammoth");
+      try {
+        const result = await mammoth.extractRawText({ buffer });
+        text = result.value;
+      } catch (error) {
+        console.error("DOCX parsing error:", error);
+        throw new Error("Failed to parse Word document. The file may be corrupted.");
+      }
+    } else if (
+      args.fileType === "text/plain" ||
+      args.fileName.endsWith(".txt")
+    ) {
+      text = buffer.toString("utf-8");
+    } else {
+      // Fallback: try to read as UTF-8 text
+      text = buffer.toString("utf-8");
+    }
+
+    if (!text || text.trim().length === 0) {
+      throw new Error("Could not extract text from the document. It may be image-based or empty.");
+    }
+
+    // Delete the file from storage after extraction
+    await ctx.runMutation(api.storage.deleteFile, { storageId: args.storageId });
+
+    return text;
+  },
+});
+
 // Export extracted text only (for debugging or alternative parsing)
 export const extractText = action({
   args: {

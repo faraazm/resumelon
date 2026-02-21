@@ -53,7 +53,25 @@ export const getUserByClerkId = query({
   },
 });
 
-export const completeOnboarding = mutation({
+export const getRemainingGenerations = query({
+  args: { clerkId: v.string(), currentMonth: v.string() },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
+      .first();
+
+    if (!user) {
+      return { remaining: 0, total: 5, used: 0 };
+    }
+
+    const isCurrentMonth = user.lastGenerationMonth === args.currentMonth;
+    const used = isCurrentMonth ? (user.monthlyGenerationCount || 0) : 0;
+    return { remaining: Math.max(0, 5 - used), total: 5, used };
+  },
+});
+
+export const incrementGenerationCount = mutation({
   args: { clerkId: v.string() },
   handler: async (ctx, args) => {
     const user = await ctx.db
@@ -65,10 +83,43 @@ export const completeOnboarding = mutation({
       throw new Error("User not found");
     }
 
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    const isCurrentMonth = user.lastGenerationMonth === currentMonth;
+    const currentCount = isCurrentMonth ? (user.monthlyGenerationCount || 0) : 0;
+
     await ctx.db.patch(user._id, {
-      hasCompletedOnboarding: true,
+      monthlyGenerationCount: currentCount + 1,
+      lastGenerationMonth: currentMonth,
       updatedAt: Date.now(),
     });
+  },
+});
+
+export const completeOnboarding = mutation({
+  args: {
+    clerkId: v.string(),
+    primaryResumeId: v.optional(v.id("resumes")),
+  },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
+      .first();
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const patchData: Record<string, any> = {
+      hasCompletedOnboarding: true,
+      updatedAt: Date.now(),
+    };
+
+    if (args.primaryResumeId) {
+      patchData.primaryResumeId = args.primaryResumeId;
+    }
+
+    await ctx.db.patch(user._id, patchData);
 
     return user._id;
   },

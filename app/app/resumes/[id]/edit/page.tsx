@@ -573,6 +573,7 @@ export default function ResumeEditorPage() {
             <WriteTab
               resumeId={resumeId}
               resumeData={localData}
+              resumeSource={resume?.source}
               onUpdate={updateResumeData}
               onSectionOrderChange={setSectionOrder}
               onSectionsChange={setWriteSections}
