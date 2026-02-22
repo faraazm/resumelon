@@ -46,13 +46,18 @@ export interface TemplateConfig {
 
   // Typography tokens
   typography: {
-    headingFont: "serif" | "sans";
-    bodyFont: "serif" | "sans";
+    headingFont: string;       // Font ID like "inter", "garamond", "montserrat"
+    bodyFont: string;          // Font ID like "inter", "garamond"
     nameFontSize: string;      // e.g., "text-2xl"
     sectionFontSize: string;   // e.g., "text-sm"
     bodyFontSize: string;      // e.g., "text-xs"
     nameWeight: string;        // e.g., "font-bold"
     sectionWeight: string;     // e.g., "font-semibold"
+    // Advanced typography options
+    nameLetterSpacing?: string;     // e.g., "tracking-wide"
+    sectionLetterSpacing?: string;  // e.g., "tracking-widest"
+    sectionTransform?: "uppercase" | "capitalize" | "none";
+    nameTransform?: "uppercase" | "capitalize" | "none";
   };
 
   // Spacing tokens
@@ -67,12 +72,16 @@ export interface TemplateConfig {
   layout: {
     columns: 1 | 2;
     headerAlignment: "left" | "center";
-    sectionDivider: "line" | "accent" | "none";
-    bulletStyle: "disc" | "dash" | "circle";
+    sectionDivider: "line" | "accent" | "none" | "background";
+    bulletStyle: "disc" | "dash" | "circle" | "square" | "none";
     showPhoto: boolean;
     sidebar: boolean;
     sidebarWidth?: string;     // e.g., "w-[180px]"
     sidebarPosition?: "left" | "right";
+    // Advanced layout options
+    contactLayout?: "inline" | "stacked" | "two-column";
+    skillsLayout?: "inline" | "tags" | "grid" | "bars";
+    datePosition?: "right" | "left" | "below";
   };
 
   // Section ordering and visibility
@@ -96,6 +105,8 @@ export interface TemplateConfig {
     divider: string;           // e.g., "#000000"
     sidebar: string;           // e.g., "#1e293b"
     accent: string;            // e.g., "#3b82f6"
+    sectionHeaderBg?: string;  // Background color for section headers
+    nameBg?: string;           // Background color behind name
   };
 }
 
@@ -132,10 +143,18 @@ export const FONT_FAMILIES: Record<string, string> = {
   roboto: "var(--font-roboto), ui-sans-serif, system-ui, sans-serif",
   lato: "var(--font-lato), ui-sans-serif, system-ui, sans-serif",
   opensans: "var(--font-opensans), ui-sans-serif, system-ui, sans-serif",
+  montserrat: "var(--font-montserrat), ui-sans-serif, system-ui, sans-serif",
+  raleway: "var(--font-raleway), ui-sans-serif, system-ui, sans-serif",
+  sourcesans: "var(--font-sourcesans), ui-sans-serif, system-ui, sans-serif",
+  poppins: "var(--font-poppins), ui-sans-serif, system-ui, sans-serif",
+  nunito: "var(--font-nunito), ui-sans-serif, system-ui, sans-serif",
   // Serif fonts
   merriweather: "var(--font-merriweather), ui-serif, serif",
   playfair: "var(--font-playfair), ui-serif, serif",
   lora: "var(--font-lora), ui-serif, serif",
+  crimson: "var(--font-crimson), ui-serif, serif",
+  librebaskerville: "var(--font-librebaskerville), ui-serif, serif",
+  garamond: "var(--font-garamond), ui-serif, serif",
 };
 
 // Get font family from font ID

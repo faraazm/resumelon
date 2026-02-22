@@ -141,7 +141,23 @@ export default defineSchema({
     userId: v.id("users"),
     resumeId: v.optional(v.id("resumes")),
     title: v.string(),
-    content: v.string(),
+    // Personal details (optional for backwards compatibility)
+    personalDetails: v.optional(v.object({
+      firstName: v.string(),
+      lastName: v.string(),
+      jobTitle: v.string(),
+      email: v.string(),
+      phone: v.string(),
+      address: v.string(),
+    })),
+    // Letter content (optional for backwards compatibility)
+    letterContent: v.optional(v.object({
+      companyName: v.string(),
+      hiringManagerName: v.string(),
+      content: v.string(), // Rich text HTML content
+    })),
+    // Legacy field for backwards compatibility
+    content: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
   }).index("by_user", ["userId"])

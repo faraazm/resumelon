@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { Instrument_Serif, Inter, Roboto, Lato, Open_Sans, Merriweather, Playfair_Display, Lora } from "next/font/google";
+import { Instrument_Serif, Inter, Roboto, Lato, Open_Sans, Merriweather, Playfair_Display, Lora, Montserrat, Raleway, Source_Sans_3, Crimson_Text, Libre_Baskerville, EB_Garamond, Poppins, Nunito } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ConvexClientProvider } from "@/components/providers/convex-client-provider";
 import "./globals.css";
@@ -59,6 +59,51 @@ const playfair = Playfair_Display({
 
 const lora = Lora({
   variable: "--font-lora",
+  subsets: ["latin"],
+});
+
+// Additional Sans-Serif fonts
+const montserrat = Montserrat({
+  variable: "--font-montserrat",
+  subsets: ["latin"],
+});
+
+const raleway = Raleway({
+  variable: "--font-raleway",
+  subsets: ["latin"],
+});
+
+const sourceSans = Source_Sans_3({
+  variable: "--font-sourcesans",
+  subsets: ["latin"],
+});
+
+const poppins = Poppins({
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-poppins",
+  subsets: ["latin"],
+});
+
+const nunito = Nunito({
+  variable: "--font-nunito",
+  subsets: ["latin"],
+});
+
+// Additional Serif fonts
+const crimsonText = Crimson_Text({
+  weight: ["400", "600", "700"],
+  variable: "--font-crimson",
+  subsets: ["latin"],
+});
+
+const libreBaskerville = Libre_Baskerville({
+  weight: ["400", "700"],
+  variable: "--font-librebaskerville",
+  subsets: ["latin"],
+});
+
+const ebGaramond = EB_Garamond({
+  variable: "--font-garamond",
   subsets: ["latin"],
 });
 
@@ -151,7 +196,7 @@ export default function RootLayout({
       <ConvexClientProvider>
         <html lang="en" suppressHydrationWarning>
           <body
-            className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} ${inter.variable} ${roboto.variable} ${lato.variable} ${openSans.variable} ${merriweather.variable} ${playfair.variable} ${lora.variable} antialiased`}
+            className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} ${inter.variable} ${roboto.variable} ${lato.variable} ${openSans.variable} ${merriweather.variable} ${playfair.variable} ${lora.variable} ${montserrat.variable} ${raleway.variable} ${sourceSans.variable} ${poppins.variable} ${nunito.variable} ${crimsonText.variable} ${libreBaskerville.variable} ${ebGaramond.variable} antialiased`}
             suppressHydrationWarning
           >
             {children}

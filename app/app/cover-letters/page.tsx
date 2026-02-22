@@ -7,7 +7,6 @@ import { useUser } from "@clerk/nextjs";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -19,27 +18,7 @@ import {
 import { PlusIcon, EnvelopeIcon } from "@heroicons/react/24/outline";
 import { Id } from "@/convex/_generated/dataModel";
 import { UpgradeDialog } from "@/components/app/upgrade-dialog";
-
-function formatRelativeDate(timestamp: number) {
-  const now = Date.now();
-  const diff = now - timestamp;
-  const minutes = Math.floor(diff / 60000);
-  const hours = Math.floor(diff / 3600000);
-  const days = Math.floor(diff / 86400000);
-
-  if (minutes < 1) return "Updated just now";
-  if (minutes < 60) return `Updated ${minutes} minute${minutes === 1 ? "" : "s"} ago`;
-  if (hours < 24) return `Updated ${hours} hour${hours === 1 ? "" : "s"} ago`;
-  if (days === 1) return "Updated yesterday";
-  if (days < 7) return `Updated ${days} days ago`;
-
-  const date = new Date(timestamp);
-  return `Updated ${date.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  })}`;
-}
+import { CoverLetterCard } from "@/components/app/dashboard/cover-letter-card";
 
 export default function CoverLettersPage() {
   const router = useRouter();
@@ -124,36 +103,14 @@ export default function CoverLettersPage() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.1 }}
-          className="space-y-3"
+          className="space-y-6"
         >
           {sorted.map((letter) => (
-            <Card key={letter._id} className="!py-0 !gap-0 shadow-none">
-              <CardContent className="!p-0">
-                <div className="flex items-center gap-4 px-4 py-3.5">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-50">
-                    <EnvelopeIcon className="h-5 w-5 text-amber-600" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h2 className="text-[15px] font-medium text-foreground truncate">
-                      {letter.title}
-                    </h2>
-                    <p className="text-[13px] text-muted-foreground">
-                      {formatRelativeDate(letter.updatedAt)}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="rounded-full shadow-none"
-                      onClick={() => handleDelete(letter._id)}
-                    >
-                      Delete
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <CoverLetterCard
+              key={letter._id}
+              coverLetter={letter}
+              onDelete={handleDelete}
+            />
           ))}
         </motion.div>
       ) : (

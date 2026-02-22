@@ -91,12 +91,20 @@ const sansSerifFonts = [
   { id: "roboto", name: "Roboto", style: "font-sans" },
   { id: "lato", name: "Lato", style: "font-sans" },
   { id: "opensans", name: "Open Sans", style: "font-sans" },
+  { id: "montserrat", name: "Montserrat", style: "font-sans" },
+  { id: "raleway", name: "Raleway", style: "font-sans" },
+  { id: "sourcesans", name: "Source Sans", style: "font-sans" },
+  { id: "poppins", name: "Poppins", style: "font-sans" },
+  { id: "nunito", name: "Nunito", style: "font-sans" },
 ];
 
 const serifFonts = [
   { id: "merriweather", name: "Merriweather", style: "font-serif" },
   { id: "playfair", name: "Playfair Display", style: "font-serif" },
   { id: "lora", name: "Lora", style: "font-serif" },
+  { id: "crimson", name: "Crimson Text", style: "font-serif" },
+  { id: "librebaskerville", name: "Libre Baskerville", style: "font-serif" },
+  { id: "garamond", name: "EB Garamond", style: "font-serif" },
 ];
 
 const spacingOptions = [
@@ -139,6 +147,24 @@ export function DesignTab({ resumeData, onUpdate }: DesignTabProps) {
 
   const updateStyle = (field: string, value: any) => {
     onUpdate("style", { ...currentStyle, [field]: value });
+  };
+
+  // When selecting a new template, reset all style overrides to use template defaults
+  const selectTemplate = (templateId: string) => {
+    const newTemplate = getTemplate(templateId);
+    // Reset all style customizations to template defaults
+    const newStyle = {
+      font: newTemplate.typography.bodyFont,
+      headingFont: newTemplate.typography.headingFont,
+      bodyFont: newTemplate.typography.bodyFont,
+      spacing: "normal", // Reset to normal, template controls actual spacing
+      accentColor: newTemplate.colors.accent,
+      showPhoto: newTemplate.layout.showPhoto,
+      showDividers: newTemplate.layout.sectionDivider !== "none",
+    };
+    // Update both template and reset style in one go
+    onUpdate("template", templateId);
+    onUpdate("style", newStyle);
   };
 
   // Calculate preview scale based on container width
@@ -193,7 +219,7 @@ export function DesignTab({ resumeData, onUpdate }: DesignTabProps) {
                 return (
                   <button
                     key={tmpl.id}
-                    onClick={() => onUpdate("template", tmpl.id)}
+                    onClick={() => selectTemplate(tmpl.id)}
                     className={`group relative overflow-hidden rounded-lg border-2 cursor-pointer ${
                       isSelected
                         ? "border-primary ring-2 ring-primary/20"

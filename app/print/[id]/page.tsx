@@ -16,13 +16,23 @@ import { PrintPageClient } from "./print-client";
 
 // Font family mapping for print (using actual font names, not CSS variables)
 const PRINT_FONT_FAMILIES: Record<string, string> = {
+  // Sans-serif fonts
   inter: "'Inter', ui-sans-serif, system-ui, sans-serif",
   roboto: "'Roboto', ui-sans-serif, system-ui, sans-serif",
   lato: "'Lato', ui-sans-serif, system-ui, sans-serif",
   opensans: "'Open Sans', ui-sans-serif, system-ui, sans-serif",
+  montserrat: "'Montserrat', ui-sans-serif, system-ui, sans-serif",
+  raleway: "'Raleway', ui-sans-serif, system-ui, sans-serif",
+  sourcesans: "'Source Sans 3', ui-sans-serif, system-ui, sans-serif",
+  poppins: "'Poppins', ui-sans-serif, system-ui, sans-serif",
+  nunito: "'Nunito', ui-sans-serif, system-ui, sans-serif",
+  // Serif fonts
   merriweather: "'Merriweather', ui-serif, serif",
   playfair: "'Playfair Display', ui-serif, serif",
   lora: "'Lora', ui-serif, serif",
+  crimson: "'Crimson Text', ui-serif, serif",
+  librebaskerville: "'Libre Baskerville', ui-serif, serif",
+  garamond: "'EB Garamond', ui-serif, serif",
 };
 
 function getPrintFontFamily(fontId: string): string {
@@ -81,9 +91,9 @@ export default async function PrintResumePage({ params, searchParams }: PrintPag
   const templateId = resume.template || "professional";
   const template = getTemplate(templateId);
 
-  // Map font IDs to font types
+  // Map font IDs to font types (for legacy compatibility)
   const getFontType = (fontId: string): "serif" | "sans" => {
-    const serifFonts = ["merriweather", "playfair", "lora"];
+    const serifFonts = ["merriweather", "playfair", "lora", "crimson", "librebaskerville", "garamond"];
     return serifFonts.includes(fontId) ? "serif" : "sans";
   };
 
@@ -113,20 +123,13 @@ export default async function PrintResumePage({ params, searchParams }: PrintPag
     resume.style?.bodyFont || getTemplateDefaultBodyFont(templateId);
 
   // Apply template overrides with print-optimized spacing
+  // NOTE: We preserve the template's typography settings (font sizes, weights, letter spacing, transforms)
+  // and only use headingFontId/bodyFontId for the actual font family rendering
   const adjustedTemplate: TemplateConfig = {
     ...template,
     typography: {
       ...template.typography,
-      headingFont: resume.style?.headingFont
-        ? getFontType(resume.style.headingFont)
-        : resume.style?.font
-          ? getFontType(resume.style.font)
-          : template.typography.headingFont,
-      bodyFont: resume.style?.bodyFont
-        ? getFontType(resume.style.bodyFont)
-        : resume.style?.font
-          ? getFontType(resume.style.font)
-          : template.typography.bodyFont,
+      // Keep template's typography settings - actual font IDs are passed separately to TemplateRenderer
     },
     spacing: {
       ...template.spacing,
@@ -204,14 +207,22 @@ export default async function PrintResumePage({ params, searchParams }: PrintPag
           fontFamily: getPrintFontFamily(bodyFontId),
           fontSize: TYPOGRAPHY.body,
           lineHeight: TYPOGRAPHY.lineHeight,
-          // CSS variables for fonts
+          // CSS variables for all fonts
           ["--font-inter" as string]: PRINT_FONT_FAMILIES.inter,
           ["--font-roboto" as string]: PRINT_FONT_FAMILIES.roboto,
           ["--font-lato" as string]: PRINT_FONT_FAMILIES.lato,
           ["--font-opensans" as string]: PRINT_FONT_FAMILIES.opensans,
+          ["--font-montserrat" as string]: PRINT_FONT_FAMILIES.montserrat,
+          ["--font-raleway" as string]: PRINT_FONT_FAMILIES.raleway,
+          ["--font-sourcesans" as string]: PRINT_FONT_FAMILIES.sourcesans,
+          ["--font-poppins" as string]: PRINT_FONT_FAMILIES.poppins,
+          ["--font-nunito" as string]: PRINT_FONT_FAMILIES.nunito,
           ["--font-merriweather" as string]: PRINT_FONT_FAMILIES.merriweather,
           ["--font-playfair" as string]: PRINT_FONT_FAMILIES.playfair,
           ["--font-lora" as string]: PRINT_FONT_FAMILIES.lora,
+          ["--font-crimson" as string]: PRINT_FONT_FAMILIES.crimson,
+          ["--font-librebaskerville" as string]: PRINT_FONT_FAMILIES.librebaskerville,
+          ["--font-garamond" as string]: PRINT_FONT_FAMILIES.garamond,
         }}
       >
         <TemplateRenderer

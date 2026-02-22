@@ -46,7 +46,6 @@ export default function NewCoverLetterPage() {
   const canGenerate = !generationLimit || generationLimit.remaining > 0;
 
   const createCoverLetter = useMutation(api.coverLetters.createCoverLetter);
-  const generateCoverLetterAction = useAction(api.ai.generateCoverLetter);
   const incrementGeneration = useMutation(api.users.incrementGenerationCount);
 
   const handleStartFromScratch = async () => {
@@ -58,8 +57,27 @@ export default function NewCoverLetterPage() {
 
     setIsCreating(true);
     try {
-      setStep("select-resume");
-      setIsCreating(false);
+      // Create empty cover letter with default structure
+      const id = await createCoverLetter({
+        clerkId: user.id,
+        title: "Untitled Cover Letter",
+        personalDetails: {
+          firstName: "",
+          lastName: "",
+          jobTitle: "",
+          email: "",
+          phone: "",
+          address: "",
+        },
+        letterContent: {
+          companyName: "",
+          hiringManagerName: "",
+          content: "",
+        },
+      });
+
+      await incrementGeneration({ clerkId: user.id });
+      router.push(`/app/cover-letters/${id}/edit`);
     } catch (err) {
       console.error("Error:", err);
       setError("Something went wrong. Please try again.");
@@ -92,51 +110,35 @@ export default function NewCoverLetterPage() {
     setStep("loading");
 
     try {
-      let content = "";
-
-      if (jobDescription.trim()) {
-        // AI-generate cover letter from resume + job description
-        const result = await generateCoverLetterAction({
-          resumeData: {
-            personalDetails: {
-              firstName: resume.personalDetails.firstName,
-              lastName: resume.personalDetails.lastName,
-              jobTitle: resume.personalDetails.jobTitle,
-            },
-            contact: {
-              email: resume.contact.email,
-              phone: resume.contact.phone,
-              location: resume.contact.location,
-            },
-            summary: resume.summary,
-            experience: resume.experience.map((exp) => ({
-              title: exp.title,
-              company: exp.company,
-              bullets: exp.bullets,
-            })),
-            skills: resume.skills,
-          },
-          jobDescription: jobDescription.trim(),
-          companyName: "the company",
-          jobTitle: resume.personalDetails.jobTitle,
-        });
-        content = result.content;
-      }
-
       const fullName = `${resume.personalDetails.firstName} ${resume.personalDetails.lastName}`.trim();
       const title = fullName
         ? `Cover Letter - ${fullName}`
         : "Untitled Cover Letter";
 
-      await createCoverLetter({
+      // Create cover letter pre-filled with resume data
+      const id = await createCoverLetter({
         clerkId: user.id,
         resumeId: selectedResumeId,
         title,
-        content,
+        personalDetails: {
+          firstName: resume.personalDetails.firstName,
+          lastName: resume.personalDetails.lastName,
+          jobTitle: resume.personalDetails.jobTitle,
+          email: resume.contact.email,
+          phone: resume.contact.phone,
+          address: resume.contact.location,
+        },
+        letterContent: {
+          companyName: "",
+          hiringManagerName: "",
+          content: jobDescription.trim()
+            ? `<p>I am writing to express my interest in the position at your company.</p><p>${resume.summary || ""}</p>`
+            : "",
+        },
       });
 
       await incrementGeneration({ clerkId: user.id });
-      router.push("/app/cover-letters");
+      router.push(`/app/cover-letters/${id}/edit`);
     } catch (err) {
       console.error("Error creating cover letter:", err);
       setError(
@@ -157,7 +159,7 @@ export default function NewCoverLetterPage() {
   }
 
   if (step === "loading") {
-    return <DocumentLoading message="Generating your cover letter..." />;
+    return <DocumentLoading message="Creating your cover letter..." />;
   }
 
   return (
@@ -204,7 +206,7 @@ export default function NewCoverLetterPage() {
                   Create a cover letter
                 </h1>
                 <p className="mt-2 text-muted-foreground">
-                  Start from scratch or generate one from an existing resume.
+                  Start from scratch or pre-fill from an existing resume.
                 </p>
               </motion.div>
 
@@ -255,14 +257,14 @@ export default function NewCoverLetterPage() {
                   >
                     <CardContent className="flex items-center gap-4 px-4 py-3">
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-violet-100 to-purple-100">
-                        <SparklesIcon className="h-5 w-5 text-violet-600" />
+                        <DocumentTextIcon className="h-5 w-5 text-violet-600" />
                       </div>
                       <div className="text-left">
                         <h3 className="text-[15px] font-medium text-foreground">
-                          Generate from a resume
+                          Pre-fill from a resume
                         </h3>
                         <p className="text-[13px] text-muted-foreground">
-                          AI creates a cover letter from your resume + job description
+                          Import your details from an existing resume
                         </p>
                       </div>
                     </CardContent>
@@ -302,7 +304,7 @@ export default function NewCoverLetterPage() {
                   Select a resume
                 </h1>
                 <p className="mt-2 text-muted-foreground">
-                  Choose which resume to base your cover letter on
+                  Choose which resume to import your details from
                 </p>
               </motion.div>
 
@@ -376,28 +378,6 @@ export default function NewCoverLetterPage() {
                 )}
               </motion.div>
 
-              {/* Job description textarea */}
-              {selectedResumeId && (
-                <motion.div
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="mt-6"
-                >
-                  <label className="text-sm font-medium text-foreground">
-                    Job description{" "}
-                    <span className="font-normal text-muted-foreground">(optional — improves AI quality)</span>
-                  </label>
-                  <Textarea
-                    value={jobDescription}
-                    onChange={(e) => setJobDescription(e.target.value)}
-                    placeholder="Paste the job description here for a tailored cover letter..."
-                    className="mt-1.5 max-h-[200px] resize-none"
-                    rows={4}
-                  />
-                </motion.div>
-              )}
-
               {/* Generate button */}
               <motion.div
                 initial={{ opacity: 0, y: 12 }}
@@ -411,9 +391,7 @@ export default function NewCoverLetterPage() {
                   className="w-full"
                   size="lg"
                 >
-                  {jobDescription.trim()
-                    ? "Generate Cover Letter"
-                    : "Create Cover Letter"}
+                  Create Cover Letter
                 </Button>
               </motion.div>
 
@@ -424,9 +402,7 @@ export default function NewCoverLetterPage() {
                 className="mt-6 mb-8 text-center"
               >
                 <p className="text-xs text-muted-foreground">
-                  {jobDescription.trim()
-                    ? "AI will generate a tailored cover letter based on your resume and the job description"
-                    : "An empty cover letter will be created linked to the selected resume"}
+                  Your personal details will be pre-filled from the selected resume
                 </p>
               </motion.div>
             </motion.div>

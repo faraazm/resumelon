@@ -26,6 +26,16 @@ function formatDateRange(start?: string, end?: string, current?: boolean): strin
 // SIDEBAR COMPONENTS
 // ===================
 
+// Helper to get text transform style
+function getTextTransform(transform?: "uppercase" | "capitalize" | "none"): string {
+  switch (transform) {
+    case "uppercase": return "uppercase";
+    case "capitalize": return "capitalize";
+    case "none":
+    default: return "normal-case";
+  }
+}
+
 // Sidebar Header Component
 interface SidebarHeaderProps {
   data: ResumeData;
@@ -52,11 +62,14 @@ export function SidebarHeader({ data, template }: SidebarHeaderProps) {
     optionalItems.push(`DOB: ${personalDetails.birthDate}`);
   }
 
+  // Get text transform class for name
+  const nameTransformClass = getTextTransform(typography.nameTransform);
+
   return (
     <div className="text-center mb-4">
       {fullName && (
         <h1
-          className={`${typography.nameFontSize} ${typography.nameWeight}`}
+          className={`${typography.nameFontSize} ${typography.nameWeight} ${typography.nameLetterSpacing || ""} ${nameTransformClass}`}
           style={{ color: colors.heading, fontFamily: "var(--heading-font, inherit)" }}
         >
           {fullName}
@@ -91,11 +104,12 @@ interface SidebarSectionProps {
 
 export function SidebarSection({ title, template, children }: SidebarSectionProps) {
   const { typography, colors, spacing } = template;
+  const sectionTransformClass = getTextTransform(typography.sectionTransform);
 
   return (
     <div className={spacing.sectionGap}>
       <h2
-        className={`${typography.sectionFontSize} ${typography.sectionWeight} uppercase tracking-wider mb-2`}
+        className={`${typography.sectionFontSize} ${typography.sectionWeight} ${sectionTransformClass} ${typography.sectionLetterSpacing || "tracking-wider"} mb-2`}
         style={{ color: colors.accent, fontFamily: "var(--heading-font, inherit)" }}
       >
         {title}
@@ -237,17 +251,73 @@ export function Header({ data, template }: HeaderProps) {
   }
 
   const alignmentClass = layout.headerAlignment === "center" ? "text-center" : "text-left";
+  const nameTransformClass = getTextTransform(typography.nameTransform);
+  const contactLayout = layout.contactLayout || "inline";
+
+  // Render contact based on layout type
+  const renderContact = () => {
+    if (contactItems.length === 0) return null;
+
+    if (contactLayout === "stacked") {
+      return (
+        <div className="mt-1 space-y-0.5">
+          {contactItems.map((item, index) => (
+            <p key={index} className="text-[9pt]" style={{ color: colors.muted }}>
+              {item}
+            </p>
+          ))}
+        </div>
+      );
+    }
+
+    if (contactLayout === "two-column") {
+      const half = Math.ceil(contactItems.length / 2);
+      const leftItems = contactItems.slice(0, half);
+      const rightItems = contactItems.slice(half);
+      return (
+        <div className="mt-1 flex justify-between text-[9pt]" style={{ color: colors.muted }}>
+          <div className="space-y-0.5">
+            {leftItems.map((item, index) => (
+              <p key={index}>{item}</p>
+            ))}
+          </div>
+          <div className="space-y-0.5 text-right">
+            {rightItems.map((item, index) => (
+              <p key={index}>{item}</p>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    // Default: inline
+    return (
+      <p className="text-[9pt] mt-1" style={{ color: colors.muted }}>
+        {contactItems.map((item, index) => (
+          <span key={index}>
+            {index > 0 && <span className="mx-1.5">|</span>}
+            {item}
+          </span>
+        ))}
+      </p>
+    );
+  };
 
   return (
     <header className={`${alignmentClass} mb-3`}>
       {fullName && (
         <h1
-          className={`${typography.nameFontSize} ${typography.nameWeight} tracking-tight`}
+          className={`${typography.nameFontSize} ${typography.nameWeight} ${typography.nameLetterSpacing || "tracking-tight"} ${nameTransformClass}`}
           style={{
             color: colors.heading,
             fontFamily: "var(--heading-font, inherit)",
             lineHeight: "1.1",
             marginBottom: "2px",
+            ...(colors.nameBg && {
+              backgroundColor: colors.nameBg,
+              padding: "4px 8px",
+              display: "inline-block"
+            }),
           }}
         >
           {fullName}
@@ -261,16 +331,7 @@ export function Header({ data, template }: HeaderProps) {
           {personalDetails.jobTitle}
         </p>
       )}
-      {contactItems.length > 0 && (
-        <p className="text-[9pt] mt-1" style={{ color: colors.muted }}>
-          {contactItems.map((item, index) => (
-            <span key={index}>
-              {index > 0 && <span className="mx-1.5">|</span>}
-              {item}
-            </span>
-          ))}
-        </p>
-      )}
+      {renderContact()}
       {optionalItems.length > 0 && (
         <p className="text-[9pt] mt-0.5" style={{ color: colors.muted }}>
           {optionalItems.map((item, index) => (
@@ -293,8 +354,37 @@ interface SectionHeaderProps {
 
 export function SectionHeader({ title, template }: SectionHeaderProps) {
   const { typography, layout, colors } = template;
+  const sectionTransformClass = getTextTransform(typography.sectionTransform);
+  const letterSpacingClass = typography.sectionLetterSpacing || "tracking-wider";
+
   const showLineDivider = layout.sectionDivider === "line";
   const showAccentDivider = layout.sectionDivider === "accent";
+  const showBackgroundDivider = layout.sectionDivider === "background";
+
+  // Background divider style (gray background behind section header)
+  if (showBackgroundDivider) {
+    return (
+      <div
+        className="section-header mb-1.5 px-2 py-1"
+        style={{
+          backgroundColor: colors.sectionHeaderBg || "#f3f4f6",
+          breakAfter: "avoid",
+          pageBreakAfter: "avoid",
+        }}
+      >
+        <h2
+          className={`${typography.sectionFontSize} ${typography.sectionWeight} ${sectionTransformClass} ${letterSpacingClass}`}
+          style={{
+            color: colors.accent,
+            fontFamily: "var(--heading-font, inherit)",
+            lineHeight: "1.2",
+          }}
+        >
+          {title}
+        </h2>
+      </div>
+    );
+  }
 
   if (showAccentDivider) {
     return (
@@ -303,7 +393,7 @@ export function SectionHeader({ title, template }: SectionHeaderProps) {
         style={{ breakAfter: "avoid", pageBreakAfter: "avoid" }}
       >
         <h2
-          className={`${typography.sectionFontSize} ${typography.sectionWeight} uppercase tracking-wider mb-0.5`}
+          className={`${typography.sectionFontSize} ${typography.sectionWeight} ${sectionTransformClass} ${letterSpacingClass} mb-0.5`}
           style={{
             color: colors.accent,
             fontFamily: "var(--heading-font, inherit)",
@@ -323,7 +413,7 @@ export function SectionHeader({ title, template }: SectionHeaderProps) {
   // For line divider or no divider, use accent color for section titles
   return (
     <h2
-      className={`section-header ${typography.sectionFontSize} ${typography.sectionWeight} uppercase tracking-wider ${
+      className={`section-header ${typography.sectionFontSize} ${typography.sectionWeight} ${sectionTransformClass} ${letterSpacingClass} ${
         showLineDivider ? "border-b pb-0.5" : ""
       } mb-1.5`}
       style={{
@@ -370,8 +460,83 @@ interface ExperienceItemProps {
 }
 
 export function ExperienceItem({ job, template, isFirst }: ExperienceItemProps) {
-  const { typography, spacing, colors } = template;
+  const { typography, spacing, colors, layout } = template;
+  const datePosition = layout.datePosition || "right";
+  const dateStr = formatDateRange(job.startDate, job.endDate, job.current);
 
+  // Date below the title/company
+  if (datePosition === "below") {
+    return (
+      <div
+        className={`job-block ${!isFirst ? spacing.itemGap : ""}`}
+        style={{ breakInside: "avoid", pageBreakInside: "avoid" }}
+      >
+        <p
+          className={`font-semibold ${typography.bodyFontSize}`}
+          style={{ color: colors.heading, lineHeight: "1.2" }}
+        >
+          {job.title}
+        </p>
+        <p
+          className={typography.bodyFontSize}
+          style={{ color: colors.muted, lineHeight: "1.2" }}
+        >
+          {job.company}
+          {job.location && ` · ${job.location}`}
+        </p>
+        {dateStr && (
+          <p
+            className="text-[9pt] mt-0.5"
+            style={{ color: colors.muted }}
+          >
+            {dateStr}
+          </p>
+        )}
+        {job.bullets && job.bullets.length > 0 && (
+          <BulletList bullets={job.bullets} template={template} />
+        )}
+      </div>
+    );
+  }
+
+  // Date on the left (timeline style)
+  if (datePosition === "left") {
+    return (
+      <div
+        className={`job-block ${!isFirst ? spacing.itemGap : ""} flex gap-4`}
+        style={{ breakInside: "avoid", pageBreakInside: "avoid" }}
+      >
+        <div className="w-[80px] shrink-0 text-right">
+          <p
+            className="text-[9pt] whitespace-nowrap"
+            style={{ color: colors.muted }}
+          >
+            {dateStr}
+          </p>
+        </div>
+        <div className="flex-1 min-w-0">
+          <p
+            className={`font-semibold ${typography.bodyFontSize}`}
+            style={{ color: colors.heading, lineHeight: "1.2" }}
+          >
+            {job.title}
+          </p>
+          <p
+            className={typography.bodyFontSize}
+            style={{ color: colors.muted, lineHeight: "1.2" }}
+          >
+            {job.company}
+            {job.location && ` · ${job.location}`}
+          </p>
+          {job.bullets && job.bullets.length > 0 && (
+            <BulletList bullets={job.bullets} template={template} />
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Default: date on the right
   return (
     <div
       className={`job-block ${!isFirst ? spacing.itemGap : ""}`}
@@ -397,7 +562,7 @@ export function ExperienceItem({ job, template, isFirst }: ExperienceItemProps) 
           className="text-[9pt] shrink-0 whitespace-nowrap"
           style={{ color: colors.muted }}
         >
-          {formatDateRange(job.startDate, job.endDate, job.current)}
+          {dateStr}
         </p>
       </div>
       {job.bullets && job.bullets.length > 0 && (
@@ -415,8 +580,75 @@ interface EducationItemProps {
 }
 
 export function EducationItem({ edu, template, isFirst }: EducationItemProps) {
-  const { typography, colors } = template;
+  const { typography, colors, layout } = template;
+  const datePosition = layout.datePosition || "right";
+  const dateStr = formatDateRange(edu.startDate, edu.endDate);
 
+  // Date below the degree/school
+  if (datePosition === "below") {
+    return (
+      <div
+        className={`education-block ${!isFirst ? "mt-1.5" : ""}`}
+        style={{ breakInside: "avoid", pageBreakInside: "avoid" }}
+      >
+        <p
+          className={`font-semibold ${typography.bodyFontSize}`}
+          style={{ color: colors.heading, lineHeight: "1.2" }}
+        >
+          {edu.degree}
+        </p>
+        <p
+          className={typography.bodyFontSize}
+          style={{ color: colors.muted, lineHeight: "1.2" }}
+        >
+          {edu.school}
+        </p>
+        {dateStr && (
+          <p
+            className="text-[9pt] mt-0.5"
+            style={{ color: colors.muted }}
+          >
+            {dateStr}
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  // Date on the left (timeline style)
+  if (datePosition === "left") {
+    return (
+      <div
+        className={`education-block ${!isFirst ? "mt-1.5" : ""} flex gap-4`}
+        style={{ breakInside: "avoid", pageBreakInside: "avoid" }}
+      >
+        <div className="w-[80px] shrink-0 text-right">
+          <p
+            className="text-[9pt] whitespace-nowrap"
+            style={{ color: colors.muted }}
+          >
+            {dateStr}
+          </p>
+        </div>
+        <div className="flex-1 min-w-0">
+          <p
+            className={`font-semibold ${typography.bodyFontSize}`}
+            style={{ color: colors.heading, lineHeight: "1.2" }}
+          >
+            {edu.degree}
+          </p>
+          <p
+            className={typography.bodyFontSize}
+            style={{ color: colors.muted, lineHeight: "1.2" }}
+          >
+            {edu.school}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Default: date on the right
   return (
     <div
       className={`education-block ${!isFirst ? "mt-1.5" : ""}`}
@@ -441,7 +673,7 @@ export function EducationItem({ edu, template, isFirst }: EducationItemProps) {
           className="text-[9pt] shrink-0 whitespace-nowrap"
           style={{ color: colors.muted }}
         >
-          {formatDateRange(edu.startDate, edu.endDate)}
+          {dateStr}
         </p>
       </div>
     </div>
@@ -553,8 +785,72 @@ interface SkillsDisplayProps {
 }
 
 export function SkillsDisplay({ skills, template }: SkillsDisplayProps) {
-  const { typography, colors } = template;
+  const { typography, colors, layout } = template;
+  const skillsLayout = layout.skillsLayout || "inline";
 
+  // Tags layout - pill-shaped badges
+  if (skillsLayout === "tags") {
+    return (
+      <div className="flex flex-wrap gap-1.5">
+        {skills.map((skill, index) => (
+          <span
+            key={index}
+            className={`${typography.bodyFontSize} px-2 py-0.5 rounded`}
+            style={{
+              backgroundColor: `${colors.accent}15`,
+              color: colors.body,
+              border: `1px solid ${colors.accent}30`,
+            }}
+          >
+            {skill}
+          </span>
+        ))}
+      </div>
+    );
+  }
+
+  // Grid layout - 2-3 columns
+  if (skillsLayout === "grid") {
+    return (
+      <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
+        {skills.map((skill, index) => (
+          <p
+            key={index}
+            className={typography.bodyFontSize}
+            style={{ color: colors.body }}
+          >
+            • {skill}
+          </p>
+        ))}
+      </div>
+    );
+  }
+
+  // Bars layout - progress bar style (visual flair)
+  if (skillsLayout === "bars") {
+    return (
+      <div className="space-y-1.5">
+        {skills.map((skill, index) => (
+          <div key={index}>
+            <p className={`${typography.bodyFontSize} mb-0.5`} style={{ color: colors.body }}>
+              {skill}
+            </p>
+            <div className="h-1 w-full rounded bg-gray-200">
+              <div
+                className="h-1 rounded"
+                style={{
+                  backgroundColor: colors.accent,
+                  width: `${85 + (index % 3) * 5}%`,
+                }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // Default: inline with bullet separators
   return (
     <p className={typography.bodyFontSize} style={{ color: colors.body }}>
       {skills.join(" · ")}

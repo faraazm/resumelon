@@ -106,9 +106,9 @@ export const ResumePreview = forwardRef<ResumePreviewHandle, ResumePreviewProps>
     return order.filter((s) => validSections.includes(s)) as ("summary" | "experience" | "education" | "skills")[];
   };
 
-  // Map font IDs to font types
+  // Map font IDs to font types (for legacy compatibility)
   const getFontType = (fontId: string): "serif" | "sans" => {
-    const serifFonts = ["merriweather", "playfair", "lora"];
+    const serifFonts = ["merriweather", "playfair", "lora", "crimson", "librebaskerville", "garamond"];
     return serifFonts.includes(fontId) ? "serif" : "sans";
   };
 
@@ -136,21 +136,13 @@ export const ResumePreview = forwardRef<ResumePreviewHandle, ResumePreviewProps>
 
   // Apply spacing and typography overrides from user style and custom section order
   // IMPORTANT: These values MUST match the print page (app/print/[id]/page.tsx) exactly
+  // NOTE: We preserve the template's typography settings (font sizes, weights, letter spacing, transforms)
+  // and only use headingFontId/bodyFontId for the actual font family rendering
   const adjustedTemplate: TemplateConfig = {
     ...template,
     typography: {
       ...template.typography,
-      // Apply user font choices if set
-      headingFont: data.style?.headingFont
-        ? getFontType(data.style.headingFont)
-        : data.style?.font
-          ? getFontType(data.style.font)
-          : template.typography.headingFont,
-      bodyFont: data.style?.bodyFont
-        ? getFontType(data.style.bodyFont)
-        : data.style?.font
-          ? getFontType(data.style.font)
-          : template.typography.bodyFont,
+      // Keep template's typography settings - actual font IDs are passed separately to TemplateRenderer
     },
     spacing: {
       ...template.spacing,
