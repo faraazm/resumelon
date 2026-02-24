@@ -166,7 +166,7 @@ export default function NewCoverLetterPage() {
     <div className="min-h-screen bg-background">
       <div className="absolute left-6 top-6 z-10">
         <Button
-          variant="ghost"
+          variant="outline"
           size="sm"
           className="gap-2"
           onClick={step === "select-resume" ? () => setStep("choose-method") : undefined}

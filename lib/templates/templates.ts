@@ -44,9 +44,9 @@ export const atsClassicTemplate: TemplateConfig = {
   },
 
   sections: {
-    order: ["experience", "education", "skills"],
+    order: ["summary", "experience", "education", "skills"],
     visible: {
-      summary: false,
+      summary: true,
       experience: true,
       education: true,
       skills: true,
@@ -170,9 +170,9 @@ export const coralTwoColumnTemplate: TemplateConfig = {
   },
 
   sections: {
-    order: ["experience", "education", "skills"],
+    order: ["summary", "experience", "education", "skills"],
     visible: {
-      summary: false,
+      summary: true,
       experience: true,
       education: true,
       skills: true,
@@ -233,9 +233,9 @@ export const timelineBlueTemplate: TemplateConfig = {
   },
 
   sections: {
-    order: ["experience", "education", "skills"],
+    order: ["summary", "experience", "education", "skills"],
     visible: {
-      summary: false,
+      summary: true,
       experience: true,
       education: true,
       skills: true,
@@ -678,7 +678,6 @@ export function getAllTemplates(): TemplateConfig[] {
     timelineBlueTemplate,
     elegantSerifTemplate,
     executiveNavyTemplate,
-    sidebarDarkTemplate,
     minimalCleanTemplate,
     compactProfessionalTemplate,
     creativeBoldTemplate,

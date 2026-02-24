@@ -1,4 +1,3 @@
-import "@/app/globals.css";
 import "../fonts.css";
 
 export const metadata = {
@@ -11,93 +10,60 @@ export default function PrintLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <head>
-        <style
-          dangerouslySetInnerHTML={{
-            __html: `
-              /* Default to Letter size (US) */
-              @page {
-                size: letter;
-                margin: 0;
-              }
+    <div
+      id="print-root"
+      style={{
+        margin: 0,
+        padding: 0,
+        background: "white",
+        fontSize: "10pt",
+        lineHeight: 1.2,
+      }}
+    >
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+            /* Override root layout styles for print pages */
+            html, body {
+              margin: 0 !important;
+              padding: 0 !important;
+              background: white !important;
+              overflow: hidden !important;
+            }
 
-              /* Print-specific styles */
-              @media print {
-                html, body {
-                  width: 8.5in;
-                  height: 11in;
-                  margin: 0;
-                  padding: 0;
-                  -webkit-print-color-adjust: exact !important;
-                  print-color-adjust: exact !important;
-                }
+            /* Hide root layout extras (toaster, overlays, etc.) */
+            body > *:not(#print-root):not(script):not(style):not(link) {
+              display: none !important;
+            }
+            /* In case print-root is deeply nested, target via ID */
+            #print-root ~ * {
+              display: none !important;
+            }
 
-                /* Prevent page breaks inside job/education blocks */
-                .job-block, .education-block, section {
-                  break-inside: avoid;
-                  page-break-inside: avoid;
-                }
+            /* Default to Letter size (US) */
+            @page {
+              size: letter;
+              margin: 0;
+            }
 
-                /* Prevent orphan headers */
-                h2, h3, .section-header {
-                  break-after: avoid;
-                  page-break-after: avoid;
-                }
-              }
-
-              /* Base styles */
-              html, body {
-                margin: 0;
-                padding: 0;
-                background: white;
-                font-size: 10pt;
-                line-height: 1.2;
-              }
-
-              * {
-                box-sizing: border-box;
-              }
-
-              /* Tighter list styling */
-              ul {
-                margin-top: 4px;
-                margin-bottom: 0;
-                padding-left: 1.25em;
-              }
-
-              li {
-                margin-bottom: 1px;
-                line-height: 1.25;
-              }
-
-              /* Tighter section spacing */
-              section {
-                margin-bottom: 12px;
-              }
-
-              /* Tighter header spacing */
-              h1 {
-                margin: 0 0 4px 0;
-                line-height: 1.1;
-              }
-
-              h2 {
-                margin: 0 0 6px 0;
-                line-height: 1.2;
-              }
-
-              p {
-                margin: 0;
-                line-height: 1.3;
-              }
-            `,
-          }}
-        />
-      </head>
-      <body className="bg-white m-0 p-0">
-        {children}
-      </body>
-    </html>
+            /* Tighter list styling for print */
+            #print-root ul {
+              margin-top: 4px;
+              margin-bottom: 0;
+              padding-left: 1.25em;
+            }
+            #print-root li {
+              margin-bottom: 1px;
+              line-height: 1.25;
+            }
+            #print-root p {
+              margin: 0;
+              line-height: 1.3;
+            }
+          `,
+        }}
+      />
+      {children}
+    </div>
   );
 }

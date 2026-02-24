@@ -84,10 +84,6 @@ export default function ResumesPage() {
   };
 
   const handleTailor = (resumeId: Id<"resumes">) => {
-    if (!canGenerate) {
-      setShowUpgrade(true);
-      return;
-    }
     router.push(`/app/resumes/optimize?resumeId=${resumeId}`);
   };
 
@@ -125,7 +121,7 @@ export default function ResumesPage() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: 0.05 }}
-        className="mb-8 flex items-center justify-between"
+        className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
       >
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">
@@ -135,9 +131,12 @@ export default function ResumesPage() {
             Create, edit, and tailor your resumes
           </p>
         </div>
-        <Button onClick={handleNewResume}>
-          <PlusIcon className="h-4 w-4" />
-          New Resume
+        <Button
+          onClick={handleNewResume}
+          className="w-full sm:w-auto text-white border-0"
+          style={{ background: "linear-gradient(135deg, #8b5cf6, #ec4899)" }}
+        >
+          Create Resume
         </Button>
       </motion.div>
 

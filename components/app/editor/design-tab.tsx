@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -40,24 +41,26 @@ const sampleResumeData: ResumeData = {
     photo: null,
   },
   contact: {
-    email: "sarah@example.com",
+    email: "sarah.johnson@email.com",
     phone: "(555) 123-4567",
-    linkedin: "linkedin.com/in/sarah",
+    linkedin: "linkedin.com/in/sarahjohnson",
     location: "San Francisco, CA",
   },
-  summary: "Experienced software engineer with 8+ years building scalable web applications. Expert in React, Node.js, and cloud architecture.",
+  summary:
+    "Results-driven software engineer with 8+ years of experience building scalable web applications and leading cross-functional teams. Expert in React, Node.js, and cloud architecture with a proven track record of delivering high-impact products.",
   experience: [
     {
       id: "1",
       title: "Senior Software Engineer",
       company: "Tech Corp",
       location: "San Francisco, CA",
-      startDate: "2020",
+      startDate: "Jan 2021",
       endDate: "",
       current: true,
       bullets: [
-        "Led development of microservices architecture",
-        "Mentored team of 5 junior developers",
+        "Led development of microservices architecture serving 2M+ daily active users, reducing latency by 40%",
+        "Mentored team of 5 junior developers and established code review standards across the engineering org",
+        "Designed and implemented real-time data pipeline processing 500K events per second using Kafka and Redis",
       ],
     },
     {
@@ -65,12 +68,40 @@ const sampleResumeData: ResumeData = {
       title: "Software Engineer",
       company: "StartupXYZ",
       location: "New York, NY",
-      startDate: "2017",
-      endDate: "2020",
+      startDate: "Jun 2018",
+      endDate: "Dec 2020",
       current: false,
       bullets: [
-        "Built React frontend serving 100k users",
-        "Implemented CI/CD pipeline",
+        "Built React frontend serving 100K+ users with 99.9% uptime and sub-200ms page load times",
+        "Implemented CI/CD pipeline reducing deployment time from 2 hours to 15 minutes",
+        "Developed RESTful APIs handling 10K requests per minute with comprehensive test coverage",
+      ],
+    },
+    {
+      id: "3",
+      title: "Frontend Developer",
+      company: "Digital Agency Co.",
+      location: "Austin, TX",
+      startDate: "Mar 2016",
+      endDate: "May 2018",
+      current: false,
+      bullets: [
+        "Developed and maintained responsive web applications using React and TypeScript for 20+ clients",
+        "Collaborated with design team to implement pixel-perfect UI components and design systems",
+        "Optimized application performance achieving 95+ Lighthouse scores across all client projects",
+      ],
+    },
+    {
+      id: "4",
+      title: "Software Development Intern",
+      company: "InnovateTech",
+      location: "Seattle, WA",
+      startDate: "Jun 2015",
+      endDate: "Feb 2016",
+      current: false,
+      bullets: [
+        "Built internal dashboard tools using Python and Flask, automating manual reporting workflows",
+        "Wrote unit and integration tests improving code coverage from 45% to 82%",
       ],
     },
   ],
@@ -79,11 +110,22 @@ const sampleResumeData: ResumeData = {
       id: "1",
       degree: "B.S. Computer Science",
       school: "Stanford University",
-      startDate: "2013",
-      endDate: "2017",
+      startDate: "2012",
+      endDate: "2016",
     },
   ],
-  skills: ["React", "TypeScript", "Node.js", "AWS", "Python", "PostgreSQL"],
+  skills: [
+    "React",
+    "TypeScript",
+    "Node.js",
+    "AWS",
+    "Python",
+    "PostgreSQL",
+    "Docker",
+    "GraphQL",
+    "Kubernetes",
+    "Redis",
+  ],
 };
 
 const sansSerifFonts = [
@@ -122,6 +164,17 @@ const accentColors = [
   { id: "#7c3aed", name: "Purple" },
   { id: "#dc2626", name: "Red" },
   { id: "#ea580c", name: "Orange" },
+];
+
+const backgroundColors = [
+  { id: "#ffffff", name: "White" },
+  { id: "#fafafa", name: "Snow" },
+  { id: "#f5f5f4", name: "Warm Gray" },
+  { id: "#faf5ff", name: "Lavender" },
+  { id: "#f0f9ff", name: "Ice Blue" },
+  { id: "#f0fdf4", name: "Mint" },
+  { id: "#fffbeb", name: "Cream" },
+  { id: "#fff1f2", name: "Blush" },
 ];
 
 import {
@@ -217,13 +270,14 @@ export function DesignTab({ resumeData, onUpdate }: DesignTabProps) {
                 const isSelected = currentTemplate === tmpl.id;
 
                 return (
-                  <button
+                  <motion.button
                     key={tmpl.id}
                     onClick={() => selectTemplate(tmpl.id)}
-                    className={`group relative overflow-hidden rounded-lg border-2 cursor-pointer ${
-                      isSelected
-                        ? "border-primary ring-2 ring-primary/20"
-                        : "border-border hover:border-primary/50"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    transition={{ duration: 0.15 }}
+                    className={`group relative overflow-hidden rounded-md cursor-pointer text-left transition-all duration-200 ${
+                      isSelected ? "border-2 border-primary ring-2 ring-primary/20" : "border border-border hover:border-primary/30"
                     }`}
                   >
                     {/* Actual Template Preview - Scaled to fit container */}
@@ -239,16 +293,34 @@ export function DesignTab({ resumeData, onUpdate }: DesignTabProps) {
                         <TemplateRenderer
                           data={sampleResumeData}
                           template={tmpl}
+                          headingFontId={tmpl.typography.headingFont}
+                          bodyFontId={tmpl.typography.bodyFont}
                         />
+                      </div>
+
+                      {/* ATS Badge */}
+                      <div className="absolute right-0 bottom-0 flex items-center gap-0.5 rounded-tl-[3px] bg-emerald-600 px-1.5 py-[3px]">
+                        <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span className="text-[9px] font-semibold text-white leading-none">ATS</span>
                       </div>
                     </div>
 
                     {/* Selected Check */}
-                    {isSelected && (
-                      <div className="absolute right-1.5 top-1.5 rounded-full bg-primary p-0.5 text-white">
-                        <CheckIcon className="h-2.5 w-2.5" />
-                      </div>
-                    )}
+                    <AnimatePresence>
+                      {isSelected && (
+                        <motion.div
+                          initial={{ scale: 0, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0, opacity: 0 }}
+                          transition={{ duration: 0.2, ease: "easeOut" }}
+                          className="absolute right-1.5 top-1.5 rounded-full bg-primary p-0.5 text-white"
+                        >
+                          <CheckIcon className="h-2.5 w-2.5" />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
 
                     {/* Label */}
                     <div className="border-t bg-background px-2 py-1.5">
@@ -256,7 +328,7 @@ export function DesignTab({ resumeData, onUpdate }: DesignTabProps) {
                         {tmpl.name}
                       </p>
                     </div>
-                  </button>
+                  </motion.button>
                 );
               })}
             </div>
@@ -277,33 +349,23 @@ export function DesignTab({ resumeData, onUpdate }: DesignTabProps) {
 
             <div className="space-y-4">
               {/* Show Photo Toggle */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label htmlFor="show-photo">Show Photo</Label>
-                  <p className="text-xs text-muted-foreground">
-                    Display a photo placeholder in your resume
-                  </p>
-                </div>
+              <div className="flex items-center space-x-2">
                 <Switch
                   id="show-photo"
                   checked={currentStyle.showPhoto ?? template.layout.showPhoto}
                   onCheckedChange={(checked) => updateStyle("showPhoto", checked)}
                 />
+                <Label htmlFor="show-photo">Show Photo</Label>
               </div>
 
               {/* Show Dividers Toggle */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label htmlFor="show-dividers">Show Section Dividers</Label>
-                  <p className="text-xs text-muted-foreground">
-                    Display horizontal lines between sections
-                  </p>
-                </div>
+              <div className="flex items-center space-x-2">
                 <Switch
                   id="show-dividers"
                   checked={currentStyle.showDividers ?? (template.layout.sectionDivider !== "none")}
                   onCheckedChange={(checked) => updateStyle("showDividers", checked)}
                 />
+                <Label htmlFor="show-dividers">Show Section Dividers</Label>
               </div>
             </div>
           </section>
@@ -391,17 +453,71 @@ export function DesignTab({ resumeData, onUpdate }: DesignTabProps) {
               {spacingOptions.map((option) => {
                 const isSelected = currentStyle.spacing === option.id;
                 return (
-                  <button
+                  <motion.button
                     key={option.id}
                     onClick={() => updateStyle("spacing", option.id)}
-                    className={`flex-1 rounded-lg border-2 px-3 md:px-4 py-2 md:py-3 text-sm font-medium cursor-pointer ${
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    transition={{ duration: 0.15 }}
+                    className={`flex-1 rounded-lg px-3 md:px-4 py-2 md:py-3 text-sm font-medium cursor-pointer transition-colors duration-200 ${
                       isSelected
-                        ? "border-primary bg-primary/5 text-primary"
-                        : "border-border text-muted-foreground hover:border-primary/50"
+                        ? "border-2 border-primary bg-primary/5 text-primary"
+                        : "border border-border bg-background text-muted-foreground hover:border-foreground/20"
                     }`}
                   >
                     {option.name}
-                  </button>
+                  </motion.button>
+                );
+              })}
+            </div>
+          </section>
+
+          <Separator />
+
+          {/* Background Color */}
+          <section>
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold text-foreground">
+                Background Color
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Choose a background color for your resume
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              {backgroundColors.map((color) => {
+                const isSelected = (currentStyle.backgroundColor || "#ffffff") === color.id;
+                return (
+                  <motion.button
+                    key={color.id}
+                    onClick={() => updateStyle("backgroundColor", color.id)}
+                    whileHover={{ scale: 1.15 }}
+                    whileTap={{ scale: 0.95 }}
+                    animate={{
+                      boxShadow: isSelected
+                        ? `0 0 0 2px hsl(var(--background)), 0 0 0 3.5px ${color.id === "#ffffff" || color.id === "#fafafa" || color.id === "#f5f5f4" ? "hsl(var(--primary))" : color.id}`
+                        : "0 0 0 0px transparent, 0 0 0 0px transparent",
+                    }}
+                    transition={{ duration: 0.2 }}
+                    className="relative w-10 h-10 rounded-full cursor-pointer border border-border"
+                    style={{ backgroundColor: color.id }}
+                    title={color.name}
+                  >
+                    <AnimatePresence>
+                      {isSelected && (
+                        <motion.div
+                          initial={{ scale: 0, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0, opacity: 0 }}
+                          transition={{ duration: 0.2, ease: "easeOut" }}
+                          className="absolute inset-0 flex items-center justify-center"
+                        >
+                          <CheckIcon className="h-5 w-5 text-gray-600" />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.button>
                 );
               })}
             </div>
@@ -424,35 +540,40 @@ export function DesignTab({ resumeData, onUpdate }: DesignTabProps) {
               {accentColors.map((color) => {
                 const isSelected = currentStyle.accentColor === color.id;
                 return (
-                  <button
+                  <motion.button
                     key={color.id}
                     onClick={() => updateStyle("accentColor", color.id)}
-                    className={`relative w-10 h-10 rounded-full cursor-pointer ${
-                      isSelected
-                        ? "ring-2 ring-offset-2 ring-primary"
-                        : "hover:scale-110"
-                    }`}
+                    whileHover={{ scale: 1.15 }}
+                    whileTap={{ scale: 0.95 }}
+                    animate={{
+                      boxShadow: isSelected
+                        ? `0 0 0 2px hsl(var(--background)), 0 0 0 3.5px ${color.id}`
+                        : "0 0 0 0px transparent, 0 0 0 0px transparent",
+                    }}
+                    transition={{ duration: 0.2 }}
+                    className="relative w-10 h-10 rounded-full cursor-pointer"
                     style={{ backgroundColor: color.id }}
                     title={color.name}
                   >
-                    {isSelected && (
-                      <CheckIcon
-                        className="absolute inset-0 m-auto h-5 w-5"
-                        style={{ color: color.id === "#000000" ? "#ffffff" : "#ffffff" }}
-                      />
-                    )}
-                  </button>
+                    <AnimatePresence>
+                      {isSelected && (
+                        <motion.div
+                          initial={{ scale: 0, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0, opacity: 0 }}
+                          transition={{ duration: 0.2, ease: "easeOut" }}
+                          className="absolute inset-0 flex items-center justify-center"
+                        >
+                          <CheckIcon className="h-5 w-5 text-white" />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.button>
                 );
               })}
             </div>
           </section>
 
-          {/* ATS Notice */}
-          <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3">
-            <p className="text-xs text-emerald-800">
-              <span className="font-medium">ATS-Optimized:</span> All templates are designed to pass Applicant Tracking Systems with clean, parseable formatting.
-            </p>
-          </div>
         </div>
       </ScrollArea>
     </div>

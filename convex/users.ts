@@ -124,3 +124,56 @@ export const completeOnboarding = mutation({
     return user._id;
   },
 });
+
+export const deleteAccount = mutation({
+  args: { clerkId: v.string() },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
+      .first();
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    // Delete all resumes and their AI generations
+    const resumes = await ctx.db
+      .query("resumes")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+
+    for (const resume of resumes) {
+      // Delete AI generations for this resume
+      const generations = await ctx.db
+        .query("aiGenerations")
+        .withIndex("by_resume", (q) => q.eq("resumeId", resume._id))
+        .collect();
+      for (const gen of generations) {
+        await ctx.db.delete(gen._id);
+      }
+      await ctx.db.delete(resume._id);
+    }
+
+    // Delete all cover letters
+    const coverLetters = await ctx.db
+      .query("coverLetters")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+    for (const cl of coverLetters) {
+      await ctx.db.delete(cl._id);
+    }
+
+    // Delete all print tokens
+    const printTokens = await ctx.db
+      .query("printTokens")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+    for (const token of printTokens) {
+      await ctx.db.delete(token._id);
+    }
+
+    // Delete the user
+    await ctx.db.delete(user._id);
+  },
+});

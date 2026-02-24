@@ -11,6 +11,27 @@ import {
 import { format, parse, isValid } from "date-fns";
 import { cn } from "@/lib/utils";
 
+const DROPDOWN_START = new Date(1960, 0);
+const DROPDOWN_END = new Date(2040, 11);
+
+function parseDate(
+  dateStr: string | undefined,
+  formats: string[]
+): Date | undefined {
+  if (!dateStr) return undefined;
+
+  for (const fmt of formats) {
+    const parsed = parse(dateStr, fmt, new Date());
+    if (isValid(parsed)) return parsed;
+  }
+
+  // Try native Date parsing as fallback
+  const nativeParsed = new Date(dateStr);
+  if (isValid(nativeParsed)) return nativeParsed;
+
+  return undefined;
+}
+
 interface DatePickerProps {
   value?: string;
   onChange: (value: string) => void;
@@ -28,25 +49,13 @@ export function DatePicker({
 }: DatePickerProps) {
   const [open, setOpen] = React.useState(false);
 
-  // Parse the string value to a Date object
-  const parseDate = (dateStr: string | undefined): Date | undefined => {
-    if (!dateStr) return undefined;
-
-    // Try parsing common formats
-    const formats = ["yyyy-MM-dd", "MM/dd/yyyy", "MMMM yyyy", "MMM yyyy", "yyyy"];
-    for (const fmt of formats) {
-      const parsed = parse(dateStr, fmt, new Date());
-      if (isValid(parsed)) return parsed;
-    }
-
-    // Try native Date parsing as fallback
-    const nativeParsed = new Date(dateStr);
-    if (isValid(nativeParsed)) return nativeParsed;
-
-    return undefined;
-  };
-
-  const date = parseDate(value);
+  const date = parseDate(value, [
+    "yyyy-MM-dd",
+    "MM/dd/yyyy",
+    "MMMM yyyy",
+    "MMM yyyy",
+    "yyyy",
+  ]);
 
   const handleSelect = (selectedDate: Date | undefined) => {
     if (selectedDate) {
@@ -77,10 +86,10 @@ export function DatePicker({
           mode="single"
           selected={date}
           defaultMonth={date}
+          startMonth={DROPDOWN_START}
+          endMonth={DROPDOWN_END}
           captionLayout="dropdown"
-          onSelect={(date) => {
-            handleSelect(date);
-          }}
+          onSelect={handleSelect}
         />
       </PopoverContent>
     </Popover>
@@ -105,25 +114,7 @@ export function MonthYearPicker({
 }: MonthYearPickerProps) {
   const [open, setOpen] = React.useState(false);
 
-  // Parse the string value to a Date object
-  const parseDate = (dateStr: string | undefined): Date | undefined => {
-    if (!dateStr) return undefined;
-
-    // Try parsing common formats
-    const formats = ["yyyy-MM", "MMMM yyyy", "MMM yyyy", "yyyy"];
-    for (const fmt of formats) {
-      const parsed = parse(dateStr, fmt, new Date());
-      if (isValid(parsed)) return parsed;
-    }
-
-    // Try native Date parsing as fallback
-    const nativeParsed = new Date(dateStr);
-    if (isValid(nativeParsed)) return nativeParsed;
-
-    return undefined;
-  };
-
-  const date = parseDate(value);
+  const date = parseDate(value, ["yyyy-MM", "MMMM yyyy", "MMM yyyy", "yyyy"]);
 
   const handleSelect = (selectedDate: Date | undefined) => {
     if (selectedDate) {
@@ -154,10 +145,10 @@ export function MonthYearPicker({
           mode="single"
           selected={date}
           defaultMonth={date}
+          startMonth={DROPDOWN_START}
+          endMonth={DROPDOWN_END}
           captionLayout="dropdown"
-          onSelect={(date) => {
-            handleSelect(date);
-          }}
+          onSelect={handleSelect}
         />
       </PopoverContent>
     </Popover>

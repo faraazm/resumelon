@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
-import { useParams } from "next/navigation";
+import { Suspense, useState, useEffect, useCallback, useRef } from "react";
+import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery, useMutation } from "convex/react";
@@ -9,16 +9,10 @@ import { useUser } from "@clerk/nextjs";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
-  ArrowLeftIcon,
   ArrowDownTrayIcon,
+  HomeIcon,
   CheckIcon,
   CloudArrowUpIcon,
   PencilSquareIcon,
@@ -89,14 +83,37 @@ const defaultResumeData = {
 };
 
 export default function ResumeEditorPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-screen items-center justify-center bg-background">
+          <div className="flex flex-col items-center gap-4">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            <p className="text-sm text-muted-foreground">Loading resume...</p>
+          </div>
+        </div>
+      }
+    >
+      <ResumeEditorContent />
+    </Suspense>
+  );
+}
+
+function ResumeEditorContent() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const resumeId = params.id as Id<"resumes">;
   const { user, isLoaded: isUserLoaded } = useUser();
   const clerkId = user?.id;
 
+  // Read ?section= param to deep-link into a specific write section
+  const initialSection = searchParams.get("section") || "personalDetails";
+
   const [activeTab, setActiveTab] = useState<"write" | "design" | "improve">("write");
   const [isSaving, setIsSaving] = useState(false);
+  const [showSaving, setShowSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const savingMinTimeRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [localData, setLocalData] = useState(defaultResumeData);
   const [sectionOrder, setSectionOrder] = useState<string[]>([
     "personalDetails",
@@ -109,7 +126,7 @@ export default function ResumeEditorPage() {
   const [showMobilePreview, setShowMobilePreview] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [writeSections, setWriteSections] = useState(initialSections);
-  const [activeWriteSection, setActiveWriteSection] = useState("personalDetails");
+  const [activeWriteSection, setActiveWriteSection] = useState(initialSection);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const hasInitializedRef = useRef(false);
   const pendingUpdatesRef = useRef<Partial<typeof localData>>({});
@@ -153,14 +170,25 @@ export default function ResumeEditorPage() {
   }, [resume]);
 
   // Debounced save - accumulates changes and saves after 1.5s of inactivity
+  // Shows "Saving..." immediately on change, keeps it visible for at least 1s after save completes
   const scheduleSave = useCallback(() => {
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
 
+    // Show saving indicator immediately
+    setShowSaving(true);
+    if (savingMinTimeRef.current) {
+      clearTimeout(savingMinTimeRef.current);
+      savingMinTimeRef.current = null;
+    }
+
     saveTimeoutRef.current = setTimeout(async () => {
       const updates = pendingUpdatesRef.current;
-      if (Object.keys(updates).length === 0) return;
+      if (Object.keys(updates).length === 0) {
+        setShowSaving(false);
+        return;
+      }
 
       // Get latest clerkId from ref to avoid stale closure
       const currentClerkId = clerkIdRef.current;
@@ -176,6 +204,7 @@ export default function ResumeEditorPage() {
       }
 
       setIsSaving(true);
+      const saveStartTime = Date.now();
       try {
         // Convert null to undefined for Convex compatibility
         const convexUpdates: Record<string, unknown> = {};
@@ -204,15 +233,18 @@ export default function ResumeEditorPage() {
         console.error("Error saving resume:", error);
       } finally {
         setIsSaving(false);
+        // Keep "Saving..." visible for at least 1s from when it first appeared
+        const elapsed = Date.now() - saveStartTime;
+        const remaining = Math.max(0, 1000 - elapsed);
+        savingMinTimeRef.current = setTimeout(() => {
+          setShowSaving(false);
+          savingMinTimeRef.current = null;
+        }, remaining);
       }
     }, 1500);
   }, [resumeId, updateResume]);
 
-  const handleTitleChange = useCallback((newTitle: string) => {
-    setLocalData((prev) => ({ ...prev, title: newTitle }));
-    pendingUpdatesRef.current = { ...pendingUpdatesRef.current, title: newTitle };
-    scheduleSave();
-  }, [scheduleSave]);
+
 
   const updateResumeData = useCallback((section: string, data: any) => {
     setLocalData((prev) => ({
@@ -294,74 +326,64 @@ export default function ResumeEditorPage() {
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.25, delay: 0.05 }}
-        className="flex h-14 shrink-0 items-center justify-between border-b border-border px-3 md:px-4"
+        className="relative flex h-14 shrink-0 items-center justify-between border-b border-border px-3 md:px-4"
       >
         {/* Left Section */}
-        <div className="flex items-center gap-2 md:gap-4">
-          {/* Mobile Menu Toggle */}
+        <div className="flex items-center gap-2 lg:gap-4">
+          {/* Mobile/Tablet Menu Toggle */}
           <Button
             variant="ghost"
             size="icon"
-            className="md:hidden cursor-pointer"
+            className="lg:hidden cursor-pointer"
             onClick={() => setShowMobileMenu(true)}
           >
             <Bars3Icon className="h-5 w-5" />
           </Button>
 
-          {/* Back button - hidden on mobile, shown in menu instead */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" asChild className="hidden md:flex cursor-pointer">
-                <Link href="/app/resumes">
-                  <ArrowLeftIcon className="h-4 w-4" />
-                </Link>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Back to dashboard</TooltipContent>
-          </Tooltip>
-
-          <Input
-            value={localData.title}
-            onChange={(e) => handleTitleChange(e.target.value)}
-            className="h-9 w-[140px] md:w-[200px] lg:w-[240px] text-sm font-medium"
-            placeholder="Untitled Resume"
-          />
+          {/* Home button - hidden below lg, shown in menu instead */}
+          <Button variant="outline" size="icon" asChild className="hidden lg:flex cursor-pointer">
+            <Link href="/app/resumes">
+              <HomeIcon className="h-4 w-4" />
+            </Link>
+          </Button>
         </div>
 
-        {/* Center Section - Tabs (hidden on mobile) */}
-        <Tabs
-          value={activeTab}
-          onValueChange={(v) => setActiveTab(v as typeof activeTab)}
-          className="hidden md:block"
-        >
-          <TabsList>
-            <TabsTrigger value="write" className="cursor-pointer gap-1.5">
-              <PencilSquareIcon className="h-4 w-4" />
-              <span className="hidden lg:inline">Write</span>
-            </TabsTrigger>
-            <TabsTrigger value="design" className="cursor-pointer gap-1.5">
-              <PaintBrushIcon className="h-4 w-4" />
-              <span className="hidden lg:inline">Design</span>
-            </TabsTrigger>
-            <TabsTrigger value="improve" className="cursor-pointer gap-1.5">
-              <SparklesIcon className="h-4 w-4" />
-              <span className="hidden lg:inline">Improve</span>
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+        {/* Center Section - Tabs (absolutely centered, hidden below lg) */}
+        <div className="absolute inset-0 hidden lg:flex items-center justify-center pointer-events-none">
+          <Tabs
+            value={activeTab}
+            onValueChange={(v) => setActiveTab(v as typeof activeTab)}
+            className="pointer-events-auto"
+          >
+            <TabsList>
+              <TabsTrigger value="write" className="cursor-pointer gap-1.5">
+                <PencilSquareIcon className="h-4 w-4" />
+                <span>Write</span>
+              </TabsTrigger>
+              <TabsTrigger value="design" className="cursor-pointer gap-1.5">
+                <PaintBrushIcon className="h-4 w-4" />
+                <span>Design</span>
+              </TabsTrigger>
+              <TabsTrigger value="improve" className="cursor-pointer gap-1.5">
+                <SparklesIcon className="h-4 w-4" />
+                <span>Improve</span>
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
 
         {/* Right Section */}
-        <div className="flex items-center gap-2 md:gap-3">
-          {/* Save Status */}
-          <div className="hidden md:flex items-center gap-1.5 text-xs text-muted-foreground">
-            {isSaving ? (
+        <div className="flex items-center gap-2 lg:gap-3">
+          {/* Save Status - fixed width to prevent layout shift */}
+          <div className="hidden lg:flex items-center gap-1.5 text-xs text-muted-foreground w-[70px]">
+            {showSaving ? (
               <>
-                <CloudArrowUpIcon className="h-4 w-4 animate-pulse" />
+                <CloudArrowUpIcon className="h-4 w-4 animate-pulse shrink-0" />
                 <span>Saving...</span>
               </>
             ) : lastSaved ? (
               <>
-                <CheckIcon className="h-4 w-4 text-green-500" />
+                <CheckIcon className="h-4 w-4 text-green-500 shrink-0" />
                 <span>Saved</span>
               </>
             ) : null}
@@ -387,7 +409,7 @@ export default function ResumeEditorPage() {
             ) : (
               <ArrowDownTrayIcon className="h-4 w-4" />
             )}
-            <span className="hidden md:inline">{isDownloading ? "Generating..." : "Download"}</span>
+            <span className="hidden lg:inline">{isDownloading ? "Generating..." : "Download"}</span>
           </Button>
         </div>
       </motion.header>
@@ -402,7 +424,7 @@ export default function ResumeEditorPage() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="fixed inset-0 z-40 bg-black/50 md:hidden"
+              className="fixed inset-0 z-40 bg-black/50 lg:hidden"
               onClick={() => setShowMobileMenu(false)}
             />
             {/* Menu Panel */}
@@ -411,7 +433,7 @@ export default function ResumeEditorPage() {
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ duration: 0.2, ease: "easeOut" }}
-              className="fixed inset-y-0 left-0 z-50 w-[280px] bg-background border-r border-border md:hidden flex flex-col"
+              className="fixed inset-y-0 left-0 z-50 w-[280px] bg-background border-r border-border lg:hidden flex flex-col"
             >
               {/* Menu Header */}
               <div className="flex items-center justify-between p-4 border-b border-border">
@@ -430,14 +452,12 @@ export default function ResumeEditorPage() {
               <div className="flex-1 overflow-auto">
                 {/* Back to Dashboard */}
                 <div className="p-3 border-b border-border">
-                  <Link
-                    href="/app/resumes"
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                    onClick={() => setShowMobileMenu(false)}
-                  >
-                    <ArrowLeftIcon className="h-4 w-4" />
-                    Back to Dashboard
-                  </Link>
+                  <Button variant="outline" asChild className="w-full gap-2 cursor-pointer">
+                    <Link href="/app/resumes" onClick={() => setShowMobileMenu(false)}>
+                      <HomeIcon className="h-4 w-4" />
+                      Back to Dashboard
+                    </Link>
+                  </Button>
                 </div>
 
                 {/* Tabs */}
@@ -539,7 +559,7 @@ export default function ResumeEditorPage() {
                 {/* Save Status on Mobile */}
                 <div className="p-3">
                   <div className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground">
-                    {isSaving ? (
+                    {showSaving ? (
                       <>
                         <CloudArrowUpIcon className="h-4 w-4 animate-pulse" />
                         <span>Saving...</span>
@@ -568,34 +588,64 @@ export default function ResumeEditorPage() {
         className="flex flex-1 overflow-hidden relative"
       >
         {/* Left Panel + Center Panel */}
-        <div className={`flex flex-1 overflow-hidden ${showMobilePreview ? 'hidden lg:flex' : ''}`}>
-          {activeTab === "write" && (
-            <WriteTab
-              resumeId={resumeId}
-              resumeData={localData}
-              resumeSource={resume?.source}
-              onUpdate={updateResumeData}
-              onSectionOrderChange={setSectionOrder}
-              onSectionsChange={setWriteSections}
-              onActiveSectionChange={setActiveWriteSection}
-              externalActiveSection={activeWriteSection}
-            />
-          )}
-          {activeTab === "design" && (
-            <DesignTab
-              resumeData={localData}
-              onUpdate={updateResumeData}
-            />
-          )}
-          {activeTab === "improve" && (
-            <ImproveTab
-              resumeData={localData}
-              onNavigate={(section) => {
-                setActiveTab("write");
-                // TODO: Scroll to section
-              }}
-            />
-          )}
+        <div className={`flex flex-1 min-w-0 overflow-hidden ${showMobilePreview ? 'hidden lg:flex' : ''}`}>
+          <AnimatePresence mode="wait" initial={false}>
+            {activeTab === "write" && (
+              <motion.div
+                key="write"
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.2, ease: "easeInOut" }}
+                className="flex flex-1 min-w-0 overflow-hidden"
+              >
+                <WriteTab
+                  resumeId={resumeId}
+                  resumeData={localData}
+                  resumeSource={resume?.source}
+                  onUpdate={updateResumeData}
+                  onSectionOrderChange={setSectionOrder}
+                  onSectionsChange={setWriteSections}
+                  onActiveSectionChange={setActiveWriteSection}
+                  externalActiveSection={activeWriteSection}
+                />
+              </motion.div>
+            )}
+            {activeTab === "design" && (
+              <motion.div
+                key="design"
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.2, ease: "easeInOut" }}
+                className="flex flex-1 min-w-0 overflow-hidden"
+              >
+                <DesignTab
+                  resumeData={localData}
+                  onUpdate={updateResumeData}
+                />
+              </motion.div>
+            )}
+            {activeTab === "improve" && (
+              <motion.div
+                key="improve"
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.2, ease: "easeInOut" }}
+                className="flex flex-1 min-w-0 overflow-hidden"
+              >
+                <ImproveTab
+                  resumeData={localData}
+                  resumeId={resumeId}
+                  onNavigate={(section) => {
+                    setActiveTab("write");
+                    setActiveWriteSection(section);
+                  }}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Right Panel - Preview (hidden on mobile unless toggled) */}
@@ -605,7 +655,7 @@ export default function ResumeEditorPage() {
           w-full lg:w-[45%]
           shrink-0
           border-l border-border
-          bg-background lg:bg-gray-100
+          bg-gray-100
           overflow-hidden
           flex-col
         `}>
@@ -613,7 +663,7 @@ export default function ResumeEditorPage() {
           <div className="lg:hidden flex justify-between items-center p-4 border-b border-border shrink-0">
             <h3 className="font-medium text-sm">Preview</h3>
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
               onClick={() => setShowMobilePreview(false)}
               className="cursor-pointer"

@@ -44,5 +44,11 @@ export const TYPOGRAPHY = {
   lineHeight: 1.25,
 } as const;
 
+// Sidebar template content padding (used for main content area)
+export const SIDEBAR_CONTENT_PADDING_PX = 24;
+
+// Safety buffer subtracted from page content height to prevent sub-pixel overflow
+export const PAGE_BOTTOM_SAFETY_PX = 2;
+
 // Page format for Playwright PDF generation
 export const PDF_FORMAT = "Letter" as const;

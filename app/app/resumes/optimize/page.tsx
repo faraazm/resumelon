@@ -237,7 +237,7 @@ function OptimizePageContent() {
       {/* Back button */}
       <div className="absolute left-6 top-6 z-10">
         <Button
-          variant="ghost"
+          variant="outline"
           size="sm"
           className="gap-2"
           onClick={step !== "job-description" ? handleBack : undefined}

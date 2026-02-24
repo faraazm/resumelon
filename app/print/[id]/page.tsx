@@ -1,6 +1,5 @@
 import { getResumeForPrint } from "@/lib/convex-server";
 import {
-  TemplateRenderer,
   getTemplate,
   ResumeData,
   TemplateConfig,
@@ -9,10 +8,12 @@ import {
 } from "@/lib/templates";
 import {
   LETTER_WIDTH_PX,
-  LETTER_HEIGHT_PX,
-  TYPOGRAPHY,
+  DEFAULT_MARGIN_PX,
+  COMPACT_MARGIN_PX,
+  SPACIOUS_MARGIN_PX,
+  SIDEBAR_CONTENT_PADDING_PX,
 } from "@/lib/pdf-constants";
-import { PrintPageClient } from "./print-client";
+import { PrintResumeClient } from "./print-client";
 
 // Font family mapping for print (using actual font names, not CSS variables)
 const PRINT_FONT_FAMILIES: Record<string, string> = {
@@ -91,12 +92,6 @@ export default async function PrintResumePage({ params, searchParams }: PrintPag
   const templateId = resume.template || "professional";
   const template = getTemplate(templateId);
 
-  // Map font IDs to font types (for legacy compatibility)
-  const getFontType = (fontId: string): "serif" | "sans" => {
-    const serifFonts = ["merriweather", "playfair", "lora", "crimson", "librebaskerville", "garamond"];
-    return serifFonts.includes(fontId) ? "serif" : "sans";
-  };
-
   // Determine if we should show photo and dividers
   const showPhoto =
     resume.style?.showPhoto !== undefined
@@ -123,17 +118,13 @@ export default async function PrintResumePage({ params, searchParams }: PrintPag
     resume.style?.bodyFont || getTemplateDefaultBodyFont(templateId);
 
   // Apply template overrides with print-optimized spacing
-  // NOTE: We preserve the template's typography settings (font sizes, weights, letter spacing, transforms)
-  // and only use headingFontId/bodyFontId for the actual font family rendering
   const adjustedTemplate: TemplateConfig = {
     ...template,
     typography: {
       ...template.typography,
-      // Keep template's typography settings - actual font IDs are passed separately to TemplateRenderer
     },
     spacing: {
       ...template.spacing,
-      // Tighter spacing optimized for print
       sectionGap:
         resume.style?.spacing === "compact"
           ? "mb-2"
@@ -178,8 +169,7 @@ export default async function PrintResumePage({ params, searchParams }: PrintPag
       lastName: resume.personalDetails?.lastName || "",
       jobTitle: resume.personalDetails?.jobTitle || "",
       photo: resume.personalDetails?.photo,
-      photoUrl: result.photoUrl || undefined, // Resolved URL from Convex storage
-      // Optional fields
+      photoUrl: result.photoUrl || undefined,
       nationality: resume.personalDetails?.nationality,
       driverLicense: resume.personalDetails?.driverLicense,
       birthDate: resume.personalDetails?.birthDate,
@@ -196,42 +186,47 @@ export default async function PrintResumePage({ params, searchParams }: PrintPag
     skills: resume.skills || [],
   };
 
+  const isSidebarTemplate = adjustedTemplate.layout.sidebar;
+  const marginPx = isSidebarTemplate
+    ? SIDEBAR_CONTENT_PADDING_PX
+    : resume.style?.spacing === "compact"
+      ? COMPACT_MARGIN_PX
+      : resume.style?.spacing === "spacious"
+        ? SPACIOUS_MARGIN_PX
+        : DEFAULT_MARGIN_PX;
+
+  const backgroundColor = resume.style?.backgroundColor || "#ffffff";
+
   return (
-    <PrintPageClient>
-      <div
-        id="resume-content"
-        className="bg-white resume-page"
-        style={{
-          width: `${LETTER_WIDTH_PX}px`,
-          minHeight: `${LETTER_HEIGHT_PX}px`,
-          fontFamily: getPrintFontFamily(bodyFontId),
-          fontSize: TYPOGRAPHY.body,
-          lineHeight: TYPOGRAPHY.lineHeight,
-          // CSS variables for all fonts
-          ["--font-inter" as string]: PRINT_FONT_FAMILIES.inter,
-          ["--font-roboto" as string]: PRINT_FONT_FAMILIES.roboto,
-          ["--font-lato" as string]: PRINT_FONT_FAMILIES.lato,
-          ["--font-opensans" as string]: PRINT_FONT_FAMILIES.opensans,
-          ["--font-montserrat" as string]: PRINT_FONT_FAMILIES.montserrat,
-          ["--font-raleway" as string]: PRINT_FONT_FAMILIES.raleway,
-          ["--font-sourcesans" as string]: PRINT_FONT_FAMILIES.sourcesans,
-          ["--font-poppins" as string]: PRINT_FONT_FAMILIES.poppins,
-          ["--font-nunito" as string]: PRINT_FONT_FAMILIES.nunito,
-          ["--font-merriweather" as string]: PRINT_FONT_FAMILIES.merriweather,
-          ["--font-playfair" as string]: PRINT_FONT_FAMILIES.playfair,
-          ["--font-lora" as string]: PRINT_FONT_FAMILIES.lora,
-          ["--font-crimson" as string]: PRINT_FONT_FAMILIES.crimson,
-          ["--font-librebaskerville" as string]: PRINT_FONT_FAMILIES.librebaskerville,
-          ["--font-garamond" as string]: PRINT_FONT_FAMILIES.garamond,
-        }}
-      >
-        <TemplateRenderer
-          data={resumeData}
-          template={adjustedTemplate}
-          headingFontId={headingFontId}
-          bodyFontId={bodyFontId}
-        />
-      </div>
-    </PrintPageClient>
+    <div
+      style={{
+        fontFamily: getPrintFontFamily(bodyFontId),
+        // CSS variables for all fonts
+        ["--font-inter" as string]: PRINT_FONT_FAMILIES.inter,
+        ["--font-roboto" as string]: PRINT_FONT_FAMILIES.roboto,
+        ["--font-lato" as string]: PRINT_FONT_FAMILIES.lato,
+        ["--font-opensans" as string]: PRINT_FONT_FAMILIES.opensans,
+        ["--font-montserrat" as string]: PRINT_FONT_FAMILIES.montserrat,
+        ["--font-raleway" as string]: PRINT_FONT_FAMILIES.raleway,
+        ["--font-sourcesans" as string]: PRINT_FONT_FAMILIES.sourcesans,
+        ["--font-poppins" as string]: PRINT_FONT_FAMILIES.poppins,
+        ["--font-nunito" as string]: PRINT_FONT_FAMILIES.nunito,
+        ["--font-merriweather" as string]: PRINT_FONT_FAMILIES.merriweather,
+        ["--font-playfair" as string]: PRINT_FONT_FAMILIES.playfair,
+        ["--font-lora" as string]: PRINT_FONT_FAMILIES.lora,
+        ["--font-crimson" as string]: PRINT_FONT_FAMILIES.crimson,
+        ["--font-librebaskerville" as string]: PRINT_FONT_FAMILIES.librebaskerville,
+        ["--font-garamond" as string]: PRINT_FONT_FAMILIES.garamond,
+      }}
+    >
+      <PrintResumeClient
+        resumeData={resumeData}
+        template={adjustedTemplate}
+        marginPx={marginPx}
+        backgroundColor={backgroundColor}
+        headingFontId={headingFontId}
+        bodyFontId={bodyFontId}
+      />
+    </div>
   );
 }

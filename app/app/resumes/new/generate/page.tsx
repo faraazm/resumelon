@@ -201,7 +201,7 @@ export default function GenerateResumePage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="absolute left-6 top-6 z-10">
-        <Button variant="ghost" size="sm" className="gap-2" asChild>
+        <Button variant="outline" size="sm" className="gap-2" asChild>
           <Link href="/app/resumes/new">
             <ArrowLeftIcon className="h-4 w-4" />
             Back

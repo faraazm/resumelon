@@ -224,7 +224,7 @@ export default function CoverLetterEditorPage() {
           {/* Back button - hidden on mobile */}
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" asChild className="hidden md:flex cursor-pointer">
+              <Button variant="outline" size="icon" asChild className="hidden md:flex cursor-pointer">
                 <Link href="/app/cover-letters">
                   <ArrowLeftIcon className="h-4 w-4" />
                 </Link>

@@ -130,7 +130,7 @@ export function TemplateRenderer({ data, template, className = "", headingFontId
     const mainSections = sectionConfig.mainSections || ["summary", "experience"];
 
     return (
-      <div className={`flex h-full ${className}`} style={fontStyle}>
+      <div className={`flex h-full ${className}`} style={{ ...fontStyle, overflowWrap: "break-word", wordBreak: "break-word" }}>
         {/* Sidebar */}
         <div
           className={`${layout.sidebarWidth || "w-[180px]"} shrink-0 p-5 ${spacing.lineHeight}`}
@@ -215,11 +215,34 @@ export function TemplateRenderer({ data, template, className = "", headingFontId
   return (
     <div
       className={`${spacing.pagePadding} ${spacing.lineHeight} ${className}`}
-      style={{ ...fontStyle, maxWidth: "100%" }}
+      style={{ ...fontStyle, maxWidth: "100%", overflowWrap: "break-word", wordBreak: "break-word" }}
     >
       {/* Header with optional photo */}
-      <div className={layout.showPhoto ? "flex items-start gap-3" : ""}>
-        {layout.showPhoto && (
+      {layout.showPhoto && layout.headerAlignment === "center" ? (
+        /* Center-aligned: photo centered above the name */
+        <div>
+          <div className="flex justify-center mb-2">
+            <div className="h-16 w-16 shrink-0 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center text-lg text-gray-500 font-medium">
+              {data.personalDetails?.photoUrl ? (
+                <img
+                  src={data.personalDetails.photoUrl}
+                  alt={`${data.personalDetails?.firstName || ""} ${data.personalDetails?.lastName || ""}`}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <>
+                  {data.personalDetails?.firstName?.charAt(0) || ""}
+                  {data.personalDetails?.lastName?.charAt(0) || ""}
+                </>
+              )}
+            </div>
+          </div>
+          <Header data={data} template={template} />
+        </div>
+      ) : layout.showPhoto ? (
+        /* Left-aligned: photo to the right of the header */
+        <div className="flex items-start justify-between gap-3">
+          <Header data={data} template={template} />
           <div className="h-14 w-14 shrink-0 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center text-lg text-gray-500 font-medium">
             {data.personalDetails?.photoUrl ? (
               <img
@@ -234,9 +257,10 @@ export function TemplateRenderer({ data, template, className = "", headingFontId
               </>
             )}
           </div>
-        )}
+        </div>
+      ) : (
         <Header data={data} template={template} />
-      </div>
+      )}
 
       {/* Render sections in template-specified order */}
       {sectionConfig.order.map((sectionId) => renderSection(sectionId))}

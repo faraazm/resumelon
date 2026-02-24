@@ -188,7 +188,7 @@ export async function POST(request: NextRequest) {
     const pdfBuffer = await page.pdf({
       format: "Letter",
       printBackground: true,
-      preferCSSPageSize: false, // Use format setting, not CSS
+      preferCSSPageSize: true, // Respect @page CSS rules for size and margins
       margin: { top: 0, right: 0, bottom: 0, left: 0 },
     });
 

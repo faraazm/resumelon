@@ -2,13 +2,13 @@
 
 import { UserButton } from "@clerk/nextjs";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   DocumentTextIcon,
   EnvelopeIcon,
   Cog6ToothIcon,
 } from "@heroicons/react/24/outline";
+import { SparklesIcon } from "@heroicons/react/24/solid";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useSyncUser } from "@/hooks/use-sync-user";
 
@@ -39,14 +39,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <header className="sticky top-0 z-50 w-full border-b border-border bg-background">
           <div className="mx-auto flex h-14 max-w-4xl items-center justify-between px-4 sm:px-6 lg:px-8">
             {/* Logo */}
-            <Link href="/app/resumes" className="flex items-center gap-2 text-lg">
-              <Image
-                src="/images/nice-resume-logo.png"
-                alt="NiceResume logo"
-                width={22}
-                height={22}
-                className="h-[22px] w-[22px]"
-              />
+            <Link href="/app/resumes" className="flex items-center gap-2 text-[20px] tracking-tight">
+              <SparklesIcon className="h-5 w-5 text-black dark:text-white" />
               <span>
                 <span className="font-light">nice</span>
                 <span className="font-bold">resume</span>

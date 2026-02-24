@@ -6,13 +6,17 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
-import { TemplateRenderer, getTemplate, ResumeData, TemplateConfig, getTemplateDefaultHeadingFont, getTemplateDefaultBodyFont } from "@/lib/templates";
+import { getTemplate, ResumeData, TemplateConfig, getTemplateDefaultHeadingFont, getTemplateDefaultBodyFont } from "@/lib/templates";
+import { EmptyState } from "@/lib/templates/components";
+import { usePagination, PageRenderer } from "@/lib/pagination";
 import {
   LETTER_WIDTH_PX,
   LETTER_HEIGHT_PX,
   LETTER_ASPECT_RATIO,
-  DEFAULT_VERTICAL_PADDING_PX,
-  TYPOGRAPHY,
+  DEFAULT_MARGIN_PX,
+  COMPACT_MARGIN_PX,
+  SPACIOUS_MARGIN_PX,
+  SIDEBAR_CONTENT_PADDING_PX,
 } from "@/lib/pdf-constants";
 
 interface ResumePreviewProps {
@@ -22,7 +26,6 @@ interface ResumePreviewProps {
       lastName: string;
       jobTitle: string;
       photo: string | null;
-      // Optional fields
       nationality?: string;
       driverLicense?: string;
       birthDate?: string;
@@ -59,6 +62,7 @@ interface ResumePreviewProps {
       bodyFont?: string;
       spacing: string;
       accentColor: string;
+      backgroundColor?: string;
       showPhoto?: boolean;
       showDividers?: boolean;
     };
@@ -72,15 +76,12 @@ export interface ResumePreviewHandle {
   getPageHeight: () => number;
 }
 
-// Use shared constants for consistency with PDF generation
-
 export const ResumePreview = forwardRef<ResumePreviewHandle, ResumePreviewProps>(
   function ResumePreview({ data, sectionOrder }, ref) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
   const [currentPage, setCurrentPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
+
 
   // Fetch photo URL from Convex storage if photo exists
   const photoUrl = useQuery(
@@ -89,13 +90,6 @@ export const ResumePreview = forwardRef<ResumePreviewHandle, ResumePreviewProps>
       ? { storageId: data.personalDetails.photo as Id<"_storage"> }
       : "skip"
   );
-
-  // Expose methods to parent for PDF generation
-  useImperativeHandle(ref, () => ({
-    getContentElement: () => contentRef.current,
-    getTotalPages: () => totalPages,
-    getPageHeight: () => LETTER_HEIGHT_PX,
-  }));
 
   // Get the template configuration
   const template = getTemplate(data.template || "professional");
@@ -106,13 +100,7 @@ export const ResumePreview = forwardRef<ResumePreviewHandle, ResumePreviewProps>
     return order.filter((s) => validSections.includes(s)) as ("summary" | "experience" | "education" | "skills")[];
   };
 
-  // Map font IDs to font types (for legacy compatibility)
-  const getFontType = (fontId: string): "serif" | "sans" => {
-    const serifFonts = ["merriweather", "playfair", "lora", "crimson", "librebaskerville", "garamond"];
-    return serifFonts.includes(fontId) ? "serif" : "sans";
-  };
-
-  // Determine if we should show photo and dividers based on user override or template default
+  // Determine if we should show photo and dividers
   const showPhoto = data.style?.showPhoto !== undefined
     ? data.style.showPhoto
     : template.layout.showPhoto;
@@ -121,32 +109,25 @@ export const ResumePreview = forwardRef<ResumePreviewHandle, ResumePreviewProps>
     ? data.style.showDividers
     : template.layout.sectionDivider !== "none";
 
-  // Determine section divider style based on override
   const sectionDivider = showDividers
     ? (template.layout.sectionDivider === "none" ? "line" : template.layout.sectionDivider)
     : "none";
 
-  // Get accent color from user style or fallback to template
   const accentColor = data.style?.accentColor || template.colors.accent;
+  const backgroundColor = data.style?.backgroundColor || "#ffffff";
 
-  // Get actual font IDs for rendering (not just serif/sans type)
   const templateId = data.template || "professional";
   const headingFontId = data.style?.headingFont || getTemplateDefaultHeadingFont(templateId);
   const bodyFontId = data.style?.bodyFont || getTemplateDefaultBodyFont(templateId);
 
-  // Apply spacing and typography overrides from user style and custom section order
-  // IMPORTANT: These values MUST match the print page (app/print/[id]/page.tsx) exactly
-  // NOTE: We preserve the template's typography settings (font sizes, weights, letter spacing, transforms)
-  // and only use headingFontId/bodyFontId for the actual font family rendering
+  // Apply spacing and typography overrides
   const adjustedTemplate: TemplateConfig = {
     ...template,
     typography: {
       ...template.typography,
-      // Keep template's typography settings - actual font IDs are passed separately to TemplateRenderer
     },
     spacing: {
       ...template.spacing,
-      // Tighter spacing optimized for print - matches print page exactly
       sectionGap:
         data.style?.spacing === "compact"
           ? "mb-2"
@@ -181,13 +162,17 @@ export const ResumePreview = forwardRef<ResumePreviewHandle, ResumePreviewProps>
       ...template.colors,
       accent: accentColor,
       divider: accentColor,
-      // Keep heading black for main name, accent color is used by section headers
     },
-    // Apply custom section order if provided
     sections: sectionOrder
       ? {
           ...template.sections,
           order: mapSectionOrder(sectionOrder),
+          visible: {
+            summary: sectionOrder.includes("summary"),
+            experience: sectionOrder.includes("experience"),
+            education: sectionOrder.includes("education"),
+            skills: sectionOrder.includes("skills"),
+          },
         }
       : template.sections,
   };
@@ -199,8 +184,7 @@ export const ResumePreview = forwardRef<ResumePreviewHandle, ResumePreviewProps>
       lastName: data.personalDetails?.lastName || "",
       jobTitle: data.personalDetails?.jobTitle || "",
       photo: data.personalDetails?.photo,
-      photoUrl: photoUrl || undefined, // Resolved URL from Convex storage
-      // Optional fields
+      photoUrl: photoUrl || undefined,
       nationality: data.personalDetails?.nationality,
       driverLicense: data.personalDetails?.driverLicense,
       birthDate: data.personalDetails?.birthDate,
@@ -217,14 +201,63 @@ export const ResumePreview = forwardRef<ResumePreviewHandle, ResumePreviewProps>
     skills: data.skills || [],
   };
 
-  // Calculate scale to fit container while maintaining aspect ratio
+  // Check if there's any content
+  const fullName = [resumeData.personalDetails?.firstName, resumeData.personalDetails?.lastName]
+    .filter(Boolean)
+    .join(" ");
+  const hasContent =
+    fullName ||
+    resumeData.personalDetails?.jobTitle ||
+    resumeData.summary ||
+    (resumeData.experience && resumeData.experience.length > 0) ||
+    (resumeData.education && resumeData.education.length > 0) ||
+    (resumeData.skills && resumeData.skills.length > 0);
+
+  // Sidebar templates use their own internal padding (p-6 / inline padding: 24px)
+  const isSidebarTemplate = adjustedTemplate.layout.sidebar;
+  const marginPx = isSidebarTemplate
+    ? SIDEBAR_CONTENT_PADDING_PX
+    : data.style?.spacing === "compact"
+      ? COMPACT_MARGIN_PX
+      : data.style?.spacing === "spacious"
+        ? SPACIOUS_MARGIN_PX
+        : DEFAULT_MARGIN_PX;
+
+  // Use the pagination engine
+  const { pages, totalPages, isReady, measurerElement } = usePagination(
+    resumeData,
+    adjustedTemplate,
+    {
+      marginPx,
+      headingFontId,
+      bodyFontId,
+      backgroundColor,
+      sectionOrder: sectionOrder
+        ? mapSectionOrder(sectionOrder)
+        : undefined,
+    }
+  );
+
+  // Expose methods to parent for PDF generation
+  useImperativeHandle(ref, () => ({
+    getContentElement: () => containerRef.current,
+    getTotalPages: () => totalPages,
+    getPageHeight: () => LETTER_HEIGHT_PX,
+  }));
+
+  // Keep currentPage in bounds when totalPages changes
+  useEffect(() => {
+    if (currentPage >= totalPages && totalPages > 0) {
+      setCurrentPage(Math.max(0, totalPages - 1));
+    }
+  }, [currentPage, totalPages]);
+
+  // Calculate scale to fit container
   const calculateScale = useCallback(() => {
     if (!containerRef.current) return;
-
     const containerWidth = containerRef.current.clientWidth;
     const containerHeight = containerRef.current.clientHeight;
 
-    // Calculate the maximum size that fits while maintaining Letter aspect ratio
     let newWidth = containerWidth;
     let newHeight = newWidth / LETTER_ASPECT_RATIO;
 
@@ -233,40 +266,25 @@ export const ResumePreview = forwardRef<ResumePreviewHandle, ResumePreviewProps>
       newWidth = newHeight * LETTER_ASPECT_RATIO;
     }
 
-    // Scale relative to Letter dimensions
-    const newScale = newWidth / LETTER_WIDTH_PX;
+    const newScale = Math.max(0.1, newWidth / LETTER_WIDTH_PX);
     setScale(newScale);
   }, []);
 
-  // Calculate total pages based on content height
-  const calculatePages = useCallback(() => {
-    if (!contentRef.current) return;
-
-    const contentHeight = contentRef.current.scrollHeight;
-    // The actual content area is the page height minus the vertical padding (margins)
-    const pageContentHeight = LETTER_HEIGHT_PX - DEFAULT_VERTICAL_PADDING_PX;
-    const pages = Math.max(1, Math.ceil(contentHeight / pageContentHeight));
-
-    setTotalPages(pages);
-    if (currentPage >= pages) {
-      setCurrentPage(Math.max(0, pages - 1));
-    }
-  }, [currentPage]);
-
-  // Recalculate on resize
   useEffect(() => {
     calculateScale();
     const handleResize = () => calculateScale();
     window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, [calculateScale]);
 
-  // Recalculate pages when data changes
-  useEffect(() => {
-    // Delay to allow content to render
-    const timer = setTimeout(calculatePages, 100);
-    return () => clearTimeout(timer);
-  }, [data, calculatePages]);
+    const observer = new ResizeObserver(() => calculateScale());
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      observer.disconnect();
+    };
+  }, [calculateScale]);
 
   const goToNextPage = () => {
     if (currentPage < totalPages - 1) {
@@ -280,76 +298,83 @@ export const ResumePreview = forwardRef<ResumePreviewHandle, ResumePreviewProps>
     }
   };
 
-  const pageContentHeight = LETTER_HEIGHT_PX - DEFAULT_VERTICAL_PADDING_PX;
-
   return (
-    <div
-      ref={containerRef}
-      className="flex flex-col h-full min-h-[500px] w-full items-center justify-center overflow-hidden"
-    >
-      {/* Paper container */}
+    <div className="h-full min-h-[500px] w-full overflow-hidden">
+      {/* Hidden measurement container */}
+      {hasContent && measurerElement}
+
+      {/* Paper area */}
       <div
-        className="relative bg-white shadow-lg overflow-hidden"
-        style={{
-          width: LETTER_WIDTH_PX * scale,
-          height: LETTER_HEIGHT_PX * scale,
-          transform: `scale(1)`,
-          transformOrigin: "top center",
-        }}
+        ref={containerRef}
+        className="relative h-full flex items-center justify-center w-full"
       >
-        {/* Content wrapper - scaled to fit */}
         <div
+          className="relative bg-white shadow-lg"
           style={{
-            width: LETTER_WIDTH_PX,
-            height: LETTER_HEIGHT_PX,
-            transform: `scale(${scale})`,
-            transformOrigin: "top left",
+            width: LETTER_WIDTH_PX * scale,
+            height: LETTER_HEIGHT_PX * scale,
             overflow: "hidden",
           }}
         >
-          {/* Scrollable content for pagination */}
           <div
-            ref={contentRef}
-            className="bg-white"
             style={{
-              transform: `translateY(-${currentPage * pageContentHeight}px)`,
-              fontSize: TYPOGRAPHY.body,
-              lineHeight: TYPOGRAPHY.lineHeight,
+              width: LETTER_WIDTH_PX,
+              height: LETTER_HEIGHT_PX,
+              transform: `scale(${scale})`,
+              transformOrigin: "top left",
             }}
           >
-            <TemplateRenderer
-              data={resumeData}
-              template={adjustedTemplate}
-              headingFontId={headingFontId}
-              bodyFontId={bodyFontId}
-            />
+            {!hasContent ? (
+              <EmptyState />
+            ) : isReady && pages[currentPage] ? (
+              <PageRenderer
+                page={pages[currentPage]}
+                template={adjustedTemplate}
+                data={resumeData}
+                marginPx={marginPx}
+                backgroundColor={backgroundColor}
+                headingFontId={headingFontId}
+                bodyFontId={bodyFontId}
+              />
+            ) : (
+              // Show blank page while measuring
+              <div
+                style={{
+                  width: LETTER_WIDTH_PX,
+                  height: LETTER_HEIGHT_PX,
+                  backgroundColor,
+                }}
+              />
+            )}
           </div>
-        </div>
-      </div>
 
-      {/* Pagination controls */}
-      <div className="mt-4 flex items-center gap-4 shrink-0">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={goToPrevPage}
-          disabled={currentPage === 0}
-          className="h-8 w-8 p-0"
-        >
-          <ChevronLeftIcon className="h-4 w-4" />
-        </Button>
-        <span className="text-xs text-muted-foreground min-w-[80px] text-center">
-          Page {currentPage + 1} of {totalPages}
-        </span>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={goToNextPage}
-          disabled={currentPage === totalPages - 1}
-          className="h-8 w-8 p-0"
-        >
-          <ChevronRightIcon className="h-4 w-4" />
-        </Button>
+          {/* Pagination controls */}
+          {totalPages > 1 && (
+            <div className="absolute bottom-0 left-0 right-0 z-10 py-2 flex items-center justify-center gap-3 bg-gradient-to-t from-white/90 to-transparent">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goToPrevPage}
+                disabled={currentPage === 0}
+                className="h-7 w-7 p-0 bg-white/80 backdrop-blur-sm"
+              >
+                <ChevronLeftIcon className="h-3.5 w-3.5" />
+              </Button>
+              <span className="text-xs text-muted-foreground min-w-[70px] text-center bg-white/80 backdrop-blur-sm rounded px-2 py-0.5">
+                Page {currentPage + 1} of {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goToNextPage}
+                disabled={currentPage === totalPages - 1}
+                className="h-7 w-7 p-0 bg-white/80 backdrop-blur-sm"
+              >
+                <ChevronRightIcon className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

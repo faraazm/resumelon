@@ -20,6 +20,7 @@ import {
   sortableKeyboardCoordinates,
   useSortable,
   rectSortingStrategy,
+  verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Button } from "@/components/ui/button";
@@ -51,7 +52,7 @@ import {
   ClipboardDocumentListIcon,
 } from "@heroicons/react/24/outline";
 import { Card, CardContent } from "@/components/ui/card";
-import { RichTextEditor, ToneType } from "@/components/ui/rich-text-editor";
+import { RichTextEditor, ToneType, AIUsageState } from "@/components/ui/rich-text-editor";
 import {
   Dialog,
   DialogContent,
@@ -128,10 +129,10 @@ function SectionHeader({
 }) {
   return (
     <div className="mb-6">
-      <div className="flex items-start justify-between gap-2">
+      <div className="flex items-center justify-between gap-2">
         <h2 className="text-lg sm:text-xl font-semibold text-foreground flex items-center gap-2 min-w-0">
           {Icon && <Icon className="h-5 w-5 text-primary shrink-0" />}
-          <span className="break-words">{title}</span>
+          <span className="truncate">{title}</span>
         </h2>
         <div className="flex items-center gap-0.5 shrink-0">
           {onEdit && (
@@ -235,6 +236,19 @@ export function WriteTab({
   const [showEditSectionDialog, setShowEditSectionDialog] = useState(false);
   const [editingSectionLabel, setEditingSectionLabel] = useState("");
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  // Shared confirmation state for item-level deletes (e.g. a single job entry)
+  const [pendingItemRemove, setPendingItemRemove] = useState<{ label: string; onConfirm: () => void } | null>(null);
+
+  // Persisted AI usage state map - keyed by fieldType + fieldId, survives tab switches
+  const [aiUsageStates, setAIUsageStates] = useState<Record<string, AIUsageState>>({});
+  const getAIUsageState = useCallback((key: string) => aiUsageStates[key], [aiUsageStates]);
+  const setAIUsageState = useCallback((key: string, state: AIUsageState) => {
+    setAIUsageStates(prev => ({ ...prev, [key]: state }));
+  }, []);
+
+  const confirmItemRemove = useCallback((label: string, onConfirm: () => void) => {
+    setPendingItemRemove({ label, onConfirm });
+  }, []);
 
   // Use external active section if provided, otherwise use internal state
   const activeSection = externalActiveSection ?? internalActiveSection;
@@ -271,8 +285,9 @@ export function WriteTab({
 
   // Handle deleting a section
   const handleDeleteSection = () => {
-    // Clear the data for this section based on its type
     const sectionId = activeSection;
+
+    // Clear the data for this section based on its type
     if (sectionId === "hobbies" || sectionId === "jobDescription") {
       onUpdate(sectionId, "");
     } else if (sectionId === "custom") {
@@ -288,13 +303,16 @@ export function WriteTab({
     } else {
       onUpdate(sectionId, []);
     }
+
     // Remove from sections list
-    const newSections = sections.filter((s) => s.id !== activeSection);
+    const newSections = sections.filter((s) => s.id !== sectionId);
     updateSectionsAndNotify(newSections);
-    // Navigate to first available section or show empty state
+
+    // Navigate to first available section
     if (newSections.length > 0) {
       setActiveSection(newSections[0].id);
     }
+
     setShowDeleteSectionDialog(false);
   };
 
@@ -386,74 +404,78 @@ export function WriteTab({
     setDraggedIndex(null);
   };
 
-  return (
-    <div className="flex flex-1 overflow-hidden flex-col md:flex-row">
-      {/* Left Sidebar - Section Navigation (hidden on mobile, shown in hamburger menu instead) */}
-      <div className="hidden md:block w-48 shrink-0 border-r border-border bg-muted/20">
-        <ScrollArea className="h-full">
-          <div className="p-1.5 space-y-0.5">
-            {sections.map((section, index) => {
-              const isActive = activeSection === section.id;
-              const isDragging = draggedIndex === index;
-              return (
-                <div
-                  key={section.id}
-                  draggable
-                  onDragStart={(e) => handleSidebarDragStart(e, index)}
-                  onDragOver={(e) => handleSidebarDragOver(e, index)}
-                  onDragEnd={handleSidebarDragEnd}
-                  onClick={() => setActiveSection(section.id)}
-                  className={`group flex w-full items-center gap-2 rounded-md px-2 py-2 text-xs font-medium transition-colors cursor-pointer ${
-                    isDragging
-                      ? "opacity-50 border border-dashed border-primary"
-                      : ""
-                  } ${
-                    isActive
-                      ? "bg-gray-100 text-foreground"
-                      : "text-gray-600 hover:bg-gray-50 hover:text-foreground"
-                  }`}
-                >
-                  <div className="relative h-4 w-4 shrink-0">
-                    <section.icon className="h-4 w-4 absolute inset-0 transition-opacity group-hover:opacity-0" />
-                    <Bars3Icon className="h-4 w-4 absolute inset-0 text-gray-400 cursor-grab opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </div>
-                  <span className="truncate">{section.label}</span>
-                </div>
-              );
-            })}
-
-            <Separator className="my-2" />
-
-            {/* Job Description - Fixed section */}
-            <div
-              onClick={() => setActiveSection("jobDescription")}
-              className={`flex w-full items-center gap-2 rounded-md px-2 py-2 text-xs font-medium transition-colors cursor-pointer ${
-                activeSection === "jobDescription"
-                  ? "bg-gray-100 text-foreground"
-                  : "text-gray-600 hover:bg-gray-50 hover:text-foreground"
-              }`}
-            >
-              <ClipboardDocumentListIcon className="h-4 w-4 shrink-0" />
-              <span className="truncate">Job Description</span>
+  const sidebarContent = (
+    <div className="p-1.5 space-y-0.5">
+      {sections.map((section, index) => {
+        const isActive = activeSection === section.id;
+        const isDragging = draggedIndex === index;
+        return (
+          <div
+            key={section.id}
+            draggable
+            onDragStart={(e) => handleSidebarDragStart(e, index)}
+            onDragOver={(e) => handleSidebarDragOver(e, index)}
+            onDragEnd={handleSidebarDragEnd}
+            onClick={() => setActiveSection(section.id)}
+            className={`group flex w-full items-center gap-2 rounded-md px-2 py-2 text-xs font-medium transition-colors cursor-pointer ${
+              isDragging
+                ? "opacity-50 border border-dashed border-primary"
+                : ""
+            } ${
+              isActive
+                ? "bg-primary/10 text-primary"
+                : "text-gray-600 hover:bg-gray-50 hover:text-foreground"
+            }`}
+          >
+            <div className="relative h-4 w-4 shrink-0">
+              <section.icon className="h-4 w-4 absolute inset-0 transition-opacity group-hover:opacity-0" />
+              <Bars3Icon className="h-4 w-4 absolute inset-0 text-gray-400 cursor-grab opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-full justify-start gap-2 text-gray-600 font-medium cursor-pointer text-xs px-2 py-2 h-auto"
-              onClick={() => setShowAddSectionDialog(true)}
-            >
-              <PlusIcon className="h-4 w-4 shrink-0" />
-              Add Section
-            </Button>
+            <span className="truncate">{section.label}</span>
           </div>
+        );
+      })}
+
+      <Separator className="my-2" />
+
+      {/* Job Description - Fixed section */}
+      <div
+        onClick={() => setActiveSection("jobDescription")}
+        className={`flex w-full items-center gap-2 rounded-md px-2 py-2 text-xs font-medium transition-colors cursor-pointer ${
+          activeSection === "jobDescription"
+            ? "bg-primary/10 text-primary"
+            : "text-gray-600 hover:bg-gray-50 hover:text-foreground"
+        }`}
+      >
+        <ClipboardDocumentListIcon className="h-4 w-4 shrink-0" />
+        <span className="truncate">Job Description</span>
+      </div>
+
+      <Button
+        variant="ghost"
+        size="sm"
+        className="w-full justify-start gap-2 text-gray-600 font-medium cursor-pointer text-xs px-2 py-2 h-auto"
+        onClick={() => setShowAddSectionDialog(true)}
+      >
+        <PlusIcon className="h-4 w-4 shrink-0" />
+        Add Section
+      </Button>
+    </div>
+  );
+
+  return (
+    <div className="relative flex flex-1 min-w-0 overflow-hidden flex-col lg:flex-row">
+      {/* Left Sidebar - Desktop (lg+) */}
+      <div className="hidden lg:block w-48 shrink-0 border-r border-border bg-muted/20">
+        <ScrollArea className="h-full">
+          {sidebarContent}
         </ScrollArea>
       </div>
 
       {/* Center Panel - Form Editor */}
-      <div className="flex-1 overflow-hidden @container">
-        <ScrollArea className="h-full">
-          <div className="max-w-2xl p-4 @md:p-6">
+      <div className="flex-1 min-w-0 overflow-hidden @container">
+        <ScrollArea className="h-full [&_[data-slot=scroll-area-viewport]>div]:!block">
+          <div className="p-4 @md:p-6 overflow-hidden">
 
             <AnimatePresence mode="wait">
               <motion.div
@@ -500,6 +522,8 @@ export function WriteTab({
                     onEdit={handleEditSection}
                     onDelete={() => setShowDeleteSectionDialog(true)}
                     skipAutoGen={resumeSource === "ai_generated" || resumeSource === "optimized" || resumeSource === "upload"}
+                    aiUsageState={getAIUsageState("summary")}
+                    onAIUsageStateChange={(s) => setAIUsageState("summary", s)}
                   />
                 )}
                 {activeSection === "experience" && (
@@ -511,6 +535,9 @@ export function WriteTab({
                     onEdit={handleEditSection}
                     onDelete={() => setShowDeleteSectionDialog(true)}
                     skipAutoGen={resumeSource === "ai_generated" || resumeSource === "optimized" || resumeSource === "upload"}
+                    onConfirmRemove={confirmItemRemove}
+                    getAIUsageState={getAIUsageState}
+                    setAIUsageState={setAIUsageState}
                   />
                 )}
                 {activeSection === "education" && (
@@ -520,6 +547,7 @@ export function WriteTab({
                     sectionLabel={currentSectionInfo?.label || "Education"}
                     onEdit={handleEditSection}
                     onDelete={() => setShowDeleteSectionDialog(true)}
+                    onConfirmRemove={confirmItemRemove}
                   />
                 )}
                 {activeSection === "skills" && (
@@ -540,6 +568,9 @@ export function WriteTab({
                     onEdit={handleEditSection}
                     onDelete={() => setShowDeleteSectionDialog(true)}
                     skipAutoGen={resumeSource === "ai_generated" || resumeSource === "optimized" || resumeSource === "upload"}
+                    onConfirmRemove={confirmItemRemove}
+                    getAIUsageState={getAIUsageState}
+                    setAIUsageState={setAIUsageState}
                   />
                 )}
                 {activeSection === "courses" && (
@@ -549,6 +580,7 @@ export function WriteTab({
                     sectionLabel={currentSectionInfo?.label || "Courses & Certificates"}
                     onEdit={handleEditSection}
                     onDelete={() => setShowDeleteSectionDialog(true)}
+                    onConfirmRemove={confirmItemRemove}
                   />
                 )}
                 {activeSection === "references" && (
@@ -558,6 +590,7 @@ export function WriteTab({
                     sectionLabel={currentSectionInfo?.label || "References"}
                     onEdit={handleEditSection}
                     onDelete={() => setShowDeleteSectionDialog(true)}
+                    onConfirmRemove={confirmItemRemove}
                   />
                 )}
                 {activeSection === "languages" && (
@@ -567,6 +600,7 @@ export function WriteTab({
                     sectionLabel={currentSectionInfo?.label || "Languages"}
                     onEdit={handleEditSection}
                     onDelete={() => setShowDeleteSectionDialog(true)}
+                    onConfirmRemove={confirmItemRemove}
                   />
                 )}
                 {activeSection === "links" && (
@@ -576,6 +610,7 @@ export function WriteTab({
                     sectionLabel={currentSectionInfo?.label || "Links"}
                     onEdit={handleEditSection}
                     onDelete={() => setShowDeleteSectionDialog(true)}
+                    onConfirmRemove={confirmItemRemove}
                   />
                 )}
                 {activeSection === "hobbies" && (
@@ -586,6 +621,8 @@ export function WriteTab({
                     sectionLabel={currentSectionInfo?.label || "Hobbies & Interests"}
                     onEdit={handleEditSection}
                     onDelete={() => setShowDeleteSectionDialog(true)}
+                    aiUsageState={getAIUsageState("hobbies")}
+                    onAIUsageStateChange={(s) => setAIUsageState("hobbies", s)}
                   />
                 )}
                 {activeSection === "custom" && (
@@ -596,6 +633,8 @@ export function WriteTab({
                     sectionLabel={currentSectionInfo?.label || "Custom Section"}
                     onEdit={handleEditSection}
                     onDelete={() => setShowDeleteSectionDialog(true)}
+                    aiUsageState={getAIUsageState("custom")}
+                    onAIUsageStateChange={(s) => setAIUsageState("custom", s)}
                   />
                 )}
               </motion.div>
@@ -746,6 +785,30 @@ export function WriteTab({
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteSection}
+              variant="destructive"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Item Confirmation Dialog (shared across all form sections) */}
+      <AlertDialog open={!!pendingItemRemove} onOpenChange={(open) => { if (!open) setPendingItemRemove(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Item</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete &ldquo;{pendingItemRemove?.label}&rdquo;? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                pendingItemRemove?.onConfirm();
+                setPendingItemRemove(null);
+              }}
               variant="destructive"
             >
               Delete
@@ -1257,6 +1320,8 @@ function SummaryForm({
   onEdit,
   onDelete,
   skipAutoGen,
+  aiUsageState,
+  onAIUsageStateChange,
 }: {
   resumeId: Id<"resumes">;
   data: string;
@@ -1265,6 +1330,8 @@ function SummaryForm({
   onEdit: () => void;
   onDelete: () => void;
   skipAutoGen?: boolean;
+  aiUsageState?: AIUsageState;
+  onAIUsageStateChange?: (state: AIUsageState) => void;
 }) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [localGenerations, setLocalGenerations] = useState<Array<{
@@ -1287,6 +1354,7 @@ function SummaryForm({
   // Convex hooks
   const generateContent = useAction(api.ai.generateImprovedContent);
   const saveGeneration = useMutation(api.aiGenerations.saveGeneration);
+  const selectGenerationMutation = useMutation(api.aiGenerations.selectGeneration);
   const existingGenerations = useQuery(api.aiGenerations.getGenerations, {
     resumeId,
     fieldType: "summary",
@@ -1297,6 +1365,24 @@ function SummaryForm({
   useEffect(() => {
     if (existingGenerations?.generations) {
       setLocalGenerations(existingGenerations.generations);
+    }
+  }, [existingGenerations]);
+
+  // Initialize AI usage state from DB selectedIndex on load
+  const hasInitializedFromDB = useRef(false);
+  useEffect(() => {
+    if (
+      existingGenerations &&
+      existingGenerations.selectedIndex != null &&
+      !hasInitializedFromDB.current &&
+      existingGenerations.generations.length > 0
+    ) {
+      hasInitializedFromDB.current = true;
+      onAIUsageStateChange?.({
+        hasUsedAI: true,
+        originalContent: existingGenerations.originalContent,
+        activeItemIndex: existingGenerations.selectedIndex + 1,
+      });
     }
   }, [existingGenerations]);
 
@@ -1398,9 +1484,15 @@ function SummaryForm({
     }
   }, [data, generateContent, saveGeneration, resumeId]);
 
-  const handleUseGeneration = useCallback((content: string) => {
+  const handleUseGeneration = useCallback((content: string, generationIndex: number) => {
     onUpdate(content);
-  }, [onUpdate]);
+    selectGenerationMutation({
+      resumeId,
+      fieldType: "summary",
+      fieldId: undefined,
+      selectedIndex: generationIndex,
+    });
+  }, [onUpdate, selectGenerationMutation, resumeId]);
 
   return (
     <div className="space-y-6">
@@ -1426,6 +1518,8 @@ function SummaryForm({
           onCustomPrompt={handleCustomPrompt}
           onUseGeneration={handleUseGeneration}
           showAI={true}
+          aiUsageState={aiUsageState}
+          onAIUsageStateChange={onAIUsageStateChange}
         />
         <p className="text-xs text-muted-foreground">
           Aim for 2-4 sentences highlighting your key qualifications
@@ -1443,12 +1537,16 @@ function ExperienceBulletsEditor({
   bullets,
   onUpdate,
   skipAutoGen,
+  aiUsageState,
+  onAIUsageStateChange,
 }: {
   resumeId: Id<"resumes">;
   experienceId: string;
   bullets: string[];
   onUpdate: (bullets: string[]) => void;
   skipAutoGen?: boolean;
+  aiUsageState?: AIUsageState;
+  onAIUsageStateChange?: (state: AIUsageState) => void;
 }) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [localGenerations, setLocalGenerations] = useState<Array<{
@@ -1470,6 +1568,7 @@ function ExperienceBulletsEditor({
 
   const generateContent = useAction(api.ai.generateImprovedContent);
   const saveGeneration = useMutation(api.aiGenerations.saveGeneration);
+  const selectGenerationMutation = useMutation(api.aiGenerations.selectGeneration);
   const existingGenerations = useQuery(api.aiGenerations.getGenerations, {
     resumeId,
     fieldType: "experience_bullets",
@@ -1499,6 +1598,24 @@ function ExperienceBulletsEditor({
   useEffect(() => {
     if (existingGenerations?.generations) {
       setLocalGenerations(existingGenerations.generations);
+    }
+  }, [existingGenerations]);
+
+  // Initialize AI usage state from DB selectedIndex on load
+  const hasInitializedFromDB = useRef(false);
+  useEffect(() => {
+    if (
+      existingGenerations &&
+      existingGenerations.selectedIndex != null &&
+      !hasInitializedFromDB.current &&
+      existingGenerations.generations.length > 0
+    ) {
+      hasInitializedFromDB.current = true;
+      onAIUsageStateChange?.({
+        hasUsedAI: true,
+        originalContent: existingGenerations.originalContent,
+        activeItemIndex: existingGenerations.selectedIndex + 1,
+      });
     }
   }, [existingGenerations]);
 
@@ -1599,9 +1716,15 @@ function ExperienceBulletsEditor({
     }
   }, [bullets, generateContent, saveGeneration, resumeId, experienceId]);
 
-  const handleUseGeneration = useCallback((content: string) => {
+  const handleUseGeneration = useCallback((content: string, generationIndex: number) => {
     onUpdate(htmlToBullets(content));
-  }, [onUpdate]);
+    selectGenerationMutation({
+      resumeId,
+      fieldType: "experience_bullets",
+      fieldId: experienceId,
+      selectedIndex: generationIndex,
+    });
+  }, [onUpdate, selectGenerationMutation, resumeId, experienceId]);
 
   const handleChange = useCallback((html: string) => {
     onUpdate(htmlToBullets(html));
@@ -1624,6 +1747,8 @@ function ExperienceBulletsEditor({
         onCustomPrompt={handleCustomPrompt}
         onUseGeneration={handleUseGeneration}
         showAI={true}
+        aiUsageState={aiUsageState}
+        onAIUsageStateChange={onAIUsageStateChange}
       />
       <p className="text-xs text-muted-foreground">
         Use bullet points to describe your achievements
@@ -1633,6 +1758,175 @@ function ExperienceBulletsEditor({
 }
 
 // Experience Form
+// Sortable Experience Card
+function SortableExperienceCard({
+  exp,
+  index,
+  expandedId,
+  setExpandedId,
+  updateExperience,
+  removeExperience,
+  resumeId,
+  skipAutoGen,
+  getAIUsageState,
+  setAIUsageState,
+}: {
+  exp: any;
+  index: number;
+  expandedId: string | null;
+  setExpandedId: (id: string | null) => void;
+  updateExperience: (index: number, field: string, value: any) => void;
+  removeExperience: (index: number) => void;
+  resumeId: Id<"resumes">;
+  skipAutoGen?: boolean;
+  getAIUsageState: (key: string) => AIUsageState | undefined;
+  setAIUsageState: (key: string, state: AIUsageState) => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: exp.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 10 : undefined,
+    position: "relative" as const,
+  };
+
+  return (
+    <Card
+      ref={setNodeRef}
+      style={style}
+      className={`!py-0 !gap-0 overflow-hidden ${isDragging ? "opacity-50 shadow-lg ring-2 ring-primary/20" : ""}`}
+    >
+      <div className="flex w-full items-center">
+        <span
+          {...attributes}
+          {...listeners}
+          className="cursor-grab active:cursor-grabbing pl-4 py-3 text-muted-foreground/50 hover:text-muted-foreground touch-none"
+          title="Drag to reorder"
+        >
+          <Bars3Icon className="h-4 w-4" />
+        </span>
+        <button
+          onClick={() =>
+            setExpandedId(expandedId === exp.id ? null : exp.id)
+          }
+          className="flex flex-1 items-center justify-between text-left cursor-pointer min-w-0 pl-3 pr-4 py-3"
+        >
+          <div className="min-w-0">
+            <p className="font-medium text-foreground leading-snug truncate">
+              {exp.title || "New Position"}
+            </p>
+            <p className="text-sm text-muted-foreground leading-snug truncate">
+              {exp.company || "Company Name"}
+            </p>
+          </div>
+          <motion.div
+            animate={{ rotate: expandedId === exp.id ? 180 : 0 }}
+            transition={{ duration: 0.2 }}
+            className="shrink-0 ml-2"
+          >
+            <ChevronDownIcon className="h-4 w-4 text-muted-foreground" />
+          </motion.div>
+        </button>
+      </div>
+
+      <AnimatePresence initial={false}>
+        {expandedId === exp.id && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeInOut" }}
+          >
+            <CardContent className="border-t px-4 py-4 space-y-4">
+              <div className="space-y-2">
+                <Label>Job Title</Label>
+                <Input
+                  placeholder="Your job title"
+                  value={exp.title || ""}
+                  onChange={(e) =>
+                    updateExperience(index, "title", e.target.value)
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Company</Label>
+                <Input
+                  placeholder="Company name"
+                  value={exp.company || ""}
+                  onChange={(e) =>
+                    updateExperience(index, "company", e.target.value)
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Location</Label>
+                <Input
+                  placeholder="City, State"
+                  value={exp.location || ""}
+                  onChange={(e) =>
+                    updateExperience(index, "location", e.target.value)
+                  }
+                />
+              </div>
+              <div className="grid gap-4 @sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Start Date</Label>
+                  <MonthYearPicker
+                    value={exp.startDate || ""}
+                    onChange={(value) =>
+                      updateExperience(index, "startDate", value)
+                    }
+                    placeholder="Select start date"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>End Date</Label>
+                  <MonthYearPicker
+                    value={exp.endDate || ""}
+                    onChange={(value) =>
+                      updateExperience(index, "endDate", value)
+                    }
+                    placeholder="Present"
+                    disabled={exp.current}
+                  />
+                </div>
+              </div>
+              <ExperienceBulletsEditor
+                resumeId={resumeId}
+                experienceId={exp.id}
+                bullets={exp.bullets || [""]}
+                onUpdate={(bullets) => updateExperience(index, "bullets", bullets)}
+                skipAutoGen={skipAutoGen}
+                aiUsageState={getAIUsageState(`experience_${exp.id}`)}
+                onAIUsageStateChange={(s) => setAIUsageState(`experience_${exp.id}`, s)}
+              />
+              <div className="flex justify-end">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-destructive hover:text-destructive"
+                  onClick={() => removeExperience(index)}
+                >
+                  <TrashIcon className="mr-2 h-4 w-4" />
+                  Remove
+                </Button>
+              </div>
+            </CardContent>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </Card>
+  );
+}
+
 function ExperienceForm({
   resumeId,
   data,
@@ -1641,6 +1935,9 @@ function ExperienceForm({
   onEdit,
   onDelete,
   skipAutoGen,
+  onConfirmRemove,
+  getAIUsageState,
+  setAIUsageState,
 }: {
   resumeId: Id<"resumes">;
   data: any[];
@@ -1649,8 +1946,20 @@ function ExperienceForm({
   onEdit: () => void;
   onDelete: () => void;
   skipAutoGen?: boolean;
+  onConfirmRemove: (label: string, onConfirm: () => void) => void;
+  getAIUsageState: (key: string) => AIUsageState | undefined;
+  setAIUsageState: (key: string, state: AIUsageState) => void;
 }) {
-  const [expandedId, setExpandedId] = useState<string | null>(data?.[0]?.id || null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 5 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const addExperience = () => {
     const newId = Date.now().toString();
@@ -1675,12 +1984,28 @@ function ExperienceForm({
   };
 
   const removeExperience = (index: number) => {
-    const itemId = data[index]?.id;
-    onUpdate(data.filter((_, i) => i !== index));
-    if (expandedId === itemId) {
-      setExpandedId(null);
+    const item = data[index];
+    const label = item?.title || item?.company || "This entry";
+    onConfirmRemove(label, () => {
+      onUpdate(data.filter((_, i) => i !== index));
+      if (expandedId === item?.id) {
+        setExpandedId(null);
+      }
+    });
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = data.findIndex((item: any) => item.id === active.id);
+      const newIndex = data.findIndex((item: any) => item.id === over.id);
+      if (oldIndex !== -1 && newIndex !== -1) {
+        onUpdate(arrayMove(data, oldIndex, newIndex));
+      }
     }
   };
+
+  const itemIds = data?.map((exp: any) => exp.id) || [];
 
   return (
     <div className="space-y-6">
@@ -1692,118 +2017,31 @@ function ExperienceForm({
         onDelete={onDelete}
       />
 
-      <div className="space-y-3">
-        {data?.map((exp, index) => (
-          <Card key={exp.id || index} className="!py-0 !gap-0 overflow-hidden">
-            <button
-              onClick={() =>
-                setExpandedId(expandedId === exp.id ? null : exp.id)
-              }
-              className="flex w-full items-center justify-between px-4 py-3 text-left cursor-pointer"
-            >
-              <div>
-                <p className="font-medium text-foreground leading-snug">
-                  {exp.title || "New Position"}
-                </p>
-                <p className="text-sm text-muted-foreground leading-snug">
-                  {exp.company || "Company Name"}
-                </p>
-              </div>
-              <motion.div
-                animate={{ rotate: expandedId === exp.id ? 180 : 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                <ChevronDownIcon className="h-4 w-4 text-muted-foreground" />
-              </motion.div>
-            </button>
-
-            <AnimatePresence initial={false}>
-              {expandedId === exp.id && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.2, ease: "easeInOut" }}
-                >
-                  <CardContent className="border-t px-4 py-4 space-y-4">
-                    <div className="space-y-2">
-                      <Label>Job Title</Label>
-                      <Input
-                        placeholder="Your job title"
-                        value={exp.title || ""}
-                        onChange={(e) =>
-                          updateExperience(index, "title", e.target.value)
-                        }
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Company</Label>
-                      <Input
-                        placeholder="Company name"
-                        value={exp.company || ""}
-                        onChange={(e) =>
-                          updateExperience(index, "company", e.target.value)
-                        }
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Location</Label>
-                      <Input
-                        placeholder="City, State"
-                        value={exp.location || ""}
-                        onChange={(e) =>
-                          updateExperience(index, "location", e.target.value)
-                        }
-                      />
-                    </div>
-                    <div className="grid gap-4 @sm:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label>Start Date</Label>
-                        <MonthYearPicker
-                          value={exp.startDate || ""}
-                          onChange={(value) =>
-                            updateExperience(index, "startDate", value)
-                          }
-                          placeholder="Select start date"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>End Date</Label>
-                        <MonthYearPicker
-                          value={exp.endDate || ""}
-                          onChange={(value) =>
-                            updateExperience(index, "endDate", value)
-                          }
-                          placeholder="Present"
-                          disabled={exp.current}
-                        />
-                      </div>
-                    </div>
-                    <ExperienceBulletsEditor
-                      resumeId={resumeId}
-                      experienceId={exp.id}
-                      bullets={exp.bullets || [""]}
-                      onUpdate={(bullets) => updateExperience(index, "bullets", bullets)}
-                      skipAutoGen={skipAutoGen}
-                    />
-                    <div className="flex justify-end">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => removeExperience(index)}
-                      >
-                        <TrashIcon className="mr-2 h-4 w-4" />
-                        Remove
-                      </Button>
-                    </div>
-                  </CardContent>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </Card>
-        ))}
-      </div>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
+          <div className="space-y-3">
+            {data?.map((exp, index) => (
+              <SortableExperienceCard
+                key={exp.id || index}
+                exp={exp}
+                index={index}
+                expandedId={expandedId}
+                setExpandedId={setExpandedId}
+                updateExperience={updateExperience}
+                removeExperience={removeExperience}
+                resumeId={resumeId}
+                skipAutoGen={skipAutoGen}
+                getAIUsageState={getAIUsageState}
+                setAIUsageState={setAIUsageState}
+              />
+            ))}
+          </div>
+        </SortableContext>
+      </DndContext>
 
       <Button variant="outline" onClick={addExperience} className="w-full">
         <PlusIcon className="mr-2 h-4 w-4" />
@@ -1814,20 +2052,182 @@ function ExperienceForm({
 }
 
 // Education Form
+// Sortable Education Card
+function SortableEducationCard({
+  edu,
+  index,
+  expandedId,
+  setExpandedId,
+  updateEducation,
+  removeEducation,
+}: {
+  edu: any;
+  index: number;
+  expandedId: string | null;
+  setExpandedId: (id: string | null) => void;
+  updateEducation: (index: number, field: string, value: any) => void;
+  removeEducation: (index: number) => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: edu.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 10 : undefined,
+    position: "relative" as const,
+  };
+
+  return (
+    <Card
+      ref={setNodeRef}
+      style={style}
+      className={`!py-0 !gap-0 overflow-hidden ${isDragging ? "opacity-50 shadow-lg ring-2 ring-primary/20" : ""}`}
+    >
+      <div className="flex w-full items-center">
+        <span
+          {...attributes}
+          {...listeners}
+          className="cursor-grab active:cursor-grabbing pl-4 py-3 text-muted-foreground/50 hover:text-muted-foreground touch-none"
+          title="Drag to reorder"
+        >
+          <Bars3Icon className="h-4 w-4" />
+        </span>
+        <button
+          onClick={() =>
+            setExpandedId(expandedId === edu.id ? null : edu.id)
+          }
+          className="flex flex-1 items-center justify-between text-left cursor-pointer min-w-0 pl-3 pr-4 py-3"
+        >
+          <div className="min-w-0">
+            <p className="font-medium text-foreground leading-snug truncate">
+              {edu.degree || "Degree"}
+            </p>
+            <p className="text-sm text-muted-foreground leading-snug truncate">
+              {edu.school || "School Name"}
+            </p>
+          </div>
+          <motion.div
+            animate={{ rotate: expandedId === edu.id ? 180 : 0 }}
+            transition={{ duration: 0.2 }}
+            className="shrink-0 ml-2"
+          >
+            <ChevronDownIcon className="h-4 w-4 text-muted-foreground" />
+          </motion.div>
+        </button>
+      </div>
+
+      <AnimatePresence initial={false}>
+        {expandedId === edu.id && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeInOut" }}
+          >
+            <CardContent className="border-t px-4 py-4 space-y-4">
+              <div className="space-y-2">
+                <Label>Degree</Label>
+                <Input
+                  placeholder="Degree and field of study"
+                  value={edu.degree || ""}
+                  onChange={(e) =>
+                    updateEducation(index, "degree", e.target.value)
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>School</Label>
+                <Input
+                  placeholder="School or university name"
+                  value={edu.school || ""}
+                  onChange={(e) =>
+                    updateEducation(index, "school", e.target.value)
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Location</Label>
+                <Input
+                  placeholder="City, State"
+                  value={edu.location || ""}
+                  onChange={(e) =>
+                    updateEducation(index, "location", sanitizeText(e.target.value, 100))
+                  }
+                />
+              </div>
+              <div className="grid gap-4 @sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Start Date</Label>
+                  <MonthYearPicker
+                    value={edu.startDate || ""}
+                    onChange={(value) =>
+                      updateEducation(index, "startDate", value)
+                    }
+                    placeholder="Select start date"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>End Date</Label>
+                  <MonthYearPicker
+                    value={edu.endDate || ""}
+                    onChange={(value) =>
+                      updateEducation(index, "endDate", value)
+                    }
+                    placeholder="Select end date"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-destructive hover:text-destructive"
+                  onClick={() => removeEducation(index)}
+                >
+                  <TrashIcon className="mr-2 h-4 w-4" />
+                  Remove
+                </Button>
+              </div>
+            </CardContent>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </Card>
+  );
+}
+
 function EducationForm({
   data,
   onUpdate,
   sectionLabel,
   onEdit,
   onDelete,
+  onConfirmRemove,
 }: {
   data: any[];
   onUpdate: (data: any[]) => void;
   sectionLabel: string;
   onEdit: () => void;
   onDelete: () => void;
+  onConfirmRemove: (label: string, onConfirm: () => void) => void;
 }) {
-  const [expandedId, setExpandedId] = useState<string | null>(data?.[0]?.id || null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 5 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const addEducation = () => {
     const newId = Date.now().toString();
@@ -1850,12 +2250,28 @@ function EducationForm({
   };
 
   const removeEducation = (index: number) => {
-    const itemId = data[index]?.id;
-    onUpdate(data.filter((_, i) => i !== index));
-    if (expandedId === itemId) {
-      setExpandedId(null);
+    const item = data[index];
+    const label = item?.degree || item?.school || "This entry";
+    onConfirmRemove(label, () => {
+      onUpdate(data.filter((_, i) => i !== index));
+      if (expandedId === item?.id) {
+        setExpandedId(null);
+      }
+    });
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = data.findIndex((item: any) => item.id === active.id);
+      const newIndex = data.findIndex((item: any) => item.id === over.id);
+      if (oldIndex !== -1 && newIndex !== -1) {
+        onUpdate(arrayMove(data, oldIndex, newIndex));
+      }
     }
   };
+
+  const itemIds = data?.map((edu: any) => edu.id) || [];
 
   return (
     <div className="space-y-6">
@@ -1867,110 +2283,27 @@ function EducationForm({
         onDelete={onDelete}
       />
 
-      <div className="space-y-3">
-        {data?.map((edu, index) => (
-          <Card key={edu.id || index} className="!py-0 !gap-0 overflow-hidden">
-            <button
-              onClick={() =>
-                setExpandedId(expandedId === edu.id ? null : edu.id)
-              }
-              className="flex w-full items-center justify-between px-4 py-3 text-left cursor-pointer"
-            >
-              <div>
-                <p className="font-medium text-foreground leading-snug">
-                  {edu.degree || "Degree"}
-                </p>
-                <p className="text-sm text-muted-foreground leading-snug">
-                  {edu.school || "School Name"}
-                </p>
-              </div>
-              <motion.div
-                animate={{ rotate: expandedId === edu.id ? 180 : 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                <ChevronDownIcon className="h-4 w-4 text-muted-foreground" />
-              </motion.div>
-            </button>
-
-            <AnimatePresence initial={false}>
-              {expandedId === edu.id && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.2, ease: "easeInOut" }}
-                >
-                  <CardContent className="border-t px-4 py-4 space-y-4">
-                    <div className="space-y-2">
-                      <Label>Degree</Label>
-                      <Input
-                        placeholder="Degree and field of study"
-                        value={edu.degree || ""}
-                        onChange={(e) =>
-                          updateEducation(index, "degree", e.target.value)
-                        }
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>School</Label>
-                      <Input
-                        placeholder="School or university name"
-                        value={edu.school || ""}
-                        onChange={(e) =>
-                          updateEducation(index, "school", e.target.value)
-                        }
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Location</Label>
-                      <Input
-                        placeholder="City, State"
-                        value={edu.location || ""}
-                        onChange={(e) =>
-                          updateEducation(index, "location", sanitizeText(e.target.value, 100))
-                        }
-                      />
-                    </div>
-                    <div className="grid gap-4 @sm:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label>Start Date</Label>
-                        <MonthYearPicker
-                          value={edu.startDate || ""}
-                          onChange={(value) =>
-                            updateEducation(index, "startDate", value)
-                          }
-                          placeholder="Select start date"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>End Date</Label>
-                        <MonthYearPicker
-                          value={edu.endDate || ""}
-                          onChange={(value) =>
-                            updateEducation(index, "endDate", value)
-                          }
-                          placeholder="Select end date"
-                        />
-                      </div>
-                    </div>
-                    <div className="flex justify-end">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => removeEducation(index)}
-                      >
-                        <TrashIcon className="mr-2 h-4 w-4" />
-                        Remove
-                      </Button>
-                    </div>
-                  </CardContent>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </Card>
-        ))}
-      </div>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
+          <div className="space-y-3">
+            {data?.map((edu, index) => (
+              <SortableEducationCard
+                key={edu.id || index}
+                edu={edu}
+                index={index}
+                expandedId={expandedId}
+                setExpandedId={setExpandedId}
+                updateEducation={updateEducation}
+                removeEducation={removeEducation}
+              />
+            ))}
+          </div>
+        </SortableContext>
+      </DndContext>
 
       <Button variant="outline" onClick={addEducation} className="w-full">
         <PlusIcon className="mr-2 h-4 w-4" />
@@ -2006,33 +2339,16 @@ function SortableSkillBadge({
     <span
       ref={setNodeRef}
       style={style}
-      className={`inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700 select-none ${
+      {...attributes}
+      {...listeners}
+      className={`inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700 select-none cursor-grab active:cursor-grabbing touch-none ${
         isDragging ? "opacity-50 shadow-lg ring-2 ring-primary/20" : ""
       }`}
     >
-      <span
-        {...attributes}
-        {...listeners}
-        className="cursor-grab active:cursor-grabbing mr-1 text-gray-400 hover:text-gray-600"
-        title="Drag to reorder"
-      >
-        <svg
-          className="h-3 w-3"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M4 8h16M4 16h16"
-          />
-        </svg>
-      </span>
       {skill}
       <button
         onClick={onRemove}
+        onPointerDown={(e) => e.stopPropagation()}
         className="ml-1 rounded-full p-0.5 hover:bg-gray-200"
       >
         <svg
@@ -2198,12 +2514,16 @@ function InternshipBulletsEditor({
   bullets,
   onUpdate,
   skipAutoGen,
+  aiUsageState,
+  onAIUsageStateChange,
 }: {
   resumeId: Id<"resumes">;
   internshipId: string;
   bullets: string[];
   onUpdate: (bullets: string[]) => void;
   skipAutoGen?: boolean;
+  aiUsageState?: AIUsageState;
+  onAIUsageStateChange?: (state: AIUsageState) => void;
 }) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [localGenerations, setLocalGenerations] = useState<Array<{
@@ -2225,6 +2545,7 @@ function InternshipBulletsEditor({
 
   const generateContent = useAction(api.ai.generateImprovedContent);
   const saveGeneration = useMutation(api.aiGenerations.saveGeneration);
+  const selectGenerationMutation = useMutation(api.aiGenerations.selectGeneration);
   const existingGenerations = useQuery(api.aiGenerations.getGenerations, {
     resumeId,
     fieldType: "internship_bullets",
@@ -2250,6 +2571,24 @@ function InternshipBulletsEditor({
   useEffect(() => {
     if (existingGenerations?.generations) {
       setLocalGenerations(existingGenerations.generations);
+    }
+  }, [existingGenerations]);
+
+  // Initialize AI usage state from DB selectedIndex on load
+  const hasInitializedFromDB = useRef(false);
+  useEffect(() => {
+    if (
+      existingGenerations &&
+      existingGenerations.selectedIndex != null &&
+      !hasInitializedFromDB.current &&
+      existingGenerations.generations.length > 0
+    ) {
+      hasInitializedFromDB.current = true;
+      onAIUsageStateChange?.({
+        hasUsedAI: true,
+        originalContent: existingGenerations.originalContent,
+        activeItemIndex: existingGenerations.selectedIndex + 1,
+      });
     }
   }, [existingGenerations]);
 
@@ -2350,9 +2689,15 @@ function InternshipBulletsEditor({
     }
   }, [bullets, generateContent, saveGeneration, resumeId, internshipId]);
 
-  const handleUseGeneration = useCallback((content: string) => {
+  const handleUseGeneration = useCallback((content: string, generationIndex: number) => {
     onUpdate(htmlToBullets(content));
-  }, [onUpdate]);
+    selectGenerationMutation({
+      resumeId,
+      fieldType: "internship_bullets",
+      fieldId: internshipId,
+      selectedIndex: generationIndex,
+    });
+  }, [onUpdate, selectGenerationMutation, resumeId, internshipId]);
 
   const handleChange = useCallback((html: string) => {
     onUpdate(htmlToBullets(html));
@@ -2375,6 +2720,8 @@ function InternshipBulletsEditor({
         onCustomPrompt={handleCustomPrompt}
         onUseGeneration={handleUseGeneration}
         showAI={true}
+        aiUsageState={aiUsageState}
+        onAIUsageStateChange={onAIUsageStateChange}
       />
     </div>
   );
@@ -2389,6 +2736,9 @@ function InternshipsForm({
   onEdit,
   onDelete,
   skipAutoGen,
+  onConfirmRemove,
+  getAIUsageState,
+  setAIUsageState,
 }: {
   resumeId: Id<"resumes">;
   data: any[];
@@ -2397,6 +2747,9 @@ function InternshipsForm({
   onEdit: () => void;
   onDelete: () => void;
   skipAutoGen?: boolean;
+  onConfirmRemove: (label: string, onConfirm: () => void) => void;
+  getAIUsageState: (key: string) => AIUsageState | undefined;
+  setAIUsageState: (key: string, state: AIUsageState) => void;
 }) {
   const [expandedId, setExpandedId] = useState<string | null>(data?.[0]?.id || null);
 
@@ -2422,11 +2775,14 @@ function InternshipsForm({
   };
 
   const removeInternship = (index: number) => {
-    const itemId = data[index]?.id;
-    onUpdate(data.filter((_, i) => i !== index));
-    if (expandedId === itemId) {
-      setExpandedId(null);
-    }
+    const item = data[index];
+    const label = item?.title || item?.company || "This entry";
+    onConfirmRemove(label, () => {
+      onUpdate(data.filter((_, i) => i !== index));
+      if (expandedId === item?.id) {
+        setExpandedId(null);
+      }
+    });
   };
 
   return (
@@ -2531,6 +2887,8 @@ function InternshipsForm({
                       bullets={internship.bullets || [""]}
                       onUpdate={(bullets) => updateInternship(index, "bullets", bullets)}
                       skipAutoGen={skipAutoGen}
+                      aiUsageState={getAIUsageState(`internship_${internship.id}`)}
+                      onAIUsageStateChange={(s) => setAIUsageState(`internship_${internship.id}`, s)}
                     />
                     <div className="flex justify-end">
                       <Button
@@ -2566,12 +2924,14 @@ function CoursesForm({
   sectionLabel,
   onEdit,
   onDelete,
+  onConfirmRemove,
 }: {
   data: any[];
   onUpdate: (data: any[]) => void;
   sectionLabel: string;
   onEdit: () => void;
   onDelete: () => void;
+  onConfirmRemove: (label: string, onConfirm: () => void) => void;
 }) {
   const [expandedId, setExpandedId] = useState<string | null>(data?.[0]?.id || null);
 
@@ -2594,11 +2954,14 @@ function CoursesForm({
   };
 
   const removeCourse = (index: number) => {
-    const itemId = data[index]?.id;
-    onUpdate(data.filter((_, i) => i !== index));
-    if (expandedId === itemId) {
-      setExpandedId(null);
-    }
+    const item = data[index];
+    const label = item?.name || item?.institution || "This entry";
+    onConfirmRemove(label, () => {
+      onUpdate(data.filter((_, i) => i !== index));
+      if (expandedId === item?.id) {
+        setExpandedId(null);
+      }
+    });
   };
 
   return (
@@ -2705,12 +3068,14 @@ function ReferencesForm({
   sectionLabel,
   onEdit,
   onDelete,
+  onConfirmRemove,
 }: {
   data: any[];
   onUpdate: (data: any[]) => void;
   sectionLabel: string;
   onEdit: () => void;
   onDelete: () => void;
+  onConfirmRemove: (label: string, onConfirm: () => void) => void;
 }) {
   const [expandedId, setExpandedId] = useState<string | null>(data?.[0]?.id || null);
 
@@ -2735,11 +3100,14 @@ function ReferencesForm({
   };
 
   const removeReference = (index: number) => {
-    const itemId = data[index]?.id;
-    onUpdate(data.filter((_, i) => i !== index));
-    if (expandedId === itemId) {
-      setExpandedId(null);
-    }
+    const item = data[index];
+    const label = item?.name || item?.company || "This entry";
+    onConfirmRemove(label, () => {
+      onUpdate(data.filter((_, i) => i !== index));
+      if (expandedId === item?.id) {
+        setExpandedId(null);
+      }
+    });
   };
 
   return (
@@ -2872,12 +3240,14 @@ function LanguagesForm({
   sectionLabel,
   onEdit,
   onDelete,
+  onConfirmRemove,
 }: {
   data: any[];
   onUpdate: (data: any[]) => void;
   sectionLabel: string;
   onEdit: () => void;
   onDelete: () => void;
+  onConfirmRemove: (label: string, onConfirm: () => void) => void;
 }) {
   const addLanguage = () => {
     const newLanguage = {
@@ -2895,7 +3265,11 @@ function LanguagesForm({
   };
 
   const removeLanguage = (index: number) => {
-    onUpdate(data.filter((_, i) => i !== index));
+    const item = data[index];
+    const label = item?.language || "This entry";
+    onConfirmRemove(label, () => {
+      onUpdate(data.filter((_, i) => i !== index));
+    });
   };
 
   const proficiencyLevels = [
@@ -2967,12 +3341,14 @@ function LinksForm({
   sectionLabel,
   onEdit,
   onDelete,
+  onConfirmRemove,
 }: {
   data: any[];
   onUpdate: (data: any[]) => void;
   sectionLabel: string;
   onEdit: () => void;
   onDelete: () => void;
+  onConfirmRemove: (label: string, onConfirm: () => void) => void;
 }) {
   const addLink = () => {
     const newLink = {
@@ -2990,7 +3366,11 @@ function LinksForm({
   };
 
   const removeLink = (index: number) => {
-    onUpdate(data.filter((_, i) => i !== index));
+    const item = data[index];
+    const label = item?.label || item?.url || "This entry";
+    onConfirmRemove(label, () => {
+      onUpdate(data.filter((_, i) => i !== index));
+    });
   };
 
   return (
@@ -3051,6 +3431,8 @@ function HobbiesForm({
   sectionLabel,
   onEdit,
   onDelete,
+  aiUsageState,
+  onAIUsageStateChange,
 }: {
   resumeId: Id<"resumes">;
   data: string;
@@ -3058,6 +3440,8 @@ function HobbiesForm({
   sectionLabel: string;
   onEdit: () => void;
   onDelete: () => void;
+  aiUsageState?: AIUsageState;
+  onAIUsageStateChange?: (state: AIUsageState) => void;
 }) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [localGenerations, setLocalGenerations] = useState<Array<{
@@ -3079,6 +3463,7 @@ function HobbiesForm({
 
   const generateContent = useAction(api.ai.generateImprovedContent);
   const saveGeneration = useMutation(api.aiGenerations.saveGeneration);
+  const selectGenerationMutation = useMutation(api.aiGenerations.selectGeneration);
   const existingGenerations = useQuery(api.aiGenerations.getGenerations, {
     resumeId,
     fieldType: "hobbies",
@@ -3088,6 +3473,24 @@ function HobbiesForm({
   useEffect(() => {
     if (existingGenerations?.generations) {
       setLocalGenerations(existingGenerations.generations);
+    }
+  }, [existingGenerations]);
+
+  // Initialize AI usage state from DB selectedIndex on load
+  const hasInitializedFromDB = useRef(false);
+  useEffect(() => {
+    if (
+      existingGenerations &&
+      existingGenerations.selectedIndex != null &&
+      !hasInitializedFromDB.current &&
+      existingGenerations.generations.length > 0
+    ) {
+      hasInitializedFromDB.current = true;
+      onAIUsageStateChange?.({
+        hasUsedAI: true,
+        originalContent: existingGenerations.originalContent,
+        activeItemIndex: existingGenerations.selectedIndex + 1,
+      });
     }
   }, [existingGenerations]);
 
@@ -3184,9 +3587,15 @@ function HobbiesForm({
     }
   }, [data, generateContent, saveGeneration, resumeId]);
 
-  const handleUseGeneration = useCallback((content: string) => {
+  const handleUseGeneration = useCallback((content: string, generationIndex: number) => {
     onUpdate(content);
-  }, [onUpdate]);
+    selectGenerationMutation({
+      resumeId,
+      fieldType: "hobbies",
+      fieldId: undefined,
+      selectedIndex: generationIndex,
+    });
+  }, [onUpdate, selectGenerationMutation, resumeId]);
 
   return (
     <div className="space-y-6">
@@ -3212,6 +3621,8 @@ function HobbiesForm({
           onCustomPrompt={handleCustomPrompt}
           onUseGeneration={handleUseGeneration}
           showAI={true}
+          aiUsageState={aiUsageState}
+          onAIUsageStateChange={onAIUsageStateChange}
         />
         <p className="text-xs text-muted-foreground">
           Keep it brief and relevant
@@ -3229,6 +3640,8 @@ function CustomSectionForm({
   sectionLabel,
   onEdit,
   onDelete,
+  aiUsageState,
+  onAIUsageStateChange,
 }: {
   resumeId: Id<"resumes">;
   data: { title: string; content: string };
@@ -3236,6 +3649,8 @@ function CustomSectionForm({
   sectionLabel: string;
   onEdit: () => void;
   onDelete: () => void;
+  aiUsageState?: AIUsageState;
+  onAIUsageStateChange?: (state: AIUsageState) => void;
 }) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [localGenerations, setLocalGenerations] = useState<Array<{
@@ -3257,6 +3672,7 @@ function CustomSectionForm({
 
   const generateContent = useAction(api.ai.generateImprovedContent);
   const saveGeneration = useMutation(api.aiGenerations.saveGeneration);
+  const selectGenerationMutation = useMutation(api.aiGenerations.selectGeneration);
   const existingGenerations = useQuery(api.aiGenerations.getGenerations, {
     resumeId,
     fieldType: "custom",
@@ -3266,6 +3682,24 @@ function CustomSectionForm({
   useEffect(() => {
     if (existingGenerations?.generations) {
       setLocalGenerations(existingGenerations.generations);
+    }
+  }, [existingGenerations]);
+
+  // Initialize AI usage state from DB selectedIndex on load
+  const hasInitializedFromDB = useRef(false);
+  useEffect(() => {
+    if (
+      existingGenerations &&
+      existingGenerations.selectedIndex != null &&
+      !hasInitializedFromDB.current &&
+      existingGenerations.generations.length > 0
+    ) {
+      hasInitializedFromDB.current = true;
+      onAIUsageStateChange?.({
+        hasUsedAI: true,
+        originalContent: existingGenerations.originalContent,
+        activeItemIndex: existingGenerations.selectedIndex + 1,
+      });
     }
   }, [existingGenerations]);
 
@@ -3362,9 +3796,15 @@ function CustomSectionForm({
     }
   }, [data?.content, generateContent, saveGeneration, resumeId]);
 
-  const handleUseGeneration = useCallback((content: string) => {
+  const handleUseGeneration = useCallback((content: string, generationIndex: number) => {
     onUpdate({ ...data, content });
-  }, [onUpdate, data]);
+    selectGenerationMutation({
+      resumeId,
+      fieldType: "custom",
+      fieldId: undefined,
+      selectedIndex: generationIndex,
+    });
+  }, [onUpdate, data, selectGenerationMutation, resumeId]);
 
   const handleContentChange = useCallback((content: string) => {
     onUpdate({ ...data, content });
@@ -3406,6 +3846,8 @@ function CustomSectionForm({
             onCustomPrompt={handleCustomPrompt}
             onUseGeneration={handleUseGeneration}
             showAI={true}
+            aiUsageState={aiUsageState}
+            onAIUsageStateChange={onAIUsageStateChange}
           />
         </div>
       </div>

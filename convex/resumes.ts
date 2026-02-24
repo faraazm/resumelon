@@ -71,6 +71,7 @@ export const createResume = mutation({
               id: v.string(),
               degree: v.string(),
               school: v.string(),
+              location: v.optional(v.string()),
               startDate: v.string(),
               endDate: v.string(),
             })
@@ -198,6 +199,7 @@ export const updateResume = mutation({
             id: v.string(),
             degree: v.string(),
             school: v.string(),
+            location: v.optional(v.string()),
             startDate: v.string(),
             endDate: v.string(),
           })
@@ -262,6 +264,7 @@ export const updateResume = mutation({
           bodyFont: v.optional(v.string()),
           spacing: v.string(),
           accentColor: v.string(),
+          backgroundColor: v.optional(v.string()),
           showPhoto: v.optional(v.boolean()),
           showDividers: v.optional(v.boolean()),
         })
@@ -386,6 +389,7 @@ export const createPrimaryResume = mutation({
               id: v.string(),
               degree: v.string(),
               school: v.string(),
+              location: v.optional(v.string()),
               startDate: v.string(),
               endDate: v.string(),
             })
@@ -487,6 +491,7 @@ export const createOptimizedResume = mutation({
           id: v.string(),
           degree: v.string(),
           school: v.string(),
+          location: v.optional(v.string()),
           startDate: v.string(),
           endDate: v.string(),
         })

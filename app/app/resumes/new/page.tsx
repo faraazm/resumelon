@@ -14,6 +14,7 @@ import {
   ArrowLeftIcon,
   ArrowUpTrayIcon,
   SparklesIcon,
+  AdjustmentsHorizontalIcon,
 } from "@heroicons/react/24/outline";
 import { DocumentLoading } from "@/components/app/document-loading";
 import { UpgradeDialog } from "@/components/app/upgrade-dialog";
@@ -228,7 +229,7 @@ export default function NewResumePage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="absolute left-6 top-6 z-10">
-        <Button variant="ghost" size="sm" className="gap-2" asChild>
+        <Button variant="outline" size="sm" className="gap-2" asChild>
           <Link href="/app/resumes">
             <ArrowLeftIcon className="h-4 w-4" />
             Back
@@ -263,7 +264,7 @@ export default function NewResumePage() {
                 Create a new resume
               </h1>
               <p className="mt-2 text-muted-foreground">
-                Start fresh, upload an existing resume, or let AI generate one for you.
+                Start fresh, upload, generate with AI, or tailor to a job.
               </p>
             </motion.div>
 
@@ -368,12 +369,38 @@ export default function NewResumePage() {
                   </CardContent>
                 </Card>
               </motion.div>
+
+              {/* Tailor to a job */}
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.35 }}
+              >
+                <Card
+                  onClick={() => router.push("/app/resumes/new/tailor")}
+                  className="!py-0 shadow-none group cursor-pointer transition-all hover:border-foreground/20"
+                >
+                  <CardContent className="flex items-center gap-4 px-4 py-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-50">
+                      <AdjustmentsHorizontalIcon className="h-5 w-5 text-amber-600" />
+                    </div>
+                    <div className="text-left">
+                      <h3 className="text-[15px] font-medium text-foreground">
+                        Tailor to a job
+                      </h3>
+                      <p className="text-[13px] text-muted-foreground">
+                        Match an existing resume to a job description
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
             </div>
 
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.3, delay: 0.35 }}
+              transition={{ duration: 0.3, delay: 0.4 }}
               className="mt-10"
             >
               <p className="text-xs text-muted-foreground">

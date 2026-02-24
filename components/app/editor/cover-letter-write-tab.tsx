@@ -20,8 +20,7 @@ const sanitizeText = (value: string, maxLength: number = 500): string => {
   return value
     .replace(/<[^>]*>/g, "")
     .replace(/[<>]/g, "")
-    .slice(0, maxLength)
-    .trim();
+    .slice(0, maxLength);
 };
 
 const sanitizeEmail = (value: string): string => {

@@ -418,7 +418,7 @@ export function SectionHeader({ title, template }: SectionHeaderProps) {
       } mb-1.5`}
       style={{
         color: colors.accent,
-        borderColor: showLineDivider ? colors.divider : "transparent",
+        borderColor: showLineDivider ? colors.accent : "transparent",
         fontFamily: "var(--heading-font, inherit)",
         lineHeight: "1.2",
         breakAfter: "avoid",
@@ -444,7 +444,6 @@ export function Section({ title, template, children, show = true }: SectionProps
   return (
     <section
       className={template.spacing.sectionGap}
-      style={{ breakInside: "avoid-page" }}
     >
       <SectionHeader title={title} template={template} />
       {children}
@@ -503,12 +502,12 @@ export function ExperienceItem({ job, template, isFirst }: ExperienceItemProps) 
   if (datePosition === "left") {
     return (
       <div
-        className={`job-block ${!isFirst ? spacing.itemGap : ""} flex gap-4`}
+        className={`job-block ${!isFirst ? spacing.itemGap : ""} flex gap-3`}
         style={{ breakInside: "avoid", pageBreakInside: "avoid" }}
       >
-        <div className="w-[80px] shrink-0 text-right">
+        <div className="w-[130px] shrink-0 text-right">
           <p
-            className="text-[9pt] whitespace-nowrap"
+            className="text-[9pt]"
             style={{ color: colors.muted }}
           >
             {dateStr}
@@ -619,12 +618,12 @@ export function EducationItem({ edu, template, isFirst }: EducationItemProps) {
   if (datePosition === "left") {
     return (
       <div
-        className={`education-block ${!isFirst ? "mt-1.5" : ""} flex gap-4`}
+        className={`education-block ${!isFirst ? "mt-1.5" : ""} flex gap-3`}
         style={{ breakInside: "avoid", pageBreakInside: "avoid" }}
       >
-        <div className="w-[80px] shrink-0 text-right">
+        <div className="w-[130px] shrink-0 text-right">
           <p
-            className="text-[9pt] whitespace-nowrap"
+            className="text-[9pt]"
             style={{ color: colors.muted }}
           >
             {dateStr}
