@@ -41,7 +41,6 @@ export default function GenerateResumePage() {
   const generateUploadUrl = useMutation(api.storage.generateUploadUrl);
   const extractTextFromFile = useAction(api.files.extractTextFromFile);
   const generateResumeFromDocuments = useAction(api.ai.generateResumeFromDocuments);
-  const incrementGeneration = useMutation(api.users.incrementGenerationCount);
 
   const currentMonth = new Date().toISOString().slice(0, 7);
   const generationLimit = useQuery(
@@ -150,6 +149,7 @@ export default function GenerateResumePage() {
       const documentsText = textParts.join("\n\n");
 
       const result = await generateResumeFromDocuments({
+        clerkId: user.id,
         documentsText,
         additionalInfo: additionalInfo.trim() || undefined,
       });
@@ -173,7 +173,6 @@ export default function GenerateResumePage() {
         },
       });
 
-      await incrementGeneration({ clerkId: user.id });
       router.push(`/app/resumes/${resumeId}/edit`);
     } catch (err) {
       console.error("Error generating resume:", err);

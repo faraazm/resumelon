@@ -1,8 +1,8 @@
-# NiceResume Core Product Flow
+# resumeclone Core Product Flow
 
 ## Product Philosophy
 
-NiceResume is not just a resume builder.
+resumeclone is not just a resume builder.
 
 It is a recurring optimization tool designed to help users tailor their resume for every job they apply to.
 

@@ -1,9 +1,9 @@
-import { mutation } from "./_generated/server";
+import { internalMutation } from "./_generated/server";
 
 // One-time migration: Mark existing resumes as primary.
 // For each user, the most recently updated resume becomes the primary.
 // Run this once after deploying the schema changes.
-export const migrateToPrimaryResumes = mutation({
+export const migrateToPrimaryResumes = internalMutation({
   args: {},
   handler: async (ctx) => {
     // Get all users

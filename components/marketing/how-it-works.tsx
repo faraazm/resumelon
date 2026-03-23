@@ -1,5 +1,12 @@
+"use client";
+
+import { motion } from "framer-motion";
+import { SectionWrapper } from "./section-wrapper";
+import { SectionHeader } from "./section-header";
+import { InlineCTA } from "./inline-cta";
 import {
-  ClipboardDocumentListIcon,
+  ArrowUpTrayIcon,
+  DocumentTextIcon,
   SparklesIcon,
   ArrowDownTrayIcon,
 } from "@heroicons/react/24/outline";
@@ -7,64 +14,88 @@ import {
 const steps = [
   {
     step: "1",
-    icon: ClipboardDocumentListIcon,
-    title: "Add your information",
+    icon: ArrowUpTrayIcon,
+    title: "Upload Your Base Resume",
     description:
-      "Fill in your details using our guided form, or import an existing resume. We'll organize everything perfectly.",
+      "Upload your existing resume or fill in your details using our guided form. We'll organize everything into a clean, professional format.",
   },
   {
     step: "2",
-    icon: SparklesIcon,
-    title: "Improve & tailor",
+    icon: DocumentTextIcon,
+    title: "Paste Job Descriptions",
     description:
-      "Choose a professional template. Our AI suggests improvements and helps tailor your resume for specific jobs.",
+      "Add job descriptions one at a time or in bulk. resumeclone analyzes each listing to identify key requirements and keywords.",
   },
   {
     step: "3",
-    icon: ArrowDownTrayIcon,
-    title: 'Click "Download"',
+    icon: SparklesIcon,
+    title: "Generate Tailored Resumes",
     description:
-      "Export your ATS-optimized resume as a PDF. You're ready to apply and land that interview.",
+      "Our AI instantly creates optimized resumes and cover letters tailored to each job. Keywords, skills, and phrasing are customized automatically.",
+  },
+  {
+    step: "4",
+    icon: ArrowDownTrayIcon,
+    title: "Download & Apply",
+    description:
+      "Export your ATS-optimized resumes as PDF or DOCX. Apply to dozens of jobs in the time it used to take for one.",
   },
 ];
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
+};
+
 export function HowItWorks() {
   return (
-    <section className="bg-background py-16 sm:py-24">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-            Create your resume in 3 easy steps{" "}
-            <span className="text-primary">now with AI</span>
-          </h2>
-          <p className="mt-4 text-lg text-muted-foreground">
-            No complicated software. No design skills needed. Just a few minutes
-            to a professional resume.
-          </p>
-        </div>
+    <SectionWrapper background="default" id="how-it-works" ariaLabelledBy="how-it-works-heading">
+      <SectionHeader
+        id="how-it-works-heading"
+        heading="From One Resume to Hundreds—In Minutes"
+        description="No complicated software. No design skills needed. Four simple steps to a smarter job search."
+      />
 
-        <div className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-          {steps.map((item) => (
-            <div
-              key={item.step}
-              className="relative rounded-2xl border border-border bg-card p-8 transition-shadow hover:shadow-lg"
-            >
-              <div className="mb-4 flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-                  <item.icon className="h-6 w-6 text-primary" />
-                </div>
-                <span className="text-4xl font-bold text-muted-foreground/20">
-                  {item.step}
-                </span>
-              </div>
-              <h3 className="mb-2 text-xl font-semibold text-foreground">
-                {item.title}
-              </h3>
-              <p className="text-muted-foreground">{item.description}</p>
+      <motion.div
+        className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-4"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: "-100px" }}
+        variants={containerVariants}
+      >
+        {steps.map((item) => (
+          <motion.div
+            key={item.step}
+            className="relative rounded-2xl border border-border bg-card p-8 transition-shadow hover:shadow-lg"
+            variants={itemVariants}
+          >
+            <div className="mb-4 flex items-center gap-4">
+              <item.icon className="h-7 w-7 text-primary" aria-hidden="true" />
+              <span className="text-4xl font-bold text-muted-foreground/50">
+                {item.step}
+              </span>
             </div>
-          ))}
-        </div>
+            <h3 className="mb-2 text-lg font-semibold text-foreground">
+              {item.title}
+            </h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              {item.description}
+            </p>
+          </motion.div>
+        ))}
+      </motion.div>
+
+      <div className="mt-12 flex justify-center">
+        <InlineCTA signedOutLabel="Generate My First Resume" />
       </div>
-    </section>
+    </SectionWrapper>
   );
 }

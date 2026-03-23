@@ -19,6 +19,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { sanitizeHtml } from "@/lib/sanitize";
 import {
   Bold,
   Italic,
@@ -510,7 +511,7 @@ export function RichTextEditor({
                           "[&_ol]:list-decimal [&_ol]:pl-3"
                         )}
                         dangerouslySetInnerHTML={{
-                          __html: currentGeneration?.content || "",
+                          __html: sanitizeHtml(currentGeneration?.content || ""),
                         }}
                       />
                     </motion.div>

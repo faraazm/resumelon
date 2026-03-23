@@ -40,6 +40,7 @@ interface ParsedResumeData {
 // Parse a document and extract text (then AI will structure it)
 export const parseDocument = action({
   args: {
+    clerkId: v.string(),
     storageId: v.id("_storage"),
     fileType: v.string(),
     fileName: v.string(),
@@ -102,6 +103,7 @@ export const parseDocument = action({
 
     // Use AI to parse the extracted text into structured data
     const parsedData = await ctx.runAction(api.ai.parseResumeWithAI, {
+      clerkId: args.clerkId,
       extractedText: text,
     });
 

@@ -8,96 +8,91 @@ import {
   ShieldCheckIcon,
   ClockIcon,
 } from "@heroicons/react/24/outline";
+import { SectionWrapper } from "./section-wrapper";
+import { SectionHeader } from "./section-header";
+import { BrandName } from "./logo";
 
 const features = [
   {
     icon: DocumentCheckIcon,
-    title: "ATS-Safe Templates",
+    title: "ATS-Safe Formatting",
     description:
-      "Every template is optimized for Applicant Tracking Systems. Your resume will be parsed correctly, every time.",
+      "Every resume is structured to pass Applicant Tracking Systems. Your application will be parsed correctly and ranked higher, every time.",
   },
   {
     icon: EyeIcon,
     title: "Live Preview",
     description:
-      "See your changes in real-time as you type. No more guessing what your final resume will look like.",
+      "See your changes in real-time as you type. No more guessing what your final resume will look like before downloading.",
   },
   {
     icon: ArrowUpTrayIcon,
     title: "Resume Import",
     description:
-      "Upload an existing resume and we'll automatically parse and organize your information for you.",
+      "Upload an existing resume and we'll automatically parse and organize your information. Start tailoring in seconds, not hours.",
   },
   {
     icon: SparklesIcon,
-    title: "AI Content Rewrites",
+    title: "AI Keyword Matching",
     description:
-      "Let AI enhance your bullet points and summary to sound more impactful and professional.",
+      "Our AI analyzes each job description and optimizes your resume with the right keywords, skills, and phrasing to match.",
   },
   {
     icon: AdjustmentsHorizontalIcon,
-    title: "Job Tailoring",
+    title: "Job-Specific Tailoring",
     description:
-      "Paste a job description and we'll help you tailor your resume to match the requirements.",
+      "Paste a job description and generate a resume customized for that exact role. Every application is unique and targeted.",
   },
   {
     icon: ArrowDownTrayIcon,
-    title: "Instant PDF Download",
+    title: "PDF & DOCX Export",
     description:
-      "Download your polished resume as a high-quality PDF with one click. Ready to send.",
+      "Download your polished resume as a high-quality PDF or DOCX with one click. No watermarks, no limitations. Ready to send.",
   },
   {
     icon: ShieldCheckIcon,
     title: "Privacy & Security",
     description:
-      "Your data is encrypted and never shared. We take your privacy seriously.",
+      "Your data is encrypted and never shared with third parties. We take your privacy as seriously as you take your career.",
   },
   {
     icon: ClockIcon,
-    title: "Save Valuable Time",
+    title: "Version Management",
     description:
-      "Stop wrestling with formatting. Create a professional resume in minutes, not hours.",
+      "Keep track of every resume version. Duplicate, edit, and manage all your tailored resumes from one organized dashboard.",
   },
 ];
 
 export function FeatureGrid() {
   return (
-    <section className="bg-muted/30 py-16 sm:py-24" aria-labelledby="advantages-heading">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-2xl text-center">
-          <h2
-            id="advantages-heading"
-            className="text-3xl font-semibold tracking-tighter text-foreground sm:text-4xl"
-          >
-            The advantages of using{" "}
-            <span className="text-primary">NiceResume</span>
-          </h2>
-          <p className="mt-4 text-lg text-muted-foreground">
-            Everything you need to create a winning resume that gets you
-            interviews.
-          </p>
-        </div>
+    <SectionWrapper background="muted" id="feature-grid" ariaLabelledBy="feature-grid-heading">
+      <SectionHeader
+        id="feature-grid-heading"
+        heading={
+          <>
+            The advantages of using <BrandName className="text-primary" />
+          </>
+        }
+        description="Everything you need to create winning resumes that get you interviews—at scale."
+      />
 
-        <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4" role="list">
-          {features.map((feature) => (
-            <article
-              key={feature.title}
-              className="group rounded-xl border border-border bg-card p-6 transition-all hover:border-primary/20 hover:shadow-md"
-              role="listitem"
-            >
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 transition-colors group-hover:bg-primary/20" aria-hidden="true">
-                <feature.icon className="h-6 w-6 text-primary" />
-              </div>
-              <h3 className="mb-2 font-semibold text-foreground">
-                {feature.title}
-              </h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                {feature.description}
-              </p>
-            </article>
-          ))}
-        </div>
+      <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4" role="list">
+        {features.map((feature) => (
+          <article
+            key={feature.title}
+            className="group rounded-xl border border-border bg-card p-6 transition-all hover:border-primary/20 hover:shadow-md"
+            role="listitem"
+          >
+            <feature.icon className="mb-4 h-7 w-7 text-primary" aria-hidden="true" />
+            <h3 className="mb-2 font-semibold text-foreground">
+              {feature.title}
+            </h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              {feature.description}
+            </p>
+          </article>
+        ))}
       </div>
-    </section>
+    </SectionWrapper>
   );
 }

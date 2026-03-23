@@ -10,17 +10,20 @@ import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import {
   ArrowLeftIcon,
   PlusIcon,
   DocumentTextIcon,
   SparklesIcon,
+  CheckIcon,
+  BriefcaseIcon,
 } from "@heroicons/react/24/outline";
 import { DocumentLoading } from "@/components/app/document-loading";
 import { UpgradeDialog } from "@/components/app/upgrade-dialog";
 import { Id } from "@/convex/_generated/dataModel";
 
-type Step = "choose-method" | "select-resume" | "loading";
+type Step = "choose-method" | "generate" | "loading";
 
 export default function NewCoverLetterPage() {
   const router = useRouter();
@@ -30,6 +33,8 @@ export default function NewCoverLetterPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [selectedResumeId, setSelectedResumeId] = useState<Id<"resumes"> | null>(null);
   const [jobDescription, setJobDescription] = useState("");
+  const [companyName, setCompanyName] = useState("");
+  const [jobTitle, setJobTitle] = useState("");
   const [showUpgrade, setShowUpgrade] = useState(false);
 
   const resumes = useQuery(
@@ -47,6 +52,7 @@ export default function NewCoverLetterPage() {
 
   const createCoverLetter = useMutation(api.coverLetters.createCoverLetter);
   const incrementGeneration = useMutation(api.users.incrementGenerationCount);
+  const generateCoverLetterAI = useAction(api.ai.generateCoverLetter);
 
   const handleStartFromScratch = async () => {
     if (!user?.id || isCreating) return;
@@ -57,7 +63,6 @@ export default function NewCoverLetterPage() {
 
     setIsCreating(true);
     try {
-      // Create empty cover letter with default structure
       const id = await createCoverLetter({
         clerkId: user.id,
         title: "Untitled Cover Letter",
@@ -85,56 +90,104 @@ export default function NewCoverLetterPage() {
     }
   };
 
-  const handleFromResume = () => {
+  const handleGenerateOption = () => {
     if (!canGenerate) {
       setShowUpgrade(true);
       return;
     }
-    setStep("select-resume");
+    setStep("generate");
   };
 
-  const handleSelectResume = (resumeId: Id<"resumes">) => {
-    setSelectedResumeId(resumeId);
-  };
+  const selectedResume = resumes?.find((r) => r._id === selectedResumeId);
+  const hasResume = !!selectedResumeId;
+  const hasJobDescription = jobDescription.trim().length > 0;
+  const canCreate = hasResume || hasJobDescription;
 
   const handleGenerate = async () => {
-    if (!user?.id || !selectedResumeId) return;
+    if (!user?.id || !canCreate) return;
     if (!canGenerate) {
       setShowUpgrade(true);
       return;
     }
 
-    const resume = resumes?.find((r) => r._id === selectedResumeId);
-    if (!resume) return;
-
     setStep("loading");
+    setError(null);
 
     try {
-      const fullName = `${resume.personalDetails.firstName} ${resume.personalDetails.lastName}`.trim();
-      const title = fullName
-        ? `Cover Letter - ${fullName}`
-        : "Untitled Cover Letter";
+      const personalDetails = selectedResume
+        ? {
+            firstName: selectedResume.personalDetails.firstName,
+            lastName: selectedResume.personalDetails.lastName,
+            jobTitle: selectedResume.personalDetails.jobTitle,
+            email: selectedResume.contact.email,
+            phone: selectedResume.contact.phone,
+            address: selectedResume.contact.location,
+          }
+        : {
+            firstName: "",
+            lastName: "",
+            jobTitle: "",
+            email: "",
+            phone: "",
+            address: "",
+          };
 
-      // Create cover letter pre-filled with resume data
+      let generatedContent = "";
+
+      // If we have both resume and job description, use AI to generate
+      if (hasResume && hasJobDescription && selectedResume) {
+        const result = await generateCoverLetterAI({
+          clerkId: user.id,
+          resumeData: {
+            personalDetails: {
+              firstName: selectedResume.personalDetails.firstName,
+              lastName: selectedResume.personalDetails.lastName,
+              jobTitle: selectedResume.personalDetails.jobTitle,
+            },
+            contact: {
+              email: selectedResume.contact.email,
+              phone: selectedResume.contact.phone,
+              location: selectedResume.contact.location,
+            },
+            summary: selectedResume.summary || "",
+            experience: (selectedResume.experience || []).map((e) => ({
+              title: e.title,
+              company: e.company,
+              bullets: e.bullets,
+            })),
+            skills: selectedResume.skills || [],
+          },
+          jobDescription: jobDescription.trim(),
+          companyName: companyName.trim() || "the company",
+          jobTitle: jobTitle.trim() || selectedResume.personalDetails.jobTitle || "the position",
+        });
+
+        // Convert plain text paragraphs to HTML
+        generatedContent = result.content
+          .split("\n\n")
+          .filter((p: string) => p.trim())
+          .map((p: string) => `<p>${p.trim()}</p>`)
+          .join("");
+      }
+
+      const fullName = `${personalDetails.firstName} ${personalDetails.lastName}`.trim();
+      const title = companyName.trim()
+        ? `Cover Letter - ${companyName.trim()}`
+        : fullName
+          ? `Cover Letter - ${fullName}`
+          : "Untitled Cover Letter";
+
       const id = await createCoverLetter({
         clerkId: user.id,
-        resumeId: selectedResumeId,
+        resumeId: selectedResumeId ?? undefined,
         title,
-        personalDetails: {
-          firstName: resume.personalDetails.firstName,
-          lastName: resume.personalDetails.lastName,
-          jobTitle: resume.personalDetails.jobTitle,
-          email: resume.contact.email,
-          phone: resume.contact.phone,
-          address: resume.contact.location,
-        },
+        personalDetails,
         letterContent: {
-          companyName: "",
+          companyName: companyName.trim(),
           hiringManagerName: "",
-          content: jobDescription.trim()
-            ? `<p>I am writing to express my interest in the position at your company.</p><p>${resume.summary || ""}</p>`
-            : "",
+          content: generatedContent,
         },
+        jobDescription: jobDescription.trim() || undefined,
       });
 
       await incrementGeneration({ clerkId: user.id });
@@ -146,7 +199,18 @@ export default function NewCoverLetterPage() {
           ? err.message
           : "Failed to create cover letter. Please try again."
       );
-      setStep("select-resume");
+      setStep("generate");
+    }
+  };
+
+  const backAction = () => {
+    if (step === "generate") {
+      setStep("choose-method");
+      setSelectedResumeId(null);
+      setJobDescription("");
+      setCompanyName("");
+      setJobTitle("");
+      setError(null);
     }
   };
 
@@ -159,7 +223,15 @@ export default function NewCoverLetterPage() {
   }
 
   if (step === "loading") {
-    return <DocumentLoading message="Creating your cover letter..." />;
+    return (
+      <DocumentLoading
+        message={
+          hasResume && hasJobDescription
+            ? "Generating your cover letter..."
+            : "Creating your cover letter..."
+        }
+      />
+    );
   }
 
   return (
@@ -169,7 +241,7 @@ export default function NewCoverLetterPage() {
           variant="outline"
           size="sm"
           className="gap-2"
-          onClick={step === "select-resume" ? () => setStep("choose-method") : undefined}
+          onClick={step === "generate" ? backAction : undefined}
           asChild={step === "choose-method"}
         >
           {step === "choose-method" ? (
@@ -186,7 +258,7 @@ export default function NewCoverLetterPage() {
         </Button>
       </div>
 
-      <div className="flex min-h-screen items-center justify-center">
+      <div className="flex min-h-screen items-start sm:items-center justify-center px-4 py-20 overflow-y-auto">
         <AnimatePresence mode="wait">
           {step === "choose-method" && (
             <motion.div
@@ -195,7 +267,7 @@ export default function NewCoverLetterPage() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.25 }}
-              className="w-full max-w-3xl px-4 text-center"
+              className="w-full max-w-lg text-center"
             >
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
@@ -206,7 +278,7 @@ export default function NewCoverLetterPage() {
                   Create a cover letter
                 </h1>
                 <p className="mt-2 text-muted-foreground">
-                  Start from scratch or pre-fill from an existing resume.
+                  Write from scratch or let AI generate one for you.
                 </p>
               </motion.div>
 
@@ -220,7 +292,7 @@ export default function NewCoverLetterPage() {
                 </motion.div>
               )}
 
-              <div className="mx-auto mt-8 flex max-w-lg flex-col gap-2.5">
+              <div className="mt-8 flex flex-col gap-2.5">
                 <motion.div
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -228,7 +300,7 @@ export default function NewCoverLetterPage() {
                 >
                   <Card
                     onClick={handleStartFromScratch}
-                    className="!py-0 shadow-none group cursor-pointer transition-all hover:border-foreground/20"
+                    className={`!py-0 shadow-none group cursor-pointer transition-all hover:border-foreground/20 ${isCreating ? "pointer-events-none opacity-60" : ""}`}
                   >
                     <CardContent className="flex items-center gap-4 px-4 py-3">
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-50">
@@ -236,7 +308,7 @@ export default function NewCoverLetterPage() {
                       </div>
                       <div className="text-left">
                         <h3 className="text-[15px] font-medium text-foreground">
-                          Start from scratch
+                          {isCreating ? "Creating..." : "Start from scratch"}
                         </h3>
                         <p className="text-[13px] text-muted-foreground">
                           Write your cover letter manually
@@ -252,19 +324,19 @@ export default function NewCoverLetterPage() {
                   transition={{ duration: 0.3, delay: 0.25 }}
                 >
                   <Card
-                    onClick={handleFromResume}
+                    onClick={handleGenerateOption}
                     className="!py-0 shadow-none group cursor-pointer transition-all hover:border-foreground/20"
                   >
                     <CardContent className="flex items-center gap-4 px-4 py-3">
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-violet-100 to-purple-100">
-                        <DocumentTextIcon className="h-5 w-5 text-violet-600" />
+                        <SparklesIcon className="h-5 w-5 text-violet-600" />
                       </div>
                       <div className="text-left">
                         <h3 className="text-[15px] font-medium text-foreground">
-                          Pre-fill from a resume
+                          Generate with AI
                         </h3>
                         <p className="text-[13px] text-muted-foreground">
-                          Import your details from an existing resume
+                          Combine your resume and a job description
                         </p>
                       </div>
                     </CardContent>
@@ -285,14 +357,14 @@ export default function NewCoverLetterPage() {
             </motion.div>
           )}
 
-          {step === "select-resume" && (
+          {step === "generate" && (
             <motion.div
-              key="select-resume"
+              key="generate"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.25 }}
-              className="w-full max-w-2xl px-4"
+              className="w-full max-w-2xl"
             >
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
@@ -300,11 +372,11 @@ export default function NewCoverLetterPage() {
                 transition={{ duration: 0.3, delay: 0.1 }}
                 className="text-center"
               >
-                <h1 className="text-3xl font-semibold tracking-tight text-foreground">
-                  Select a resume
+                <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">
+                  Generate a cover letter
                 </h1>
-                <p className="mt-2 text-muted-foreground">
-                  Choose which resume to import your details from
+                <p className="mt-2 text-sm sm:text-base text-muted-foreground">
+                  Select a resume and/or paste a job description. Provide both for the best results.
                 </p>
               </motion.div>
 
@@ -318,93 +390,159 @@ export default function NewCoverLetterPage() {
                 </motion.div>
               )}
 
-              {/* Resume list */}
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: 0.2 }}
-                className="mt-8 space-y-2"
-              >
-                {resumes === undefined ? (
-                  <div className="space-y-2">
-                    {[1, 2].map((i) => (
-                      <div key={i} className="h-16 animate-pulse rounded-xl bg-muted" />
-                    ))}
-                  </div>
-                ) : resumes.length === 0 ? (
-                  <div className="rounded-lg border border-dashed py-8 text-center">
-                    <p className="text-sm text-muted-foreground">
-                      No resumes found. Create a resume first.
-                    </p>
-                    <Button asChild className="mt-3" size="sm">
-                      <Link href="/app/resumes/new">Create Resume</Link>
-                    </Button>
-                  </div>
-                ) : (
-                  resumes
-                    .sort((a, b) => b.updatedAt - a.updatedAt)
-                    .map((resume) => (
-                      <Card
-                        key={resume._id}
-                        onClick={() => handleSelectResume(resume._id)}
-                        className={`!py-0 shadow-none group cursor-pointer transition-all hover:border-foreground/20 ${
-                          selectedResumeId === resume._id
-                            ? "border-primary bg-primary/5"
-                            : ""
-                        }`}
-                      >
-                        <CardContent className="flex items-center gap-4 px-4 py-3">
-                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted">
-                            <DocumentTextIcon className="h-4 w-4 text-muted-foreground" />
-                          </div>
-                          <div className="flex-1 min-w-0 text-left">
-                            <h3 className="text-sm font-medium text-foreground truncate">
-                              {resume.title}
-                            </h3>
-                            <p className="text-xs text-muted-foreground">
-                              {resume.personalDetails.jobTitle || "No job title"}
-                            </p>
-                          </div>
-                          {selectedResumeId === resume._id && (
-                            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary">
-                              <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                              </svg>
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-                    ))
-                )}
-              </motion.div>
-
-              {/* Generate button */}
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: 0.25 }}
-                className="mt-6"
-              >
-                <Button
-                  onClick={handleGenerate}
-                  disabled={!selectedResumeId}
-                  className="w-full"
-                  size="lg"
+              <div className="mt-8 space-y-6">
+                {/* Resume selection */}
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: 0.15 }}
                 >
-                  Create Cover Letter
-                </Button>
-              </motion.div>
+                  <div className="flex items-center gap-2 mb-2.5">
+                    <DocumentTextIcon className="h-4 w-4 text-muted-foreground" />
+                    <h2 className="text-sm font-medium text-foreground">
+                      Select a resume
+                    </h2>
+                    <span className="text-xs text-muted-foreground">(optional)</span>
+                  </div>
 
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.3, delay: 0.3 }}
-                className="mt-6 mb-8 text-center"
-              >
-                <p className="text-xs text-muted-foreground">
-                  Your personal details will be pre-filled from the selected resume
-                </p>
-              </motion.div>
+                  <div className="max-h-[200px] overflow-y-auto rounded-lg border border-border">
+                    {resumes === undefined ? (
+                      <div className="p-3 space-y-2">
+                        {[1, 2].map((i) => (
+                          <div key={i} className="h-12 animate-pulse rounded-md bg-muted" />
+                        ))}
+                      </div>
+                    ) : resumes.length === 0 ? (
+                      <div className="py-6 text-center">
+                        <p className="text-sm text-muted-foreground">
+                          No resumes yet.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="p-1.5 space-y-0.5">
+                        {[...resumes]
+                          .sort((a, b) => b.updatedAt - a.updatedAt)
+                          .map((resume) => {
+                            const isSelected = selectedResumeId === resume._id;
+                            return (
+                              <button
+                                key={resume._id}
+                                onClick={() =>
+                                  setSelectedResumeId(isSelected ? null : resume._id)
+                                }
+                                className={`flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left transition-colors ${
+                                  isSelected
+                                    ? "bg-primary/5 ring-1 ring-primary"
+                                    : "hover:bg-muted/50"
+                                }`}
+                              >
+                                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted">
+                                  <DocumentTextIcon className="h-4 w-4 text-muted-foreground" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-foreground truncate">
+                                    {resume.title}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground truncate">
+                                    {resume.personalDetails.jobTitle || "No job title"}
+                                  </p>
+                                </div>
+                                {isSelected && (
+                                  <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary">
+                                    <CheckIcon className="h-3 w-3 text-white" />
+                                  </div>
+                                )}
+                              </button>
+                            );
+                          })}
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+
+                {/* Job description */}
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: 0.2 }}
+                >
+                  <div className="flex items-center gap-2 mb-2.5">
+                    <BriefcaseIcon className="h-4 w-4 text-muted-foreground" />
+                    <h2 className="text-sm font-medium text-foreground">
+                      Job description
+                    </h2>
+                    <span className="text-xs text-muted-foreground">(optional)</span>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex flex-col gap-3 sm:flex-row">
+                      <Input
+                        placeholder="Company name"
+                        value={companyName}
+                        onChange={(e) => setCompanyName(e.target.value)}
+                        className="flex-1"
+                      />
+                      <Input
+                        placeholder="Job title"
+                        value={jobTitle}
+                        onChange={(e) => setJobTitle(e.target.value)}
+                        className="flex-1"
+                      />
+                    </div>
+                    <Textarea
+                      placeholder="Paste the job description here..."
+                      value={jobDescription}
+                      onChange={(e) => setJobDescription(e.target.value)}
+                      rows={5}
+                      className="max-h-[200px] resize-y"
+                    />
+                  </div>
+                </motion.div>
+
+                {/* Hint text */}
+                {hasResume && hasJobDescription && (
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="text-xs text-emerald-600 text-center"
+                  >
+                    AI will generate a tailored cover letter using your resume and the job description
+                  </motion.p>
+                )}
+                {hasResume && !hasJobDescription && (
+                  <p className="text-xs text-muted-foreground text-center">
+                    Your details will be pre-filled from the selected resume
+                  </p>
+                )}
+                {!hasResume && hasJobDescription && (
+                  <p className="text-xs text-muted-foreground text-center">
+                    A cover letter will be created with the job context — fill in your details in the editor
+                  </p>
+                )}
+
+                {/* Generate button */}
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: 0.25 }}
+                >
+                  <Button
+                    onClick={handleGenerate}
+                    disabled={!canCreate}
+                    className="w-full"
+                    size="lg"
+                  >
+                    {hasResume && hasJobDescription ? (
+                      <>
+                        <SparklesIcon className="h-4 w-4" />
+                        Generate Cover Letter
+                      </>
+                    ) : (
+                      "Create Cover Letter"
+                    )}
+                  </Button>
+                </motion.div>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

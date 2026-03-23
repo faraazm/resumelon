@@ -70,26 +70,8 @@ interface ResumeCardData {
   sectionOrder?: string[];
 }
 
-function formatRelativeDate(timestamp: number) {
-  const now = Date.now();
-  const diff = now - timestamp;
-  const minutes = Math.floor(diff / 60000);
-  const hours = Math.floor(diff / 3600000);
-  const days = Math.floor(diff / 86400000);
-
-  if (minutes < 1) return "Updated just now";
-  if (minutes < 60) return `Updated ${minutes} minute${minutes === 1 ? "" : "s"} ago`;
-  if (hours < 24) return `Updated ${hours} hour${hours === 1 ? "" : "s"} ago`;
-  if (days === 1) return "Updated yesterday";
-  if (days < 7) return `Updated ${days} days ago`;
-
-  const date = new Date(timestamp);
-  return `Updated ${date.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  })}`;
-}
+import { Checkbox } from "@/components/ui/checkbox";
+import { formatRelativeDate } from "./format-date";
 
 function buildAdjustedTemplate(
   resume: ResumeCardData,
@@ -181,12 +163,16 @@ export function ResumeCard({
   onDelete,
   onDuplicate,
   onTailor,
+  selected,
+  onSelect,
 }: {
   resume: ResumeCardData;
   userName?: string;
   onDelete: (id: Id<"resumes">) => void;
   onDuplicate?: (id: Id<"resumes">) => void;
   onTailor?: (id: Id<"resumes">) => void;
+  selected?: boolean;
+  onSelect?: () => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0.2);
@@ -240,9 +226,14 @@ export function ResumeCard({
   };
 
   return (
-    <Card className="overflow-hidden !py-0 !gap-0">
+    <Card className={`overflow-hidden !py-0 !gap-0 ${selected ? "ring-2 ring-primary" : ""}`}>
       <CardContent className="!p-0">
         <div className="flex flex-col sm:flex-row items-stretch">
+          {onSelect && (
+            <div className="flex items-start pt-4 pl-4 sm:pt-5 sm:pl-5">
+              <Checkbox checked={selected} onCheckedChange={onSelect} />
+            </div>
+          )}
           {/* Thumbnail */}
           <Link
             href={`/app/resumes/${resume._id}/edit`}

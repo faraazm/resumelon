@@ -4,10 +4,19 @@ import { motion } from "framer-motion";
 import {
   Navbar,
   Hero,
+  ProblemSection,
+  SolutionSection,
+  HowItWorks,
+  BenefitsSection,
   FeatureSections,
   FeatureGrid,
+  ComparisonSection,
   ATSExplainer,
+  Testimonials,
+  UseCases,
+  ObjectionSection,
   PricingPreview,
+  UrgencyCTA,
   FAQ,
   CTABanner,
   Footer,
@@ -18,30 +27,47 @@ const sectionVariants = {
   visible: { opacity: 1, y: 0 },
 };
 
+function AnimatedSection({ children }: { children: React.ReactNode }) {
+  return (
+    <motion.div
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, margin: "-100px" }}
+      variants={sectionVariants}
+      transition={{ duration: 0.4 }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
 const organizationSchema = {
   "@context": "https://schema.org",
   "@type": "Organization",
-  name: "NiceResume",
-  url: "https://niceresume.com",
-  logo: "https://niceresume.com/images/nice-resume-logo.png",
+  name: "resumeclone",
+  url: "https://resumeclone.com",
+  logo: "https://resumeclone.com/images/resumeclone-logo.png",
   description:
-    "AI-powered resume builder that helps job seekers create professional, ATS-optimized resumes.",
+    "AI-powered resume builder that helps job seekers mass apply with tailored, ATS-optimized resumes and cover letters.",
   sameAs: [],
 };
 
 const softwareSchema = {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
-  name: "NiceResume",
+  name: "resumeclone",
   applicationCategory: "BusinessApplication",
   operatingSystem: "Web",
+  description:
+    "Generate ATS-friendly resumes and cover letters tailored to every job description. Mass apply to jobs with customized, optimized applications in seconds.",
   offers: [
     {
       "@type": "Offer",
       price: "0",
       priceCurrency: "USD",
       name: "Free Plan",
-      description: "Create 1 resume with basic templates",
+      description:
+        "Create 1 resume with basic templates and PDF download",
     },
     {
       "@type": "Offer",
@@ -49,7 +75,7 @@ const softwareSchema = {
       priceCurrency: "USD",
       name: "Pro Plan",
       description:
-        "Unlimited resumes, all templates, AI suggestions, and cover letter generator",
+        "Unlimited resumes, all templates, AI suggestions, cover letter generator, and DOCX export",
     },
   ],
   aggregateRating: {
@@ -67,34 +93,66 @@ const faqSchema = {
   mainEntity: [
     {
       "@type": "Question",
-      name: "Why should I use an online resume builder?",
+      name: "What is resumeclone?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "An online resume builder like NiceResume saves you hours of formatting headaches. You get professional, ATS-optimized templates, real-time previews, and AI-powered suggestions—all without needing design skills.",
+        text: "resumeclone is an AI-powered resume builder that helps you create, tailor, and optimize resumes and cover letters for every job you apply to. Upload your base resume once, paste job descriptions, and instantly generate ATS-friendly, customized applications at scale.",
       },
     },
     {
       "@type": "Question",
-      name: "Are NiceResume templates ATS-friendly?",
+      name: "How does resumeclone work?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Yes, 100%. Every NiceResume template is designed from the ground up to be ATS-compatible. We use clean formatting, standard fonts, proper heading structures, and text-based PDFs that parse correctly through any Applicant Tracking System.",
+        text: "Upload your base resume or fill in your details, paste job descriptions you're interested in, and resumeclone's AI generates tailored resumes and cover letters optimized for each role. Every resume is formatted to pass ATS filters and ready to download as PDF or DOCX.",
       },
     },
     {
       "@type": "Question",
-      name: "Is the NiceResume resume builder really free?",
+      name: "Are resumeclone templates ATS-friendly?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Yes! You can create one resume, choose from our basic templates, and download it as a PDF completely free. No credit card required.",
+        text: "Yes, 100%. Every resumeclone template is designed from the ground up to be ATS-compatible. We use clean formatting, standard fonts, proper heading structures, and text-based PDFs that parse correctly through any Applicant Tracking System.",
       },
     },
     {
       "@type": "Question",
-      name: "What is ATS and why does it matter?",
+      name: "Is the resumeclone resume builder really free?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "ATS (Applicant Tracking System) is software used by over 90% of large companies to filter resumes before a human sees them. If your resume isn't ATS-friendly, it might never reach a recruiter—no matter how qualified you are.",
+        text: "Yes! You can create one resume, choose from basic templates, and download it as a PDF completely free. No credit card required. Our Pro plan ($19.99/month or $99.99/year) unlocks unlimited resumes, all premium templates, AI writing assistance, cover letters, and more.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Does resumeclone generate cover letters?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Yes. resumeclone Pro generates personalized cover letters for every application. Each cover letter is tailored to the job description and pulls relevant details from your resume.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "How many resumes can I create?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Free users can create 1 resume with basic templates and PDF download. Pro users get unlimited resumes, all premium templates, AI suggestions, cover letters, and DOCX export—everything you need to mass apply at scale.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Is resumeclone suitable for students and new graduates?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Yes. resumeclone is built for all job seekers—students applying to internships, new graduates entering the job market, career switchers, and experienced professionals. The AI adapts to your experience level.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Does resumeclone work for all industries?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Yes. Our templates and AI optimization work across all industries—tech, finance, healthcare, marketing, education, and more. The AI tailors your resume based on the specific job description.",
       },
     },
   ],
@@ -103,11 +161,13 @@ const faqSchema = {
 const websiteSchema = {
   "@context": "https://schema.org",
   "@type": "WebSite",
-  name: "NiceResume",
-  url: "https://niceresume.com",
+  name: "resumeclone",
+  url: "https://resumeclone.com",
+  description:
+    "AI-powered resume builder for mass applying to jobs with tailored, ATS-optimized resumes and cover letters.",
   potentialAction: {
     "@type": "SearchAction",
-    target: "https://niceresume.com/search?q={search_term_string}",
+    target: "https://resumeclone.com/search?q={search_term_string}",
     "query-input": "required name=search_term_string",
   },
 };
@@ -131,6 +191,7 @@ export default function Home() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
       />
+
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -138,7 +199,9 @@ export default function Home() {
       >
         <Navbar />
       </motion.div>
+
       <main>
+        {/* 1. Hero - Above the fold */}
         <motion.div
           initial="hidden"
           animate="visible"
@@ -147,61 +210,83 @@ export default function Home() {
         >
           <Hero />
         </motion.div>
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-100px" }}
-          variants={sectionVariants}
-          transition={{ duration: 0.4 }}
-        >
+
+        {/* 2. Problem - Agitate pain */}
+        <AnimatedSection>
+          <ProblemSection />
+        </AnimatedSection>
+
+        {/* 3. Solution - Introduce product */}
+        <AnimatedSection>
+          <SolutionSection />
+        </AnimatedSection>
+
+        {/* 4. How It Works - 4 steps */}
+        <AnimatedSection>
+          <HowItWorks />
+        </AnimatedSection>
+
+        {/* 5. Core Benefits */}
+        <AnimatedSection>
+          <BenefitsSection />
+        </AnimatedSection>
+
+        {/* 6. Feature Breakdown - Deeper layer */}
+        <AnimatedSection>
           <FeatureSections />
-        </motion.div>
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-100px" }}
-          variants={sectionVariants}
-          transition={{ duration: 0.4 }}
-        >
+        </AnimatedSection>
+
+        {/* 7. Feature Grid */}
+        <AnimatedSection>
           <FeatureGrid />
-        </motion.div>
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-100px" }}
-          variants={sectionVariants}
-          transition={{ duration: 0.4 }}
-        >
+        </AnimatedSection>
+
+        {/* 8. Before vs After */}
+        <AnimatedSection>
+          <ComparisonSection />
+        </AnimatedSection>
+
+        {/* 9. ATS Explainer */}
+        <AnimatedSection>
           <ATSExplainer />
-        </motion.div>
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-100px" }}
-          variants={sectionVariants}
-          transition={{ duration: 0.4 }}
-        >
+        </AnimatedSection>
+
+        {/* 10. Social Proof */}
+        <AnimatedSection>
+          <Testimonials />
+        </AnimatedSection>
+
+        {/* 11. Use Cases */}
+        <AnimatedSection>
+          <UseCases />
+        </AnimatedSection>
+
+        {/* Mid-page urgency CTA */}
+        <AnimatedSection>
+          <UrgencyCTA />
+        </AnimatedSection>
+
+        {/* 12. Objection Handling */}
+        <AnimatedSection>
+          <ObjectionSection />
+        </AnimatedSection>
+
+        {/* 13. Pricing */}
+        <AnimatedSection>
           <PricingPreview />
-        </motion.div>
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-100px" }}
-          variants={sectionVariants}
-          transition={{ duration: 0.4 }}
-        >
+        </AnimatedSection>
+
+        {/* 14. FAQ */}
+        <AnimatedSection>
           <FAQ />
-        </motion.div>
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-100px" }}
-          variants={sectionVariants}
-          transition={{ duration: 0.4 }}
-        >
+        </AnimatedSection>
+
+        {/* 15. Final CTA */}
+        <AnimatedSection>
           <CTABanner />
-        </motion.div>
+        </AnimatedSection>
       </main>
+
       <Footer />
     </div>
   );

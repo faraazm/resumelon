@@ -95,6 +95,7 @@ export default function NewResumePage() {
       const { storageId } = await uploadResponse.json();
 
       const data = await parseDocument({
+        clerkId: user.id,
         storageId,
         fileType: file.type,
         fileName: file.name,
@@ -128,7 +129,6 @@ export default function NewResumePage() {
         initialData: parsedResumeData,
       });
 
-      await incrementGeneration({ clerkId: user.id });
       router.push(`/app/resumes/${resumeId}/edit`);
     } catch (err) {
       console.error("Error uploading document:", err);

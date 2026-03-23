@@ -20,7 +20,9 @@ import {
 } from "@/components/ui/dialog";
 import {
   CreditCardIcon,
+  ChatBubbleLeftRightIcon,
 } from "@heroicons/react/24/outline";
+import { SupportDialog } from "@/components/app/support-dialog";
 
 export default function SettingsPage() {
   const { user } = useUser();
@@ -31,6 +33,7 @@ export default function SettingsPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
+  const [supportDialogOpen, setSupportDialogOpen] = useState(false);
 
   // Mock subscription data - will be replaced with Stripe
   const subscription = {
@@ -151,11 +154,37 @@ export default function SettingsPage() {
           </Card>
         </motion.div>
 
-        {/* Delete Account Card */}
+        {/* Contact Support Card */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.2 }}
+        >
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0">
+              <div>
+                <CardTitle>Contact Support</CardTitle>
+                <CardDescription>
+                  Have a question, issue, or feature request? We&apos;re here to help.
+                </CardDescription>
+              </div>
+              <Button
+                variant="outline"
+                className="gap-2"
+                onClick={() => setSupportDialogOpen(true)}
+              >
+                <ChatBubbleLeftRightIcon className="h-4 w-4" />
+                Get Help
+              </Button>
+            </CardHeader>
+          </Card>
+        </motion.div>
+
+        {/* Delete Account Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.25 }}
         >
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0">
@@ -175,6 +204,9 @@ export default function SettingsPage() {
           </Card>
         </motion.div>
       </div>
+
+      {/* Support Dialog */}
+      <SupportDialog open={supportDialogOpen} onOpenChange={setSupportDialogOpen} />
 
       {/* Delete Account Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

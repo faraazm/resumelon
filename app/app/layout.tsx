@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -8,9 +9,10 @@ import {
   EnvelopeIcon,
   Cog6ToothIcon,
 } from "@heroicons/react/24/outline";
-import { SparklesIcon } from "@heroicons/react/24/solid";
+import Image from "next/image";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useSyncUser } from "@/hooks/use-sync-user";
+import { ViewPreferenceProvider } from "@/hooks/use-view-preference";
 
 const navigation = [
   { name: "Resumes", href: "/app/resumes", icon: DocumentTextIcon },
@@ -27,24 +29,38 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   // Check if we're in the resume editor or onboarding (hide navigation)
   const isEditorView = pathname.includes("/edit") || pathname.includes("/new") || pathname.includes("/optimize");
   const isOnboarding = pathname.includes("/onboarding");
+  const showNav = !isEditorView && !isOnboarding;
 
-  if (isEditorView || isOnboarding) {
+  // Force scrollbar visible on dashboard pages to prevent layout shift
+  useEffect(() => {
+    if (!showNav) return;
+    document.documentElement.style.overflowY = "scroll";
+    return () => {
+      document.documentElement.style.overflowY = "";
+    };
+  }, [showNav]);
+
+  if (!showNav) {
     return <TooltipProvider>{children}</TooltipProvider>;
   }
 
   return (
     <TooltipProvider>
+      <ViewPreferenceProvider>
       <div className="min-h-screen bg-muted/30">
         {/* Top Navigation */}
         <header className="sticky top-0 z-50 w-full border-b border-border bg-background">
           <div className="mx-auto flex h-14 max-w-4xl items-center justify-between px-4 sm:px-6 lg:px-8">
             {/* Logo */}
-            <Link href="/app/resumes" className="flex items-center gap-2 text-[20px] tracking-tight">
-              <SparklesIcon className="h-5 w-5 text-black dark:text-white" />
-              <span>
-                <span className="font-light">nice</span>
-                <span className="font-bold">resume</span>
-              </span>
+            <Link href="/app/resumes" className="flex items-center gap-1.5 text-[20px] font-semibold tracking-tight">
+              <Image
+                src="/images/resumeclone-logo.png"
+                alt=""
+                width={24}
+                height={24}
+                className="h-6 w-6"
+              />
+              <span>resumeclone</span>
             </Link>
 
             {/* Navigation */}
@@ -84,6 +100,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         {/* Main Content */}
         <main>{children}</main>
       </div>
+      </ViewPreferenceProvider>
     </TooltipProvider>
   );
 }

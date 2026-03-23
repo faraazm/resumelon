@@ -642,6 +642,7 @@ function ResumeEditorContent() {
                     setActiveTab("write");
                     setActiveWriteSection(section);
                   }}
+                  onUpdate={updateResumeData}
                 />
               </motion.div>
             )}

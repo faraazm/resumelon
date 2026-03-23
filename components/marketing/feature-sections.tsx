@@ -5,11 +5,13 @@ import { CheckIcon } from "@heroicons/react/24/outline";
 import { ArrowUpRightIcon } from "@heroicons/react/20/solid";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { ImagePlaceholder } from "./image-placeholder";
 
 interface Feature {
   title: string;
   description: string;
   features: string[];
+  imagePlaceholder: string;
   cta?: {
     label: string;
     href: string;
@@ -18,47 +20,50 @@ interface Feature {
 
 const featureData: Feature[] = [
   {
-    title: "AI-Powered Resume Building",
+    title: "Bulk Resume Generation",
     description:
-      "Let our intelligent assistant help you craft compelling bullet points and optimize your resume for any job description.",
+      "Generate dozens or hundreds of tailored resumes from a single base resume. Each one is customized with the right keywords, skills, and phrasing for the specific job description.",
     features: [
-      "Smart content suggestions based on your role",
-      "Automatic keyword optimization for ATS",
-      "Real-time writing improvements",
-      "Job description analysis and tailoring",
+      "AI-powered keyword matching for every job listing",
+      "Automatic skill and experience rephrasing",
+      "Batch processing for multiple job descriptions",
+      "Each resume reads like it was hand-crafted",
     ],
+    imagePlaceholder: "Bulk generation interface",
     cta: {
-      label: "Learn More",
+      label: "Start generating",
       href: "/sign-up",
     },
   },
   {
-    title: "ATS-Optimized Templates",
+    title: "AI-Powered Cover Letters",
     description:
-      "Every template is designed to pass Applicant Tracking Systems while still looking professional and modern.",
+      "Stop writing cover letters from scratch. resumeclone generates personalized, compelling cover letters that complement your tailored resume for each application.",
+    features: [
+      "Pulls key details from your resume automatically",
+      "Matches tone and language to the job description",
+      "Highlights your most relevant experience",
+      "Ready to send in seconds, not hours",
+    ],
+    imagePlaceholder: "Cover letter generator preview",
+    cta: {
+      label: "Try cover letters",
+      href: "/sign-up",
+    },
+  },
+  {
+    title: "ATS-Safe Templates & Export",
+    description:
+      "Every template is designed to look professional and parse perfectly through Applicant Tracking Systems. Export as PDF or DOCX with one click—no watermarks, no limitations.",
     features: [
       "Tested with major ATS platforms",
-      "Clean, parseable formatting",
-      "Professional typography",
-      "Customizable sections and layouts",
+      "Clean, parseable formatting every time",
+      "High-quality PDF and DOCX export",
+      "Version management for all your resumes",
     ],
+    imagePlaceholder: "Template library preview",
     cta: {
-      label: "Learn More",
-      href: "/sign-up",
-    },
-  },
-  {
-    title: "One-Click Export",
-    description:
-      "Download your polished resume instantly. No watermarks, no limitations. Your resume, ready when you are.",
-    features: [
-      "High-quality PDF export",
-      "Perfect formatting every time",
-      "Unlimited downloads",
-      "Print-ready resolution",
-    ],
-    cta: {
-      label: "Learn More",
+      label: "Browse templates",
       href: "/sign-up",
     },
   },
@@ -153,12 +158,12 @@ function FeatureSection({
         </motion.div>
 
         {/* Visual Side */}
-        <div className="relative flex flex-col justify-center bg-gray-100 p-8 md:w-1/2 md:p-12 min-h-[300px]">
-          <div className="flex items-center justify-center h-full">
-            <span className="text-muted-foreground text-sm">
-              Feature preview
-            </span>
-          </div>
+        <div className="relative flex flex-col justify-center bg-muted/20 p-8 md:w-1/2 md:p-12 min-h-[300px]">
+          <ImagePlaceholder
+            label={feature.imagePlaceholder}
+            aspectRatio="auto"
+            className="h-full min-h-[250px]"
+          />
         </div>
       </motion.div>
     </div>
@@ -167,10 +172,20 @@ function FeatureSection({
 
 export function FeatureSections() {
   return (
-    <section id="features" className="bg-muted/30 py-8" aria-labelledby="features-heading">
-      <h2 id="features-heading" className="sr-only">
-        Key Features
-      </h2>
+    <section id="features" className="bg-background py-8" aria-labelledby="features-heading">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 pt-8 pb-0">
+        <div className="mx-auto max-w-3xl text-center">
+          <h2
+            id="features-heading"
+            className="text-3xl font-semibold tracking-tighter text-foreground sm:text-4xl"
+          >
+            Everything You Need to Land Interviews
+          </h2>
+          <p className="mt-4 text-lg text-muted-foreground">
+            From bulk resume generation to AI cover letters—every feature is built to help you apply faster and get more callbacks.
+          </p>
+        </div>
+      </div>
       {featureData.map((feature, index) => (
         <FeatureSection
           key={index}

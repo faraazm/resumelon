@@ -3,6 +3,7 @@
 import { v } from "convex/values";
 import { action } from "./_generated/server";
 import { api } from "./_generated/api";
+import { internal } from "./_generated/api";
 import OpenAI from "openai";
 
 // Schema for job match analysis structured output
@@ -207,12 +208,16 @@ const resumeSchema = {
 // Generate a resume from uploaded documents (multi-file AI synthesis)
 export const generateResumeFromDocuments = action({
   args: {
+    clerkId: v.string(),
     documentsText: v.string(),
     additionalInfo: v.optional(v.string()),
     generateCoverLetter: v.optional(v.boolean()),
     jobDescription: v.optional(v.string()),
   },
   handler: async (ctx, args): Promise<{ resumeData: any; coverLetterContent: string | null }> => {
+    const limitCheck = await ctx.runQuery(internal.users.internalCheckGenerationLimit, { clerkId: args.clerkId });
+    if (!limitCheck.allowed) throw new Error(limitCheck.reason);
+
     const openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
     });
@@ -284,6 +289,7 @@ IMPORTANT GUIDELINES:
       if (args.generateCoverLetter && args.jobDescription) {
         try {
           const coverLetterResult = await ctx.runAction(api.ai.generateCoverLetter, {
+            clerkId: args.clerkId,
             resumeData: {
               personalDetails: {
                 firstName: resumeData.personalDetails.firstName,
@@ -314,6 +320,7 @@ IMPORTANT GUIDELINES:
         }
       }
 
+      await ctx.runMutation(internal.users.internalIncrementGenerationCount, { clerkId: args.clerkId });
       return { resumeData, coverLetterContent };
     } catch (error) {
       console.error("AI resume generation error:", error);
@@ -324,9 +331,13 @@ IMPORTANT GUIDELINES:
 
 export const parseResumeWithAI = action({
   args: {
+    clerkId: v.string(),
     extractedText: v.string(),
   },
   handler: async (ctx, args) => {
+    const limitCheck = await ctx.runQuery(internal.users.internalCheckGenerationLimit, { clerkId: args.clerkId });
+    if (!limitCheck.allowed) throw new Error(limitCheck.reason);
+
     const openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
     });
@@ -390,6 +401,7 @@ The extracted text may have formatting issues from PDF extraction - intelligentl
         })),
       };
 
+      await ctx.runMutation(internal.users.internalIncrementGenerationCount, { clerkId: args.clerkId });
       return result;
     } catch (error) {
       console.error("AI parsing error:", error);
@@ -401,12 +413,16 @@ The extracted text may have formatting issues from PDF extraction - intelligentl
 // Generate improved content for a resume field
 export const generateImprovedContent = action({
   args: {
+    clerkId: v.string(),
     content: v.string(),
     fieldType: v.string(),
     tone: v.string(),
     customPrompt: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    const limitCheck = await ctx.runQuery(internal.users.internalCheckOptimizationLimit, { clerkId: args.clerkId });
+    if (!limitCheck.allowed) throw new Error(limitCheck.reason);
+
     const openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
     });
@@ -476,6 +492,7 @@ IMPORTANT GUIDELINES:
         cleanedContent = `<p>${cleanedContent}</p>`;
       }
 
+      await ctx.runMutation(internal.users.internalIncrementOptimizationCount, { clerkId: args.clerkId });
       return { content: cleanedContent };
     } catch (error) {
       console.error("AI generation error:", error);
@@ -487,6 +504,7 @@ IMPORTANT GUIDELINES:
 // Analyze how well a resume matches a job description
 export const analyzeJobMatch = action({
   args: {
+    clerkId: v.string(),
     resumeData: v.object({
       personalDetails: v.object({
         firstName: v.string(),
@@ -507,6 +525,9 @@ export const analyzeJobMatch = action({
     jobDescription: v.string(),
   },
   handler: async (ctx, args) => {
+    const limitCheck = await ctx.runQuery(internal.users.internalCheckGenerationLimit, { clerkId: args.clerkId });
+    if (!limitCheck.allowed) throw new Error(limitCheck.reason);
+
     const openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
     });
@@ -557,6 +578,7 @@ ${args.jobDescription}`;
         throw new Error("No response from AI");
       }
 
+      await ctx.runMutation(internal.users.internalIncrementGenerationCount, { clerkId: args.clerkId });
       return JSON.parse(content);
     } catch (error) {
       console.error("AI job match analysis error:", error);
@@ -568,6 +590,7 @@ ${args.jobDescription}`;
 // Generate a fully optimized resume for a specific job
 export const generateOptimizedResume = action({
   args: {
+    clerkId: v.string(),
     resumeData: v.object({
       personalDetails: v.object({
         firstName: v.string(),
@@ -609,6 +632,9 @@ export const generateOptimizedResume = action({
     jobDescription: v.string(),
   },
   handler: async (ctx, args) => {
+    const limitCheck = await ctx.runQuery(internal.users.internalCheckGenerationLimit, { clerkId: args.clerkId });
+    if (!limitCheck.allowed) throw new Error(limitCheck.reason);
+
     const openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
     });
@@ -658,6 +684,7 @@ Generate an optimized version of this resume tailored for the above job.`;
         throw new Error("No response from AI");
       }
 
+      await ctx.runMutation(internal.users.internalIncrementGenerationCount, { clerkId: args.clerkId });
       return JSON.parse(content);
     } catch (error) {
       console.error("AI resume optimization error:", error);
@@ -669,6 +696,7 @@ Generate an optimized version of this resume tailored for the above job.`;
 // Generate a cover letter for an optimized resume
 export const generateCoverLetter = action({
   args: {
+    clerkId: v.string(),
     resumeData: v.object({
       personalDetails: v.object({
         firstName: v.string(),
@@ -695,6 +723,9 @@ export const generateCoverLetter = action({
     jobTitle: v.string(),
   },
   handler: async (ctx, args) => {
+    const limitCheck = await ctx.runQuery(internal.users.internalCheckGenerationLimit, { clerkId: args.clerkId });
+    if (!limitCheck.allowed) throw new Error(limitCheck.reason);
+
     const openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
     });
@@ -702,13 +733,14 @@ export const generateCoverLetter = action({
     const systemPrompt = `You are an expert cover letter writer. Write a compelling, professional cover letter.
 
 GUIDELINES:
-1. Address it to the Hiring Manager (unless a specific name is in the job description)
-2. Keep it concise - 3-4 paragraphs maximum
+1. Start with "Dear [Hiring Manager Name or 'Hiring Manager']," as the first line
+2. Keep it concise - 3-4 body paragraphs maximum
 3. Reference specific skills and experience from the resume that match the job
 4. Show genuine enthusiasm for the role and company
 5. Use a professional but personable tone
 6. Do not use generic filler or cliches
-7. Return ONLY the cover letter text, no subject line or metadata`;
+7. End with a closing like "Sincerely," followed by the applicant's full name on the next line
+8. Return ONLY the complete cover letter text (greeting through signature), no subject line or metadata`;
 
     const userInput = `RESUME:
 Name: ${args.resumeData.personalDetails.firstName} ${args.resumeData.personalDetails.lastName}
@@ -734,6 +766,7 @@ ${args.jobDescription}`;
         throw new Error("No response from AI");
       }
 
+      await ctx.runMutation(internal.users.internalIncrementGenerationCount, { clerkId: args.clerkId });
       return { content: content.trim() };
     } catch (error) {
       console.error("AI cover letter generation error:", error);

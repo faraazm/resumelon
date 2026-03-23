@@ -1,10 +1,21 @@
 "use client";
 
-import { useRef, useEffect, useState } from "react";
+import { useState, useRef, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
+import { getTemplate, TemplateConfig, getTemplateDefaultHeadingFont, getTemplateDefaultBodyFont } from "@/lib/templates";
+import { CoverLetterData, CoverLetterRenderer } from "@/lib/cover-letter/CoverLetterRenderer";
+import { useCoverLetterPagination, CoverLetterPageRenderer } from "@/lib/cover-letter/use-cover-letter-pagination";
+import {
+  LETTER_WIDTH_PX,
+  LETTER_HEIGHT_PX,
+  DEFAULT_MARGIN_PX,
+  COMPACT_MARGIN_PX,
+  SPACIOUS_MARGIN_PX,
+} from "@/lib/pdf-constants";
 
 interface CoverLetterPreviewProps {
   data: {
-    title: string;
     personalDetails: {
       firstName: string;
       lastName: string;
@@ -18,113 +29,140 @@ interface CoverLetterPreviewProps {
       hiringManagerName: string;
       content: string;
     };
+    template?: string;
+    style?: {
+      font: string;
+      headingFont?: string;
+      bodyFont?: string;
+      spacing: string;
+      accentColor: string;
+      backgroundColor?: string;
+    };
   };
 }
 
 export function CoverLetterPreview({ data }: CoverLetterPreviewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [scale, setScale] = useState(1);
+  const [scale, setScale] = useState(0.5);
+  const [currentPage, setCurrentPage] = useState(0);
 
-  const { personalDetails, letterContent } = data;
+  const templateId = data.template || "ats-classic";
+  const baseTemplate = getTemplate(templateId);
+  const spacing = data.style?.spacing || "normal";
 
-  // Get today's date formatted
-  const today = new Date().toLocaleDateString("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
+  const accentColor = data.style?.accentColor || baseTemplate.colors.accent;
 
-  // Calculate scale to fit the preview in the container
+  const adjustedTemplate: TemplateConfig = {
+    ...baseTemplate,
+    spacing: {
+      ...baseTemplate.spacing,
+      sectionGap: spacing === "compact" ? "mb-2" : spacing === "spacious" ? "mb-4" : "mb-3",
+      itemGap: spacing === "compact" ? "mt-1" : spacing === "spacious" ? "mt-2.5" : "mt-2",
+      pagePadding: spacing === "compact" ? "p-[0.4in]" : spacing === "spacious" ? "p-[0.6in]" : "p-[0.5in]",
+      lineHeight: spacing === "compact" ? "leading-tight" : spacing === "spacious" ? "leading-snug" : "leading-snug",
+    },
+    colors: {
+      ...baseTemplate.colors,
+      accent: accentColor,
+      divider: accentColor,
+    },
+  };
+
+  const headingFontId = data.style?.headingFont || getTemplateDefaultHeadingFont(templateId);
+  const bodyFontId = data.style?.bodyFont || getTemplateDefaultBodyFont(templateId);
+  const backgroundColor = data.style?.backgroundColor || "#ffffff";
+
+  const marginPx = spacing === "compact" ? COMPACT_MARGIN_PX : spacing === "spacious" ? SPACIOUS_MARGIN_PX : DEFAULT_MARGIN_PX;
+
+  const coverLetterData: CoverLetterData = {
+    personalDetails: data.personalDetails,
+    letterContent: data.letterContent,
+  };
+
+  const { pages, totalPages, measurerElement } = useCoverLetterPagination(
+    coverLetterData,
+    adjustedTemplate,
+    { marginPx, headingFontId, bodyFontId, backgroundColor }
+  );
+
+  // Scale to fit container
   useEffect(() => {
     const updateScale = () => {
       if (containerRef.current) {
-        const containerWidth = containerRef.current.offsetWidth - 32; // Account for padding
-        const pageWidth = 816; // US Letter width in px at 96 DPI
-        const newScale = Math.min(containerWidth / pageWidth, 1);
-        setScale(newScale);
+        const containerWidth = containerRef.current.offsetWidth;
+        setScale(Math.min(containerWidth / LETTER_WIDTH_PX, 1));
       }
     };
-
     updateScale();
     window.addEventListener("resize", updateScale);
     return () => window.removeEventListener("resize", updateScale);
   }, []);
 
-  const fullName = `${personalDetails.firstName} ${personalDetails.lastName}`.trim();
+  // Clamp current page
+  useEffect(() => {
+    if (currentPage >= totalPages) {
+      setCurrentPage(Math.max(0, totalPages - 1));
+    }
+  }, [totalPages, currentPage]);
+
+  const page = pages[currentPage] || pages[0];
 
   return (
-    <div ref={containerRef} className="flex justify-center">
+    <div ref={containerRef} className="flex flex-col items-center gap-4">
+      {measurerElement}
+
+      {/* Page */}
       <div
         className="bg-white shadow-lg rounded-sm overflow-hidden"
         style={{
-          width: `${816 * scale}px`,
-          height: `${1056 * scale}px`,
+          width: `${LETTER_WIDTH_PX * scale}px`,
+          height: `${LETTER_HEIGHT_PX * scale}px`,
         }}
       >
         <div
           className="origin-top-left"
           style={{
-            width: "816px",
-            height: "1056px",
+            width: `${LETTER_WIDTH_PX}px`,
+            height: `${LETTER_HEIGHT_PX}px`,
             transform: `scale(${scale})`,
           }}
         >
-          {/* Letter Content */}
-          <div className="w-full h-full p-16 font-serif text-[14px] leading-relaxed text-gray-800">
-            {/* Sender Information */}
-            <div className="mb-8">
-              {fullName && (
-                <p className="font-semibold text-lg text-gray-900">{fullName}</p>
-              )}
-              {personalDetails.jobTitle && (
-                <p className="text-gray-600">{personalDetails.jobTitle}</p>
-              )}
-              <div className="mt-1 text-sm text-gray-600 space-y-0.5">
-                {personalDetails.email && <p>{personalDetails.email}</p>}
-                {personalDetails.phone && <p>{personalDetails.phone}</p>}
-                {personalDetails.address && <p>{personalDetails.address}</p>}
-              </div>
-            </div>
-
-            {/* Date */}
-            <p className="mb-6 text-gray-700">{today}</p>
-
-            {/* Recipient Information */}
-            {(letterContent.hiringManagerName || letterContent.companyName) && (
-              <div className="mb-6 text-gray-700">
-                {letterContent.hiringManagerName && (
-                  <p>{letterContent.hiringManagerName}</p>
-                )}
-                {letterContent.companyName && (
-                  <p>{letterContent.companyName}</p>
-                )}
-              </div>
-            )}
-
-            {/* Greeting */}
-            <p className="mb-4 text-gray-800">
-              Dear {letterContent.hiringManagerName || "Hiring Manager"},
-            </p>
-
-            {/* Letter Body */}
-            <div
-              className="prose prose-sm max-w-none text-gray-700 leading-relaxed [&_p]:mb-4 [&_ul]:mb-4 [&_ol]:mb-4 [&_li]:mb-1"
-              dangerouslySetInnerHTML={{
-                __html: letterContent.content ||
-                  '<p class="text-gray-400 italic">Start writing your cover letter content...</p>'
-              }}
-            />
-
-            {/* Closing */}
-            {letterContent.content && (
-              <div className="mt-8 text-gray-800">
-                <p className="mb-4">Sincerely,</p>
-                <p className="font-medium">{fullName || "[Your Name]"}</p>
-              </div>
-            )}
-          </div>
+          <CoverLetterPageRenderer
+            page={page}
+            data={coverLetterData}
+            template={adjustedTemplate}
+            marginPx={marginPx}
+            backgroundColor={backgroundColor}
+            headingFontId={headingFontId}
+            bodyFontId={bodyFontId}
+          />
         </div>
       </div>
+
+      {/* Page Navigation */}
+      {totalPages > 1 && (
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            size="icon-xs"
+            onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
+            disabled={currentPage === 0}
+          >
+            <ChevronLeftIcon className="h-3.5 w-3.5" />
+          </Button>
+          <span className="text-xs text-muted-foreground">
+            {currentPage + 1} / {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            size="icon-xs"
+            onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
+            disabled={currentPage === totalPages - 1}
+          >
+            <ChevronRightIcon className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

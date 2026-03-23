@@ -73,7 +73,6 @@ function OptimizePageContent() {
   const analyzeJobMatch = useAction(api.ai.analyzeJobMatch);
   const generateOptimizedResume = useAction(api.ai.generateOptimizedResume);
   const createResume = useMutation(api.resumes.createResume);
-  const incrementGeneration = useMutation(api.users.incrementGenerationCount);
 
   const checkUsageLimits = () => {
     if (!canGenerate) {
@@ -92,6 +91,7 @@ function OptimizePageContent() {
 
     try {
       const result = await analyzeJobMatch({
+        clerkId: user.id,
         resumeData: {
           personalDetails: {
             firstName: resume.personalDetails.firstName,
@@ -139,12 +139,14 @@ function OptimizePageContent() {
 
   const generateAndCreate = async () => {
     if (!user?.id || !resume || isGenerating) return;
+    if (!checkUsageLimits()) return;
 
     setIsGenerating(true);
     setStep("loading");
 
     try {
       const result = await generateOptimizedResume({
+        clerkId: user!.id,
         resumeData: {
           personalDetails: resume.personalDetails,
           contact: resume.contact,
@@ -181,7 +183,6 @@ function OptimizePageContent() {
         },
       });
 
-      await incrementGeneration({ clerkId: user!.id });
       router.push(`/app/resumes/${newResumeId}/edit`);
     } catch (err) {
       console.error("Generation error:", err);
@@ -282,7 +283,7 @@ function OptimizePageContent() {
 
       {/* Error toast */}
       {error && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 rounded-lg bg-destructive/10 px-4 py-3 text-sm text-destructive shadow-lg">
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 rounded-lg bg-destructive px-4 py-3 text-sm text-destructive-foreground shadow-lg">
           {error}
         </div>
       )}

@@ -3,8 +3,10 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAction, useQuery, useMutation } from "convex/react";
+import { useUser } from "@clerk/nextjs";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
+import { UpgradeDialog } from "@/components/app/upgrade-dialog";
 import {
   DndContext,
   closestCenter,
@@ -70,41 +72,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
-// Input sanitization utilities
-const sanitizeText = (value: string, maxLength: number = 500): string => {
-  // Remove potentially dangerous characters and limit length
-  return value
-    .replace(/<[^>]*>/g, "") // Remove HTML tags
-    .replace(/[<>]/g, "") // Remove < and > characters
-    .slice(0, maxLength)
-    .trim();
-};
-
-const sanitizeEmail = (value: string): string => {
-  // Basic email sanitization - remove spaces and dangerous chars
-  return value
-    .replace(/[<>'"]/g, "")
-    .replace(/\s/g, "")
-    .toLowerCase()
-    .slice(0, 254); // Max email length per RFC
-};
-
-const sanitizePhone = (value: string): string => {
-  // Allow only digits, spaces, dashes, parentheses, and plus
-  return value
-    .replace(/[^0-9\s\-\(\)\+\.]/g, "")
-    .slice(0, 20);
-};
-
-const sanitizeUrl = (value: string): string => {
-  // Basic URL sanitization
-  return value
-    .replace(/[<>'"]/g, "")
-    .replace(/javascript:/gi, "")
-    .replace(/data:/gi, "")
-    .slice(0, 500);
-};
+import { sanitizeText, sanitizeEmail, sanitizePhone, sanitizeUrl, sanitizeHtml } from "@/lib/sanitize";
 
 // Animation variants for content transitions
 const contentVariants = {
@@ -238,6 +213,19 @@ export function WriteTab({
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   // Shared confirmation state for item-level deletes (e.g. a single job entry)
   const [pendingItemRemove, setPendingItemRemove] = useState<{ label: string; onConfirm: () => void } | null>(null);
+
+  // Optimization limit for free users
+  const { user: clerkUser } = useUser();
+  const clerkId = clerkUser?.id;
+  const optimizationLimit = useQuery(
+    api.users.getRemainingOptimizations,
+    clerkId ? { clerkId } : "skip"
+  );
+  const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
+  const canOptimize = !optimizationLimit || optimizationLimit.remaining > 0;
+  const handleOptimizeLimitReached = useCallback(() => setShowUpgradeDialog(true), []);
+  // Server-side increment happens inside generateImprovedContent action
+  const handleOptimizationUsed = useCallback(() => {}, []);
 
   // Persisted AI usage state map - keyed by fieldType + fieldId, survives tab switches
   const [aiUsageStates, setAIUsageStates] = useState<Record<string, AIUsageState>>({});
@@ -516,6 +504,7 @@ export function WriteTab({
                 {activeSection === "summary" && (
                   <SummaryForm
                     resumeId={resumeId}
+                    clerkId={clerkId}
                     data={resumeData.summary}
                     onUpdate={(data) => onUpdate("summary", data)}
                     sectionLabel={currentSectionInfo?.label || "Professional Summary"}
@@ -524,11 +513,15 @@ export function WriteTab({
                     skipAutoGen={resumeSource === "ai_generated" || resumeSource === "optimized" || resumeSource === "upload"}
                     aiUsageState={getAIUsageState("summary")}
                     onAIUsageStateChange={(s) => setAIUsageState("summary", s)}
+                    canOptimize={canOptimize}
+                    onOptimizeLimitReached={handleOptimizeLimitReached}
+                    onOptimizationUsed={handleOptimizationUsed}
                   />
                 )}
                 {activeSection === "experience" && (
                   <ExperienceForm
                     resumeId={resumeId}
+                    clerkId={clerkId}
                     data={resumeData.experience}
                     onUpdate={(data) => onUpdate("experience", data)}
                     sectionLabel={currentSectionInfo?.label || "Employment History"}
@@ -538,6 +531,9 @@ export function WriteTab({
                     onConfirmRemove={confirmItemRemove}
                     getAIUsageState={getAIUsageState}
                     setAIUsageState={setAIUsageState}
+                    canOptimize={canOptimize}
+                    onOptimizeLimitReached={handleOptimizeLimitReached}
+                    onOptimizationUsed={handleOptimizationUsed}
                   />
                 )}
                 {activeSection === "education" && (
@@ -562,6 +558,7 @@ export function WriteTab({
                 {activeSection === "internships" && (
                   <InternshipsForm
                     resumeId={resumeId}
+                    clerkId={clerkId}
                     data={resumeData.internships || []}
                     onUpdate={(data) => onUpdate("internships", data)}
                     sectionLabel={currentSectionInfo?.label || "Internships"}
@@ -571,6 +568,9 @@ export function WriteTab({
                     onConfirmRemove={confirmItemRemove}
                     getAIUsageState={getAIUsageState}
                     setAIUsageState={setAIUsageState}
+                    canOptimize={canOptimize}
+                    onOptimizeLimitReached={handleOptimizeLimitReached}
+                    onOptimizationUsed={handleOptimizationUsed}
                   />
                 )}
                 {activeSection === "courses" && (
@@ -616,6 +616,7 @@ export function WriteTab({
                 {activeSection === "hobbies" && (
                   <HobbiesForm
                     resumeId={resumeId}
+                    clerkId={clerkId}
                     data={resumeData.hobbies || ""}
                     onUpdate={(data) => onUpdate("hobbies", data)}
                     sectionLabel={currentSectionInfo?.label || "Hobbies & Interests"}
@@ -623,11 +624,15 @@ export function WriteTab({
                     onDelete={() => setShowDeleteSectionDialog(true)}
                     aiUsageState={getAIUsageState("hobbies")}
                     onAIUsageStateChange={(s) => setAIUsageState("hobbies", s)}
+                    canOptimize={canOptimize}
+                    onOptimizeLimitReached={handleOptimizeLimitReached}
+                    onOptimizationUsed={handleOptimizationUsed}
                   />
                 )}
                 {activeSection === "custom" && (
                   <CustomSectionForm
                     resumeId={resumeId}
+                    clerkId={clerkId}
                     data={resumeData.custom || { title: "", content: "" }}
                     onUpdate={(data) => onUpdate("custom", data)}
                     sectionLabel={currentSectionInfo?.label || "Custom Section"}
@@ -635,6 +640,9 @@ export function WriteTab({
                     onDelete={() => setShowDeleteSectionDialog(true)}
                     aiUsageState={getAIUsageState("custom")}
                     onAIUsageStateChange={(s) => setAIUsageState("custom", s)}
+                    canOptimize={canOptimize}
+                    onOptimizeLimitReached={handleOptimizeLimitReached}
+                    onOptimizationUsed={handleOptimizationUsed}
                   />
                 )}
               </motion.div>
@@ -816,6 +824,8 @@ export function WriteTab({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <UpgradeDialog open={showUpgradeDialog} onOpenChange={setShowUpgradeDialog} />
     </div>
   );
 }
@@ -849,7 +859,7 @@ function JobDescriptionForm({
           placeholder="Paste the full job description here. Include the job title, requirements, responsibilities, and any other relevant details. This helps our AI tailor your resume to match what the employer is looking for."
           value={data || ""}
           onChange={(e) => onUpdate(e.target.value)}
-          className="min-h-[250px] resize-none"
+          className="min-h-[250px] max-h-[400px] overflow-y-auto resize-none"
         />
         <p className="text-xs text-muted-foreground">
           Adding a job description helps the AI suggest improvements tailored to the specific role
@@ -920,7 +930,7 @@ function PersonalDetailsForm({
   onEdit: () => void;
   onDelete: () => void;
 }) {
-  const [showOptionalFields, setShowOptionalFields] = useState(false);
+
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -1136,45 +1146,33 @@ function PersonalDetailsForm({
       )}
 
       {/* Add Optional Fields Dropdown */}
-      <div className="relative">
-        <button
-          type="button"
-          onClick={() => setShowOptionalFields(!showOptionalFields)}
-          className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 cursor-pointer"
-        >
-          <PlusIcon className="h-4 w-4" />
-          Add optional fields
-          <ChevronDownIcon
-            className={`h-4 w-4 transition-transform ${showOptionalFields ? "rotate-180" : ""}`}
-          />
-        </button>
-
-        {showOptionalFields && (
-          <div className="absolute left-0 top-full z-10 mt-2 min-w-[200px] rounded-lg border border-border bg-background p-2 shadow-lg">
+      {!optionalFieldOptions.every((f) => f.enabled) && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 cursor-pointer"
+            >
+              <PlusIcon className="h-4 w-4" />
+              Add optional fields
+              <ChevronDownIcon className="h-4 w-4" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-48">
             {optionalFieldOptions
               .filter((f) => !f.enabled)
               .map((field) => (
-                <button
-                  type="button"
+                <DropdownMenuItem
                   key={field.id}
-                  onClick={() => {
-                    toggleOptionalField(field.id);
-                    setShowOptionalFields(false);
-                  }}
-                  className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+                  onClick={() => toggleOptionalField(field.id)}
                 >
-                  <PlusIcon className="h-4 w-4" />
+                  <PlusIcon className="mr-1.5 h-4 w-4 text-muted-foreground" />
                   {field.label}
-                </button>
+                </DropdownMenuItem>
               ))}
-            {optionalFieldOptions.every((f) => f.enabled) && (
-              <p className="px-3 py-2 text-sm text-muted-foreground">
-                All optional fields added
-              </p>
-            )}
-          </div>
-        )}
-      </div>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
 
       <div className="space-y-2">
         <Label>Photo (Optional)</Label>
@@ -1182,16 +1180,16 @@ function PersonalDetailsForm({
           {/* Photo preview or placeholder */}
           <div className="relative">
             {data?.photo ? (
-              <div className="h-20 w-20 rounded-lg overflow-hidden border-2 border-border">
+              <div className="h-20 w-20 rounded-md overflow-hidden border border-border">
                 <PhotoPreview storageId={data.photo} />
               </div>
             ) : (
-              <div className="flex h-20 w-20 items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted/50">
+              <div className="flex h-20 w-20 items-center justify-center rounded-md border border-dashed border-border bg-muted/50">
                 <UserIcon className="h-8 w-8 text-muted-foreground" />
               </div>
             )}
             {isUploadingPhoto && (
-              <div className="absolute inset-0 flex items-center justify-center bg-background/80 rounded-lg">
+              <div className="absolute inset-0 flex items-center justify-center bg-background/80 rounded-md">
                 <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
               </div>
             )}
@@ -1314,6 +1312,7 @@ function ContactForm({
 // Summary Form with Rich Text Editor and AI
 function SummaryForm({
   resumeId,
+  clerkId,
   data,
   onUpdate,
   sectionLabel,
@@ -1322,8 +1321,12 @@ function SummaryForm({
   skipAutoGen,
   aiUsageState,
   onAIUsageStateChange,
+  canOptimize,
+  onOptimizeLimitReached,
+  onOptimizationUsed,
 }: {
   resumeId: Id<"resumes">;
+  clerkId?: string;
   data: string;
   onUpdate: (data: string) => void;
   sectionLabel: string;
@@ -1332,6 +1335,9 @@ function SummaryForm({
   skipAutoGen?: boolean;
   aiUsageState?: AIUsageState;
   onAIUsageStateChange?: (state: AIUsageState) => void;
+  canOptimize?: boolean;
+  onOptimizeLimitReached?: () => void;
+  onOptimizationUsed?: () => void;
 }) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [localGenerations, setLocalGenerations] = useState<Array<{
@@ -1408,11 +1414,13 @@ function SummaryForm({
   }, [existingGenerations, skipAutoGen]);
 
   const handleGenerate = useCallback(async (tone: ToneType, isAutoGen = false) => {
-    if (!data || data.trim().length < 10) return;
+    if (!data || data.trim().length < 10 || !clerkId) return;
+    if (!isAutoGen && !canOptimize) { onOptimizeLimitReached?.(); return; }
 
     setIsGenerating(true);
     try {
       const result = await generateContent({
+        clerkId,
         content: data,
         fieldType: "summary",
         tone,
@@ -1437,20 +1445,24 @@ function SummaryForm({
           tone,
           isAutoGenerated: isAutoGen,
         });
+
+        if (!isAutoGen) onOptimizationUsed?.();
       }
     } catch (error) {
       console.error("Failed to generate content:", error);
     } finally {
       setIsGenerating(false);
     }
-  }, [data, generateContent, saveGeneration, resumeId]);
+  }, [data, clerkId, generateContent, saveGeneration, resumeId, canOptimize, onOptimizeLimitReached, onOptimizationUsed]);
 
   const handleCustomPrompt = useCallback(async (prompt: string) => {
-    if (!data || data.trim().length < 10) return;
+    if (!data || data.trim().length < 10 || !clerkId) return;
+    if (!canOptimize) { onOptimizeLimitReached?.(); return; }
 
     setIsGenerating(true);
     try {
       const result = await generateContent({
+        clerkId,
         content: data,
         fieldType: "summary",
         tone: "custom",
@@ -1476,13 +1488,15 @@ function SummaryForm({
           tone: "custom",
           prompt,
         });
+
+        onOptimizationUsed?.();
       }
     } catch (error) {
       console.error("Failed to generate content:", error);
     } finally {
       setIsGenerating(false);
     }
-  }, [data, generateContent, saveGeneration, resumeId]);
+  }, [data, generateContent, saveGeneration, resumeId, canOptimize, onOptimizeLimitReached, onOptimizationUsed]);
 
   const handleUseGeneration = useCallback((content: string, generationIndex: number) => {
     onUpdate(content);
@@ -1507,7 +1521,7 @@ function SummaryForm({
       <div className="space-y-2">
         <RichTextEditor
           content={data || ""}
-          onChange={onUpdate}
+          onChange={(html) => onUpdate(sanitizeHtml(html))}
           placeholder="Write a brief overview of your experience and career goals..."
           minHeight="150px"
           resumeId={resumeId as string}
@@ -1533,20 +1547,28 @@ function SummaryForm({
 // Experience Bullets Editor with AI (sub-component for each experience item)
 function ExperienceBulletsEditor({
   resumeId,
+  clerkId,
   experienceId,
   bullets,
   onUpdate,
   skipAutoGen,
   aiUsageState,
   onAIUsageStateChange,
+  canOptimize,
+  onOptimizeLimitReached,
+  onOptimizationUsed,
 }: {
   resumeId: Id<"resumes">;
+  clerkId?: string;
   experienceId: string;
   bullets: string[];
   onUpdate: (bullets: string[]) => void;
   skipAutoGen?: boolean;
   aiUsageState?: AIUsageState;
   onAIUsageStateChange?: (state: AIUsageState) => void;
+  canOptimize?: boolean;
+  onOptimizeLimitReached?: () => void;
+  onOptimizationUsed?: () => void;
 }) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [localGenerations, setLocalGenerations] = useState<Array<{
@@ -1640,11 +1662,13 @@ function ExperienceBulletsEditor({
 
   const handleGenerate = useCallback(async (tone: ToneType, isAutoGen = false) => {
     const bulletContent = bullets?.join("\n") || "";
-    if (bulletContent.trim().length < 10) return;
+    if (bulletContent.trim().length < 10 || !clerkId) return;
+    if (!isAutoGen && !canOptimize) { onOptimizeLimitReached?.(); return; }
 
     setIsGenerating(true);
     try {
       const result = await generateContent({
+        clerkId,
         content: bulletContent,
         fieldType: "experience_bullets",
         tone,
@@ -1668,21 +1692,25 @@ function ExperienceBulletsEditor({
           tone,
           isAutoGenerated: isAutoGen,
         });
+
+        if (!isAutoGen) onOptimizationUsed?.();
       }
     } catch (error) {
       console.error("Failed to generate content:", error);
     } finally {
       setIsGenerating(false);
     }
-  }, [bullets, generateContent, saveGeneration, resumeId, experienceId]);
+  }, [bullets, clerkId, generateContent, saveGeneration, resumeId, experienceId, canOptimize, onOptimizeLimitReached, onOptimizationUsed]);
 
   const handleCustomPrompt = useCallback(async (prompt: string) => {
     const bulletContent = bullets?.join("\n") || "";
-    if (bulletContent.trim().length < 10) return;
+    if (bulletContent.trim().length < 10 || !clerkId) return;
+    if (!canOptimize) { onOptimizeLimitReached?.(); return; }
 
     setIsGenerating(true);
     try {
       const result = await generateContent({
+        clerkId,
         content: bulletContent,
         fieldType: "experience_bullets",
         tone: "custom",
@@ -1708,13 +1736,15 @@ function ExperienceBulletsEditor({
           tone: "custom",
           prompt,
         });
+
+        onOptimizationUsed?.();
       }
     } catch (error) {
       console.error("Failed to generate content:", error);
     } finally {
       setIsGenerating(false);
     }
-  }, [bullets, generateContent, saveGeneration, resumeId, experienceId]);
+  }, [bullets, generateContent, saveGeneration, resumeId, experienceId, canOptimize, onOptimizeLimitReached, onOptimizationUsed]);
 
   const handleUseGeneration = useCallback((content: string, generationIndex: number) => {
     onUpdate(htmlToBullets(content));
@@ -1767,9 +1797,13 @@ function SortableExperienceCard({
   updateExperience,
   removeExperience,
   resumeId,
+  clerkId,
   skipAutoGen,
   getAIUsageState,
   setAIUsageState,
+  canOptimize,
+  onOptimizeLimitReached,
+  onOptimizationUsed,
 }: {
   exp: any;
   index: number;
@@ -1778,9 +1812,13 @@ function SortableExperienceCard({
   updateExperience: (index: number, field: string, value: any) => void;
   removeExperience: (index: number) => void;
   resumeId: Id<"resumes">;
+  clerkId?: string;
   skipAutoGen?: boolean;
   getAIUsageState: (key: string) => AIUsageState | undefined;
   setAIUsageState: (key: string, state: AIUsageState) => void;
+  canOptimize?: boolean;
+  onOptimizeLimitReached?: () => void;
+  onOptimizationUsed?: () => void;
 }) {
   const {
     attributes,
@@ -1901,12 +1939,16 @@ function SortableExperienceCard({
               </div>
               <ExperienceBulletsEditor
                 resumeId={resumeId}
+                clerkId={clerkId}
                 experienceId={exp.id}
                 bullets={exp.bullets || [""]}
                 onUpdate={(bullets) => updateExperience(index, "bullets", bullets)}
                 skipAutoGen={skipAutoGen}
                 aiUsageState={getAIUsageState(`experience_${exp.id}`)}
                 onAIUsageStateChange={(s) => setAIUsageState(`experience_${exp.id}`, s)}
+                canOptimize={canOptimize}
+                onOptimizeLimitReached={onOptimizeLimitReached}
+                onOptimizationUsed={onOptimizationUsed}
               />
               <div className="flex justify-end">
                 <Button
@@ -1929,6 +1971,7 @@ function SortableExperienceCard({
 
 function ExperienceForm({
   resumeId,
+  clerkId,
   data,
   onUpdate,
   sectionLabel,
@@ -1938,8 +1981,12 @@ function ExperienceForm({
   onConfirmRemove,
   getAIUsageState,
   setAIUsageState,
+  canOptimize,
+  onOptimizeLimitReached,
+  onOptimizationUsed,
 }: {
   resumeId: Id<"resumes">;
+  clerkId?: string;
   data: any[];
   onUpdate: (data: any[]) => void;
   sectionLabel: string;
@@ -1949,6 +1996,9 @@ function ExperienceForm({
   onConfirmRemove: (label: string, onConfirm: () => void) => void;
   getAIUsageState: (key: string) => AIUsageState | undefined;
   setAIUsageState: (key: string, state: AIUsageState) => void;
+  canOptimize?: boolean;
+  onOptimizeLimitReached?: () => void;
+  onOptimizationUsed?: () => void;
 }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -2034,9 +2084,13 @@ function ExperienceForm({
                 updateExperience={updateExperience}
                 removeExperience={removeExperience}
                 resumeId={resumeId}
+                clerkId={clerkId}
                 skipAutoGen={skipAutoGen}
                 getAIUsageState={getAIUsageState}
                 setAIUsageState={setAIUsageState}
+                canOptimize={canOptimize}
+                onOptimizeLimitReached={onOptimizeLimitReached}
+                onOptimizationUsed={onOptimizationUsed}
               />
             ))}
           </div>
@@ -2510,20 +2564,28 @@ function SkillsForm({
 // Internship Bullets Editor with AI (reuses same pattern as ExperienceBulletsEditor)
 function InternshipBulletsEditor({
   resumeId,
+  clerkId,
   internshipId,
   bullets,
   onUpdate,
   skipAutoGen,
   aiUsageState,
   onAIUsageStateChange,
+  canOptimize,
+  onOptimizeLimitReached,
+  onOptimizationUsed,
 }: {
   resumeId: Id<"resumes">;
+  clerkId?: string;
   internshipId: string;
   bullets: string[];
   onUpdate: (bullets: string[]) => void;
   skipAutoGen?: boolean;
   aiUsageState?: AIUsageState;
   onAIUsageStateChange?: (state: AIUsageState) => void;
+  canOptimize?: boolean;
+  onOptimizeLimitReached?: () => void;
+  onOptimizationUsed?: () => void;
 }) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [localGenerations, setLocalGenerations] = useState<Array<{
@@ -2613,11 +2675,13 @@ function InternshipBulletsEditor({
 
   const handleGenerate = useCallback(async (tone: ToneType, isAutoGen = false) => {
     const bulletContent = bullets?.join("\n") || "";
-    if (bulletContent.trim().length < 10) return;
+    if (bulletContent.trim().length < 10 || !clerkId) return;
+    if (!isAutoGen && !canOptimize) { onOptimizeLimitReached?.(); return; }
 
     setIsGenerating(true);
     try {
       const result = await generateContent({
+        clerkId,
         content: bulletContent,
         fieldType: "internship_bullets",
         tone,
@@ -2641,21 +2705,25 @@ function InternshipBulletsEditor({
           tone,
           isAutoGenerated: isAutoGen,
         });
+
+        if (!isAutoGen) onOptimizationUsed?.();
       }
     } catch (error) {
       console.error("Failed to generate content:", error);
     } finally {
       setIsGenerating(false);
     }
-  }, [bullets, generateContent, saveGeneration, resumeId, internshipId]);
+  }, [bullets, clerkId, generateContent, saveGeneration, resumeId, internshipId, canOptimize, onOptimizeLimitReached, onOptimizationUsed]);
 
   const handleCustomPrompt = useCallback(async (prompt: string) => {
     const bulletContent = bullets?.join("\n") || "";
-    if (bulletContent.trim().length < 10) return;
+    if (bulletContent.trim().length < 10 || !clerkId) return;
+    if (!canOptimize) { onOptimizeLimitReached?.(); return; }
 
     setIsGenerating(true);
     try {
       const result = await generateContent({
+        clerkId,
         content: bulletContent,
         fieldType: "internship_bullets",
         tone: "custom",
@@ -2681,13 +2749,15 @@ function InternshipBulletsEditor({
           tone: "custom",
           prompt,
         });
+
+        onOptimizationUsed?.();
       }
     } catch (error) {
       console.error("Failed to generate content:", error);
     } finally {
       setIsGenerating(false);
     }
-  }, [bullets, generateContent, saveGeneration, resumeId, internshipId]);
+  }, [bullets, generateContent, saveGeneration, resumeId, internshipId, canOptimize, onOptimizeLimitReached, onOptimizationUsed]);
 
   const handleUseGeneration = useCallback((content: string, generationIndex: number) => {
     onUpdate(htmlToBullets(content));
@@ -2730,6 +2800,7 @@ function InternshipBulletsEditor({
 // Internships Form (similar to Experience)
 function InternshipsForm({
   resumeId,
+  clerkId,
   data,
   onUpdate,
   sectionLabel,
@@ -2739,8 +2810,12 @@ function InternshipsForm({
   onConfirmRemove,
   getAIUsageState,
   setAIUsageState,
+  canOptimize,
+  onOptimizeLimitReached,
+  onOptimizationUsed,
 }: {
   resumeId: Id<"resumes">;
+  clerkId?: string;
   data: any[];
   onUpdate: (data: any[]) => void;
   sectionLabel: string;
@@ -2750,6 +2825,9 @@ function InternshipsForm({
   onConfirmRemove: (label: string, onConfirm: () => void) => void;
   getAIUsageState: (key: string) => AIUsageState | undefined;
   setAIUsageState: (key: string, state: AIUsageState) => void;
+  canOptimize?: boolean;
+  onOptimizeLimitReached?: () => void;
+  onOptimizationUsed?: () => void;
 }) {
   const [expandedId, setExpandedId] = useState<string | null>(data?.[0]?.id || null);
 
@@ -2883,12 +2961,16 @@ function InternshipsForm({
                     </div>
                     <InternshipBulletsEditor
                       resumeId={resumeId}
+                      clerkId={clerkId}
                       internshipId={internship.id}
                       bullets={internship.bullets || [""]}
                       onUpdate={(bullets) => updateInternship(index, "bullets", bullets)}
                       skipAutoGen={skipAutoGen}
                       aiUsageState={getAIUsageState(`internship_${internship.id}`)}
                       onAIUsageStateChange={(s) => setAIUsageState(`internship_${internship.id}`, s)}
+                      canOptimize={canOptimize}
+                      onOptimizeLimitReached={onOptimizeLimitReached}
+                      onOptimizationUsed={onOptimizationUsed}
                     />
                     <div className="flex justify-end">
                       <Button
@@ -3426,6 +3508,7 @@ function LinksForm({
 // Hobbies Form with AI
 function HobbiesForm({
   resumeId,
+  clerkId,
   data,
   onUpdate,
   sectionLabel,
@@ -3433,8 +3516,12 @@ function HobbiesForm({
   onDelete,
   aiUsageState,
   onAIUsageStateChange,
+  canOptimize,
+  onOptimizeLimitReached,
+  onOptimizationUsed,
 }: {
   resumeId: Id<"resumes">;
+  clerkId?: string;
   data: string;
   onUpdate: (data: string) => void;
   sectionLabel: string;
@@ -3442,6 +3529,9 @@ function HobbiesForm({
   onDelete: () => void;
   aiUsageState?: AIUsageState;
   onAIUsageStateChange?: (state: AIUsageState) => void;
+  canOptimize?: boolean;
+  onOptimizeLimitReached?: () => void;
+  onOptimizationUsed?: () => void;
 }) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [localGenerations, setLocalGenerations] = useState<Array<{
@@ -3512,11 +3602,13 @@ function HobbiesForm({
   }, [existingGenerations]);
 
   const handleGenerate = useCallback(async (tone: ToneType, isAutoGen = false) => {
-    if (!data || data.trim().length < 10) return;
+    if (!data || data.trim().length < 10 || !clerkId) return;
+    if (!isAutoGen && !canOptimize) { onOptimizeLimitReached?.(); return; }
 
     setIsGenerating(true);
     try {
       const result = await generateContent({
+        clerkId,
         content: data,
         fieldType: "hobbies",
         tone,
@@ -3540,20 +3632,24 @@ function HobbiesForm({
           tone,
           isAutoGenerated: isAutoGen,
         });
+
+        if (!isAutoGen) onOptimizationUsed?.();
       }
     } catch (error) {
       console.error("Failed to generate content:", error);
     } finally {
       setIsGenerating(false);
     }
-  }, [data, generateContent, saveGeneration, resumeId]);
+  }, [data, clerkId, generateContent, saveGeneration, resumeId, canOptimize, onOptimizeLimitReached, onOptimizationUsed]);
 
   const handleCustomPrompt = useCallback(async (prompt: string) => {
-    if (!data || data.trim().length < 10) return;
+    if (!data || data.trim().length < 10 || !clerkId) return;
+    if (!canOptimize) { onOptimizeLimitReached?.(); return; }
 
     setIsGenerating(true);
     try {
       const result = await generateContent({
+        clerkId,
         content: data,
         fieldType: "hobbies",
         tone: "custom",
@@ -3579,13 +3675,15 @@ function HobbiesForm({
           tone: "custom",
           prompt,
         });
+
+        onOptimizationUsed?.();
       }
     } catch (error) {
       console.error("Failed to generate content:", error);
     } finally {
       setIsGenerating(false);
     }
-  }, [data, generateContent, saveGeneration, resumeId]);
+  }, [data, generateContent, saveGeneration, resumeId, canOptimize, onOptimizeLimitReached, onOptimizationUsed]);
 
   const handleUseGeneration = useCallback((content: string, generationIndex: number) => {
     onUpdate(content);
@@ -3635,6 +3733,7 @@ function HobbiesForm({
 // Custom Section Form with AI
 function CustomSectionForm({
   resumeId,
+  clerkId,
   data,
   onUpdate,
   sectionLabel,
@@ -3642,8 +3741,12 @@ function CustomSectionForm({
   onDelete,
   aiUsageState,
   onAIUsageStateChange,
+  canOptimize,
+  onOptimizeLimitReached,
+  onOptimizationUsed,
 }: {
   resumeId: Id<"resumes">;
+  clerkId?: string;
   data: { title: string; content: string };
   onUpdate: (data: { title: string; content: string }) => void;
   sectionLabel: string;
@@ -3651,6 +3754,9 @@ function CustomSectionForm({
   onDelete: () => void;
   aiUsageState?: AIUsageState;
   onAIUsageStateChange?: (state: AIUsageState) => void;
+  canOptimize?: boolean;
+  onOptimizeLimitReached?: () => void;
+  onOptimizationUsed?: () => void;
 }) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [localGenerations, setLocalGenerations] = useState<Array<{
@@ -3721,11 +3827,13 @@ function CustomSectionForm({
   }, [existingGenerations]);
 
   const handleGenerate = useCallback(async (tone: ToneType, isAutoGen = false) => {
-    if (!data?.content || data.content.trim().length < 10) return;
+    if (!data?.content || data.content.trim().length < 10 || !clerkId) return;
+    if (!isAutoGen && !canOptimize) { onOptimizeLimitReached?.(); return; }
 
     setIsGenerating(true);
     try {
       const result = await generateContent({
+        clerkId,
         content: data.content,
         fieldType: "custom",
         tone,
@@ -3749,20 +3857,24 @@ function CustomSectionForm({
           tone,
           isAutoGenerated: isAutoGen,
         });
+
+        if (!isAutoGen) onOptimizationUsed?.();
       }
     } catch (error) {
       console.error("Failed to generate content:", error);
     } finally {
       setIsGenerating(false);
     }
-  }, [data?.content, generateContent, saveGeneration, resumeId]);
+  }, [data?.content, clerkId, generateContent, saveGeneration, resumeId, canOptimize, onOptimizeLimitReached, onOptimizationUsed]);
 
   const handleCustomPrompt = useCallback(async (prompt: string) => {
-    if (!data?.content || data.content.trim().length < 10) return;
+    if (!data?.content || data.content.trim().length < 10 || !clerkId) return;
+    if (!canOptimize) { onOptimizeLimitReached?.(); return; }
 
     setIsGenerating(true);
     try {
       const result = await generateContent({
+        clerkId,
         content: data.content,
         fieldType: "custom",
         tone: "custom",
@@ -3788,13 +3900,15 @@ function CustomSectionForm({
           tone: "custom",
           prompt,
         });
+
+        onOptimizationUsed?.();
       }
     } catch (error) {
       console.error("Failed to generate content:", error);
     } finally {
       setIsGenerating(false);
     }
-  }, [data?.content, generateContent, saveGeneration, resumeId]);
+  }, [data?.content, generateContent, saveGeneration, resumeId, canOptimize, onOptimizeLimitReached, onOptimizationUsed]);
 
   const handleUseGeneration = useCallback((content: string, generationIndex: number) => {
     onUpdate({ ...data, content });

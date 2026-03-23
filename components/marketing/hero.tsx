@@ -4,11 +4,18 @@ import Link from "next/link";
 import { SignedIn, SignedOut, ClerkLoaded, ClerkLoading } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import { ImagePlaceholder } from "./image-placeholder";
+
+const trustSignals = [
+  "Used by 10,000+ job seekers",
+  "ATS-optimized templates",
+  "AI-powered tailoring",
+];
 
 export function Hero() {
-  const scrollToFeatures = (e: React.MouseEvent<HTMLButtonElement>) => {
+  const scrollToSection = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    const element = document.querySelector("#features");
+    const element = document.querySelector("#solution");
     if (element) {
       element.scrollIntoView({ behavior: "smooth" });
     }
@@ -32,23 +39,24 @@ export function Hero() {
             </div>
 
             <h1 className="text-4xl font-semibold tracking-tighter text-foreground sm:text-5xl lg:text-6xl">
-              Build a Resume That Passes ATS and{" "}
+              Mass Apply to Jobs with Tailored Resumes{" "}
               <span
                 className="italic bg-gradient-to-r from-primary via-blue-500 to-violet-500 bg-clip-text text-transparent pb-1 inline-block font-normal text-[2.75rem] sm:text-[3.25rem] lg:text-[4rem] tracking-[0.02em]"
                 style={{ fontFamily: "var(--font-instrument-serif)" }}
               >
-                Gets Interviews
+                in Seconds
               </span>
             </h1>
 
             <motion.p
-              className="mt-6 text-lg leading-6 text-muted-foreground"
+              className="mt-6 text-lg leading-7 text-muted-foreground"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.2 }}
             >
-              Build a job-winning resume with our intelligent builder. Get
-              noticed by recruiters and land more interviews.
+              resumeclone generates ATS-friendly resumes and cover letters for
+              every job you apply to—customized, optimized, and ready to send in
+              seconds. Stop rewriting. Start interviewing.
             </motion.p>
 
             {/* CTAs */}
@@ -58,16 +66,15 @@ export function Hero() {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.3 }}
             >
-              {/* Loading skeleton for primary button */}
               <ClerkLoading>
-                <div className="h-11 w-[180px] animate-pulse rounded-md bg-muted" />
+                <div className="h-11 w-[220px] animate-pulse rounded-md bg-muted" />
               </ClerkLoading>
 
               <ClerkLoaded>
                 <SignedOut>
                   <Button size="lg" asChild className="text-base gap-1">
                     <Link href="/sign-up">
-                      Create my resume
+                      Generate My First Resume
                       <span>→</span>
                     </Link>
                   </Button>
@@ -85,31 +92,52 @@ export function Hero() {
               <Button
                 size="lg"
                 variant="outline"
-                onClick={scrollToFeatures}
+                onClick={scrollToSection}
                 className="text-base"
               >
-                Learn more
+                See How It Works
               </Button>
+            </motion.div>
+
+            {/* Trust Signals */}
+            <motion.div
+              className="mt-8 flex flex-wrap gap-x-6 gap-y-2"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+            >
+              {trustSignals.map((signal) => (
+                <span
+                  key={signal}
+                  className="flex items-center gap-1.5 text-sm text-muted-foreground"
+                >
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                  {signal}
+                </span>
+              ))}
             </motion.div>
           </motion.div>
 
-          {/* Right side - Mesh gradient placeholder */}
+          {/* Right side - Image placeholder */}
           <motion.div
             className="hidden items-center justify-center lg:flex lg:justify-end"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            <div className="relative w-full max-w-lg aspect-square">
-              {/* Blue border */}
+            <div className="relative w-full max-w-lg">
               <div className="absolute inset-0 rounded-3xl p-4 bg-primary">
-                {/* Inner gray square */}
-                <div className="h-full w-full rounded-2xl bg-gray-200 flex items-center justify-center">
-                  <span className="text-muted-foreground text-sm">
-                    Thumbnail preview
-                  </span>
+                <div className="h-full w-full rounded-2xl bg-gray-200 overflow-hidden">
+                  <ImagePlaceholder
+                    label="Bulk resume generation preview"
+                    aspectRatio="square"
+                    rounded="2xl"
+                    className="h-full border-0"
+                  />
                 </div>
               </div>
+              {/* Maintain aspect ratio */}
+              <div className="aspect-square" />
             </div>
           </motion.div>
         </div>

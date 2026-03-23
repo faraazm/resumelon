@@ -5,8 +5,17 @@ const isPublicRoute = createRouteMatcher([
   "/sign-in(.*)",
   "/sign-up(.*)",
   "/pricing(.*)",
+  "/about(.*)",
+  "/contact(.*)",
+  "/terms(.*)",
+  "/privacy(.*)",
+  "/ats-resume-builder(.*)",
+  "/resume-templates(.*)",
+  "/resume-generator(.*)",
+  "/cover-letter-generator(.*)",
+  "/cover-letter-templates(.*)",
   "/api/webhooks(.*)",
-  "/print/(.*)", // Print route is public but protected by signed token
+  "/print/(.*)",
 ]);
 
 export default clerkMiddleware(async (auth, req) => {

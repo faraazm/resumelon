@@ -42,6 +42,23 @@ export async function getResumeForPrint(token: string) {
 }
 
 /**
+ * Get cover letter for printing using a secure print token
+ */
+export async function getCoverLetterForPrint(token: string) {
+  const client = new ConvexHttpClient(convexUrl);
+
+  try {
+    const result = await client.query(api.printTokens.getCoverLetterForPrint, {
+      token,
+    });
+    return result;
+  } catch (error) {
+    console.error("Failed to fetch cover letter for print:", error);
+    return { error: "Failed to fetch cover letter", coverLetter: null };
+  }
+}
+
+/**
  * Mark a print token as consumed
  */
 export async function consumePrintToken(token: string) {

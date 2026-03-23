@@ -10,9 +10,10 @@ interface ImproveTabProps {
   resumeData: any;
   resumeId: string;
   onNavigate: (section: string) => void;
+  onUpdate?: (section: string, data: any) => void;
 }
 
-export function ImproveTab({ resumeData, resumeId, onNavigate }: ImproveTabProps) {
+export function ImproveTab({ resumeData, resumeId, onNavigate, onUpdate }: ImproveTabProps) {
   const score = useMemo(() => {
     return scoreResume({
       personalDetails: resumeData.personalDetails,
@@ -28,13 +29,18 @@ export function ImproveTab({ resumeData, resumeId, onNavigate }: ImproveTabProps
     <div className="flex-1 overflow-hidden">
       <ScrollArea className="h-full">
         <div className="p-4 md:p-6 space-y-4">
-          {/* Score Overview */}
           <ScoreOverview score={score} />
 
-          {/* Section Cards */}
           <div className="space-y-3">
             {score.sections.map((section) => (
-              <SectionCard key={section.key} section={section} resumeId={resumeId} />
+              <SectionCard
+                key={section.key}
+                section={section}
+                resumeId={resumeId}
+                resumeData={resumeData}
+                onNavigate={onNavigate}
+                onUpdateResume={onUpdate}
+              />
             ))}
           </div>
         </div>

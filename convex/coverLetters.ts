@@ -19,6 +19,7 @@ export const createCoverLetter = mutation({
       content: v.string(),
     }),
     resumeId: v.optional(v.id("resumes")),
+    jobDescription: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const user = await ctx.db
@@ -44,6 +45,7 @@ export const createCoverLetter = mutation({
       title: args.title,
       personalDetails: args.personalDetails,
       letterContent: args.letterContent,
+      jobDescription: args.jobDescription,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
@@ -129,6 +131,15 @@ export const updateCoverLetter = mutation({
         companyName: v.string(),
         hiringManagerName: v.string(),
         content: v.string(),
+      })),
+      template: v.optional(v.string()),
+      style: v.optional(v.object({
+        font: v.string(),
+        headingFont: v.optional(v.string()),
+        bodyFont: v.optional(v.string()),
+        spacing: v.string(),
+        accentColor: v.string(),
+        backgroundColor: v.optional(v.string()),
       })),
     }),
   },

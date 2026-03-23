@@ -14,28 +14,7 @@ import {
   ChevronRightIcon,
 } from "@heroicons/react/24/outline";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
-
-// Input sanitization utilities
-const sanitizeText = (value: string, maxLength: number = 500): string => {
-  return value
-    .replace(/<[^>]*>/g, "")
-    .replace(/[<>]/g, "")
-    .slice(0, maxLength);
-};
-
-const sanitizeEmail = (value: string): string => {
-  return value
-    .replace(/[<>'"]/g, "")
-    .replace(/\s/g, "")
-    .toLowerCase()
-    .slice(0, 254);
-};
-
-const sanitizePhone = (value: string): string => {
-  return value
-    .replace(/[^0-9\s\-\(\)\+\.]/g, "")
-    .slice(0, 20);
-};
+import { sanitizeText, sanitizeEmail, sanitizePhone, sanitizeHtml } from "@/lib/sanitize";
 
 // Animation variants for content transitions
 const contentVariants = {
@@ -367,40 +346,19 @@ function LetterContentSection({
 
       <div className="space-y-4">
         <div className="space-y-1.5">
-          <Label htmlFor="companyName">Company Name</Label>
-          <Input
-            id="companyName"
-            value={data.companyName}
-            onChange={(e) => handleChange("companyName", e.target.value)}
-            placeholder="Acme Corporation"
-          />
-        </div>
-
-        <div className="space-y-1.5">
-          <Label htmlFor="hiringManagerName">Hiring Manager Name</Label>
-          <Input
-            id="hiringManagerName"
-            value={data.hiringManagerName}
-            onChange={(e) => handleChange("hiringManagerName", e.target.value)}
-            placeholder="Jane Smith"
-          />
-          <p className="text-xs text-muted-foreground">
-            Leave blank to use "Hiring Manager" in the greeting
-          </p>
-        </div>
-
-        <div className="space-y-1.5">
           <Label>Letter Body</Label>
           <p className="text-xs text-muted-foreground mb-2">
-            Explain why you're a good fit for this position
+            Include the greeting, body, and closing signature
           </p>
-          <RichTextEditor
-            content={data.content}
-            onChange={(content) => handleChange("content", content)}
-            placeholder="Write your cover letter here..."
-            minHeight="300px"
-            showAI={false}
-          />
+          <div className="max-h-[500px] overflow-y-auto rounded-md border border-border">
+            <RichTextEditor
+              content={data.content}
+              onChange={(content) => handleChange("content", sanitizeHtml(content))}
+              placeholder="Dear Hiring Manager,&#10;&#10;Write your cover letter here...&#10;&#10;Sincerely,&#10;Your Name"
+              minHeight="300px"
+              showAI={false}
+            />
+          </div>
         </div>
       </div>
     </div>

@@ -57,7 +57,7 @@ export function JobDescriptionStep({
           placeholder="Paste the full job description here..."
           value={jobDescription}
           onChange={(e) => onJobDescriptionChange(e.target.value)}
-          className="min-h-[220px] max-h-[400px] text-left resize-none"
+          className="min-h-[220px] max-h-[400px] overflow-y-auto text-left resize-none"
           disabled={isLoading}
         />
       </motion.div>

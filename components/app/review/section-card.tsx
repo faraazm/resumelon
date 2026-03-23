@@ -1,6 +1,9 @@
 "use client";
 
-import Link from "next/link";
+import { useState } from "react";
+import { useAction } from "convex/react";
+import { useUser } from "@clerk/nextjs";
+import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import {
   Accordion,
@@ -13,7 +16,7 @@ import {
   ExclamationTriangleIcon,
   XCircleIcon,
 } from "@heroicons/react/24/solid";
-import { PencilSquareIcon } from "@heroicons/react/24/outline";
+import { PencilSquareIcon, SparklesIcon } from "@heroicons/react/24/outline";
 import type { SectionScore } from "@/lib/resume-scoring";
 
 const statusConfig = {
@@ -40,7 +43,6 @@ const statusConfig = {
   },
 } as const;
 
-// Map scoring keys to editor section keys
 const sectionToEditorKey: Record<string, string> = {
   personal: "personalDetails",
   contact: "contact",
@@ -53,14 +55,146 @@ const sectionToEditorKey: Record<string, string> = {
 export function SectionCard({
   section,
   resumeId,
+  resumeData,
+  onNavigate,
+  onUpdateResume,
 }: {
   section: SectionScore;
   resumeId: string;
+  resumeData?: any;
+  onNavigate?: (section: string) => void;
+  onUpdateResume?: (section: string, data: any) => void;
 }) {
+  const { user } = useUser();
+  const generateImprovedContent = useAction(api.ai.generateImprovedContent);
+  const [isFixing, setIsFixing] = useState(false);
+
   const config = statusConfig[section.status];
   const Icon = config.icon;
   const editorSection = sectionToEditorKey[section.key] || section.key;
-  const editHref = `/app/resumes/${resumeId}/edit?section=${editorSection}`;
+
+  const canAutoFix =
+    section.status !== "complete" &&
+    !!onUpdateResume &&
+    !!resumeData &&
+    !!user?.id &&
+    (section.key === "summary" || section.key === "experience" || section.key === "skills");
+
+  const handleNavigate = () => {
+    if (onNavigate) {
+      onNavigate(editorSection);
+    }
+  };
+
+  const handleAutoFix = async () => {
+    if (!user?.id || !resumeData || !onUpdateResume) return;
+    setIsFixing(true);
+
+    try {
+      if (section.key === "summary") {
+        const currentSummary = resumeData.summary || "";
+        const prompt = !currentSummary.trim()
+          ? `Generate a professional resume summary for a ${resumeData.personalDetails?.jobTitle || "professional"} with this background:\n${(resumeData.experience || []).map((e: any) => `${e.title} at ${e.company}: ${e.bullets?.join("; ") || ""}`).join("\n")}`
+          : currentSummary;
+
+        const result = await generateImprovedContent({
+          clerkId: user.id,
+          content: prompt,
+          fieldType: "summary",
+          tone: "professional",
+        });
+        onUpdateResume("summary", result.content);
+      } else if (section.key === "experience") {
+        const experience = [...(resumeData.experience || [])];
+        // Collect ALL jobs that need any kind of fix
+        const jobsToFix: { index: number; title: string; company: string; existingBullets: string; targetCount: number; action: string }[] = [];
+
+        for (let i = 0; i < experience.length; i++) {
+          const job = experience[i];
+          const realBullets = (job.bullets || []).filter((b: string) => b.replace(/<[^>]*>/g, "").trim().length > 0);
+          const bulletCount = realBullets.length;
+          const existing = realBullets.map((b: string) => b.replace(/<[^>]*>/g, "").trim()).join("; ");
+
+          if (bulletCount < 3) {
+            jobsToFix.push({ index: i, title: job.title, company: job.company, existingBullets: existing, targetCount: 3, action: "generate" });
+          } else if (bulletCount > 5) {
+            jobsToFix.push({ index: i, title: job.title, company: job.company, existingBullets: existing, targetCount: 5, action: "trim" });
+          } else {
+            // Check for weak bullets (< 10 words)
+            const weakCount = realBullets.filter((b: string) => b.replace(/<[^>]*>/g, "").trim().split(/\s+/).length < 10).length;
+            if (weakCount > 0) {
+              jobsToFix.push({ index: i, title: job.title, company: job.company, existingBullets: existing, targetCount: bulletCount, action: "improve" });
+            }
+          }
+        }
+
+        if (jobsToFix.length > 0) {
+          const batchPrompt = jobsToFix
+            .map((j, idx) => {
+              if (j.action === "trim") return `JOB ${idx + 1}: ${j.title} at ${j.company}\nExisting: ${j.existingBullets}\nKeep only the ${j.targetCount} strongest bullets.`;
+              if (j.action === "improve") return `JOB ${idx + 1}: ${j.title} at ${j.company}\nExisting: ${j.existingBullets}\nRewrite all ${j.targetCount} bullets to be more impactful with metrics and strong verbs.`;
+              return `JOB ${idx + 1}: ${j.title} at ${j.company}\nExisting: ${j.existingBullets || "(none)"}\nGenerate ${j.targetCount} achievement-oriented bullets.`;
+            })
+            .join("\n\n");
+
+          const result = await generateImprovedContent({
+            clerkId: user.id,
+            content: batchPrompt,
+            fieldType: "experience_bullets",
+            tone: "custom",
+            customPrompt: `For each JOB, return the requested bullet points. Format:\nJOB 1:\n<ul><li>bullet</li></ul>\nJOB 2:\n<ul><li>bullet</li></ul>\nUse strong action verbs and metrics. No explanations.`,
+          });
+
+          const jobSections = result.content.split(/JOB\s*\d+\s*:/i).filter((s: string) => s.trim());
+          for (let j = 0; j < jobsToFix.length && j < jobSections.length; j++) {
+            const bullets = (jobSections[j].match(/<li>(.*?)<\/li>/g) || [])
+              .map((li: string) => li.replace(/<\/?li>/g, "").trim())
+              .filter((b: string) => b.length > 0);
+            if (bullets.length > 0) {
+              experience[jobsToFix[j].index] = { ...experience[jobsToFix[j].index], bullets };
+            }
+          }
+          onUpdateResume("experience", experience);
+        }
+      } else if (section.key === "skills") {
+        const currentSkills = resumeData.skills || [];
+        const jobTitle = resumeData.personalDetails?.jobTitle || "";
+        const experienceContext = (resumeData.experience || [])
+          .map((e: any) => `${e.title} at ${e.company}`)
+          .join(", ");
+
+        if (currentSkills.length < 5) {
+          // Too few — add more
+          const result = await generateImprovedContent({
+            clerkId: user.id,
+            content: `Current skills: ${currentSkills.join(", ")}\nJob title: ${jobTitle}\nExperience: ${experienceContext}\n\nSuggest ${10 - currentSkills.length} additional relevant skills.`,
+            fieldType: "skills",
+            tone: "custom",
+            customPrompt: `Return ONLY a comma-separated list of skills. No HTML, no explanations.`,
+          });
+          const newSkills = result.content.replace(/<[^>]*>/g, "").split(",").map((s: string) => s.trim()).filter((s: string) => s.length > 0 && !currentSkills.includes(s));
+          onUpdateResume("skills", [...currentSkills, ...newSkills.slice(0, 10 - currentSkills.length)]);
+        } else if (currentSkills.length > 15) {
+          // Too many — ask AI to pick the best 12
+          const result = await generateImprovedContent({
+            clerkId: user.id,
+            content: `All skills: ${currentSkills.join(", ")}\nJob title: ${jobTitle}\nExperience: ${experienceContext}\n\nPick the 12 most relevant and impactful skills for this profile.`,
+            fieldType: "skills",
+            tone: "custom",
+            customPrompt: `Return ONLY a comma-separated list of the 12 best skills. No HTML, no explanations.`,
+          });
+          const trimmed = result.content.replace(/<[^>]*>/g, "").split(",").map((s: string) => s.trim()).filter((s: string) => s.length > 0);
+          if (trimmed.length > 0) {
+            onUpdateResume("skills", trimmed.slice(0, 15));
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Auto-fix error:", error);
+    } finally {
+      setIsFixing(false);
+    }
+  };
 
   return (
     <div className="rounded-xl border bg-card text-card-foreground overflow-hidden">
@@ -71,7 +205,6 @@ export function SectionCard({
                 <Icon className={`h-5 w-5 shrink-0 ${config.color}`} />
                 <span className="font-medium text-sm">{section.name}</span>
 
-                {/* Mini progress bar */}
                 <div className="hidden sm:block h-1.5 w-20 rounded-full bg-muted">
                   <div
                     className={`h-full rounded-full ${config.bg} transition-all duration-500`}
@@ -119,18 +252,35 @@ export function SectionCard({
                 </div>
               )}
 
-              {/* Edit button */}
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-3 gap-1.5 rounded-full shadow-none"
-                asChild
-              >
-                <Link href={editHref}>
+              {/* Action buttons */}
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 rounded-full shadow-none"
+                  onClick={handleNavigate}
+                >
                   <PencilSquareIcon className="h-3.5 w-3.5" />
                   Edit {section.name}
-                </Link>
-              </Button>
+                </Button>
+
+                {canAutoFix && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 rounded-full shadow-none"
+                    onClick={handleAutoFix}
+                    disabled={isFixing}
+                  >
+                    {isFixing ? (
+                      <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    ) : (
+                      <SparklesIcon className="h-3.5 w-3.5" />
+                    )}
+                    {isFixing ? "Fixing..." : "AI Fix"}
+                  </Button>
+                )}
+              </div>
           </AccordionContent>
         </AccordionItem>
       </Accordion>

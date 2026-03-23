@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { mutation, query, internalQuery, internalMutation } from "./_generated/server";
 
 export const getOrCreateUser = mutation({
   args: {
@@ -62,12 +62,16 @@ export const getRemainingGenerations = query({
       .first();
 
     if (!user) {
-      return { remaining: 0, total: 5, used: 0 };
+      return { remaining: 0, total: 5, used: 0, isPro: false };
+    }
+
+    if (user.subscriptionStatus === "active") {
+      return { remaining: Infinity, total: Infinity, used: 0, isPro: true };
     }
 
     const isCurrentMonth = user.lastGenerationMonth === args.currentMonth;
     const used = isCurrentMonth ? (user.monthlyGenerationCount || 0) : 0;
-    return { remaining: Math.max(0, 5 - used), total: 5, used };
+    return { remaining: Math.max(0, 5 - used), total: 5, used, isPro: false };
   },
 });
 
@@ -90,6 +94,46 @@ export const incrementGenerationCount = mutation({
     await ctx.db.patch(user._id, {
       monthlyGenerationCount: currentCount + 1,
       lastGenerationMonth: currentMonth,
+      updatedAt: Date.now(),
+    });
+  },
+});
+
+export const getRemainingOptimizations = query({
+  args: { clerkId: v.string() },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
+      .first();
+
+    if (!user) {
+      return { remaining: 0, total: 10, used: 0, isPro: false };
+    }
+
+    if (user.subscriptionStatus === "active") {
+      return { remaining: Infinity, total: Infinity, used: 0, isPro: true };
+    }
+
+    const used = user.optimizationCount || 0;
+    return { remaining: Math.max(0, 10 - used), total: 10, used, isPro: false };
+  },
+});
+
+export const incrementOptimizationCount = mutation({
+  args: { clerkId: v.string() },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
+      .first();
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    await ctx.db.patch(user._id, {
+      optimizationCount: (user.optimizationCount || 0) + 1,
       updatedAt: Date.now(),
     });
   },
@@ -175,5 +219,112 @@ export const deleteAccount = mutation({
 
     // Delete the user
     await ctx.db.delete(user._id);
+  },
+});
+
+// --- Internal helpers for server-side AI limit enforcement ---
+
+export const internalCheckOptimizationLimit = internalQuery({
+  args: { clerkId: v.string() },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
+      .first();
+
+    if (!user) return { allowed: false, reason: "User not found" };
+    if (user.subscriptionStatus === "active") return { allowed: true };
+
+    const used = user.optimizationCount || 0;
+    if (used >= 10) {
+      return { allowed: false, reason: "Free optimization limit reached (10). Upgrade to Pro for unlimited." };
+    }
+    return { allowed: true };
+  },
+});
+
+export const internalCheckGenerationLimit = internalQuery({
+  args: { clerkId: v.string() },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
+      .first();
+
+    if (!user) return { allowed: false, reason: "User not found" };
+    if (user.subscriptionStatus === "active") return { allowed: true };
+
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    const isCurrentMonth = user.lastGenerationMonth === currentMonth;
+    const used = isCurrentMonth ? (user.monthlyGenerationCount || 0) : 0;
+
+    if (used >= 5) {
+      return { allowed: false, reason: "Free monthly generation limit reached (5/month). Upgrade to Pro for unlimited." };
+    }
+    return { allowed: true };
+  },
+});
+
+export const internalIncrementOptimizationCount = internalMutation({
+  args: { clerkId: v.string() },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
+      .first();
+
+    if (!user) throw new Error("User not found");
+
+    await ctx.db.patch(user._id, {
+      optimizationCount: (user.optimizationCount || 0) + 1,
+      updatedAt: Date.now(),
+    });
+  },
+});
+
+export const internalIncrementGenerationCount = internalMutation({
+  args: { clerkId: v.string() },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
+      .first();
+
+    if (!user) throw new Error("User not found");
+
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    const isCurrentMonth = user.lastGenerationMonth === currentMonth;
+    const currentCount = isCurrentMonth ? (user.monthlyGenerationCount || 0) : 0;
+
+    await ctx.db.patch(user._id, {
+      monthlyGenerationCount: currentCount + 1,
+      lastGenerationMonth: currentMonth,
+      updatedAt: Date.now(),
+    });
+  },
+});
+
+export const updateSubscriptionStatus = mutation({
+  args: {
+    clerkId: v.string(),
+    subscriptionStatus: v.string(),
+    stripeSubscriptionId: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
+      .first();
+
+    if (!user) {
+      console.error(`updateSubscriptionStatus: user not found for clerkId ${args.clerkId}`);
+      return;
+    }
+
+    await ctx.db.patch(user._id, {
+      subscriptionStatus: args.subscriptionStatus,
+      ...(args.stripeSubscriptionId ? { stripeSubscriptionId: args.stripeSubscriptionId } : {}),
+      updatedAt: Date.now(),
+    });
   },
 });

@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation, query, internalQuery } from "./_generated/server";
+import { mutation, query, internalQuery, internalMutation } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
 
 const TOKEN_EXPIRY_MS = 2 * 60 * 1000; // 2 minutes
@@ -94,6 +94,9 @@ export const getResumeForPrint = query({
     }
 
     // Get the resume
+    if (!tokenRecord.resumeId) {
+      return { error: "Not a resume token", resume: null };
+    }
     const resume = await ctx.db.get(tokenRecord.resumeId);
     if (!resume) {
       return { error: "Resume not found", resume: null };
@@ -144,9 +147,89 @@ export const consumePrintToken = mutation({
 });
 
 /**
+ * Create a one-time print token for a cover letter
+ */
+export const createCoverLetterPrintToken = mutation({
+  args: {
+    coverLetterId: v.id("coverLetters"),
+    clerkId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
+      .first();
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const coverLetter = await ctx.db.get(args.coverLetterId);
+    if (!coverLetter) {
+      throw new Error("Cover letter not found");
+    }
+
+    if (coverLetter.userId !== user._id) {
+      throw new Error("Access denied: You do not own this cover letter");
+    }
+
+    const jti = generateJti();
+    const now = Date.now();
+
+    await ctx.db.insert("printTokens", {
+      jti,
+      coverLetterId: args.coverLetterId,
+      userId: user._id,
+      expiresAt: now + TOKEN_EXPIRY_MS,
+      createdAt: now,
+    });
+
+    return { token: jti, coverLetterId: args.coverLetterId };
+  },
+});
+
+/**
+ * Get cover letter data for printing using a valid token
+ */
+export const getCoverLetterForPrint = query({
+  args: {
+    token: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const tokenRecord = await ctx.db
+      .query("printTokens")
+      .withIndex("by_jti", (q) => q.eq("jti", args.token))
+      .first();
+
+    if (!tokenRecord) {
+      return { error: "Invalid token", coverLetter: null };
+    }
+
+    if (tokenRecord.usedAt) {
+      return { error: "Token already used", coverLetter: null };
+    }
+
+    if (Date.now() > tokenRecord.expiresAt) {
+      return { error: "Token expired", coverLetter: null };
+    }
+
+    if (!tokenRecord.coverLetterId) {
+      return { error: "Not a cover letter token", coverLetter: null };
+    }
+
+    const coverLetter = await ctx.db.get(tokenRecord.coverLetterId);
+    if (!coverLetter) {
+      return { error: "Cover letter not found", coverLetter: null };
+    }
+
+    return { error: null, coverLetter, coverLetterId: tokenRecord.coverLetterId };
+  },
+});
+
+/**
  * Clean up expired tokens (can be called periodically)
  */
-export const cleanupExpiredTokens = mutation({
+export const cleanupExpiredTokens = internalMutation({
   args: {},
   handler: async (ctx) => {
     const now = Date.now();

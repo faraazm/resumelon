@@ -5,9 +5,13 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
-  ArrowDownTrayIcon,
+  PencilSquareIcon,
+  TrashIcon,
+  DocumentDuplicateIcon,
 } from "@heroicons/react/24/outline";
 import { Id } from "@/convex/_generated/dataModel";
+import { Checkbox } from "@/components/ui/checkbox";
+import { formatRelativeDate } from "./format-date";
 
 interface CoverLetterCardData {
   _id: Id<"coverLetters">;
@@ -28,28 +32,6 @@ interface CoverLetterCardData {
   };
 }
 
-function formatRelativeDate(timestamp: number) {
-  const now = Date.now();
-  const diff = now - timestamp;
-  const minutes = Math.floor(diff / 60000);
-  const hours = Math.floor(diff / 3600000);
-  const days = Math.floor(diff / 86400000);
-
-  if (minutes < 1) return "Updated just now";
-  if (minutes < 60) return `Updated ${minutes} minute${minutes === 1 ? "" : "s"} ago`;
-  if (hours < 24) return `Updated ${hours} hour${hours === 1 ? "" : "s"} ago`;
-  if (days === 1) return "Updated yesterday";
-  if (days < 7) return `Updated ${days} days ago`;
-
-  const date = new Date(timestamp);
-  return `Updated ${date.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  })}`;
-}
-
-// Strip HTML tags for preview
 function stripHtml(html: string): string {
   return html.replace(/<[^>]*>/g, "").trim();
 }
@@ -57,9 +39,15 @@ function stripHtml(html: string): string {
 export function CoverLetterCard({
   coverLetter,
   onDelete,
+  onDuplicate,
+  selected,
+  onSelect,
 }: {
   coverLetter: CoverLetterCardData;
   onDelete: (id: Id<"coverLetters">) => void;
+  onDuplicate?: (id: Id<"coverLetters">) => void;
+  selected?: boolean;
+  onSelect?: () => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0.2);
@@ -93,7 +81,6 @@ export function CoverLetterCard({
     return () => window.removeEventListener("resize", updateScale);
   }, []);
 
-  // Get today's date formatted
   const today = new Date().toLocaleDateString("en-US", {
     month: "long",
     day: "numeric",
@@ -101,9 +88,14 @@ export function CoverLetterCard({
   });
 
   return (
-    <Card className="overflow-hidden !py-0 !gap-0">
+    <Card className={`overflow-hidden !py-0 !gap-0 ${selected ? "ring-2 ring-primary" : ""}`}>
       <CardContent className="!p-0">
         <div className="flex flex-col sm:flex-row items-stretch">
+          {onSelect && (
+            <div className="flex items-start pt-4 pl-4 sm:pt-5 sm:pl-5">
+              <Checkbox checked={selected} onCheckedChange={onSelect} />
+            </div>
+          )}
           {/* Thumbnail Preview */}
           <Link
             href={`/app/cover-letters/${coverLetter._id}/edit`}
@@ -111,8 +103,8 @@ export function CoverLetterCard({
           >
             <div
               ref={containerRef}
-              className="relative mx-auto w-[180px] sm:w-[200px] overflow-hidden rounded-md border border-border/60 bg-white shadow-sm cursor-pointer transition-shadow hover:shadow-md"
-              style={{ aspectRatio: "8.5 / 11" }}
+              className="relative mx-auto w-[180px] sm:w-[200px] overflow-hidden rounded-md border border-border cursor-pointer"
+              style={{ aspectRatio: "8.5 / 11", backgroundColor: "#ffffff" }}
             >
               <div
                 className="absolute top-0 left-0 origin-top-left"
@@ -145,23 +137,6 @@ export function CoverLetterCard({
 
                   {/* Date */}
                   <p className="mb-6">{today}</p>
-
-                  {/* Recipient */}
-                  {(letterContent.hiringManagerName || letterContent.companyName) && (
-                    <div className="mb-6">
-                      {letterContent.hiringManagerName && (
-                        <p>{letterContent.hiringManagerName}</p>
-                      )}
-                      {letterContent.companyName && (
-                        <p>{letterContent.companyName}</p>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Greeting */}
-                  <p className="mb-4">
-                    Dear {letterContent.hiringManagerName || "Hiring Manager"},
-                  </p>
 
                   {/* Content Preview */}
                   <div className="text-gray-700 line-clamp-6">
@@ -198,19 +173,32 @@ export function CoverLetterCard({
               <Button
                 variant="outline"
                 size="sm"
-                className="rounded-full shadow-none"
+                className="rounded-full gap-1.5 shadow-none"
                 asChild
               >
                 <Link href={`/app/cover-letters/${coverLetter._id}/edit`}>
+                  <PencilSquareIcon className="h-3.5 w-3.5" />
                   Edit
                 </Link>
               </Button>
+              {onDuplicate && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-full gap-1.5 shadow-none"
+                  onClick={() => onDuplicate(coverLetter._id)}
+                >
+                  <DocumentDuplicateIcon className="h-3.5 w-3.5" />
+                  Copy
+                </Button>
+              )}
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
-                className="rounded-full shadow-none"
+                className="rounded-full gap-1.5 shadow-none text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                 onClick={() => onDelete(coverLetter._id)}
               >
+                <TrashIcon className="h-3.5 w-3.5" />
                 Delete
               </Button>
             </div>

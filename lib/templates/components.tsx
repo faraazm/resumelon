@@ -2,6 +2,7 @@
 
 import { TemplateConfig, ResumeData } from "./types";
 import { LETTER_HEIGHT_PX } from "@/lib/pdf-constants";
+import { sanitizeHtml } from "@/lib/sanitize";
 
 // The heading font style - uses CSS variable if set, otherwise falls back to class
 function getHeadingStyle(): React.CSSProperties {
@@ -502,34 +503,39 @@ export function ExperienceItem({ job, template, isFirst }: ExperienceItemProps) 
   if (datePosition === "left") {
     return (
       <div
-        className={`job-block ${!isFirst ? spacing.itemGap : ""} flex gap-3`}
+        className={`job-block ${!isFirst ? spacing.itemGap : ""}`}
         style={{ breakInside: "avoid", pageBreakInside: "avoid" }}
       >
-        <div className="w-[130px] shrink-0 text-right">
+        <div className="flex items-baseline gap-3">
           <p
-            className="text-[9pt]"
+            className="w-[130px] shrink-0 text-right text-[9pt]"
             style={{ color: colors.muted }}
           >
             {dateStr}
           </p>
+          <div className="flex-1 min-w-0">
+            <p
+              className={`font-semibold ${typography.bodyFontSize}`}
+              style={{ color: colors.heading, lineHeight: "1.2" }}
+            >
+              {job.title}
+            </p>
+          </div>
         </div>
-        <div className="flex-1 min-w-0">
-          <p
-            className={`font-semibold ${typography.bodyFontSize}`}
-            style={{ color: colors.heading, lineHeight: "1.2" }}
-          >
-            {job.title}
-          </p>
-          <p
-            className={typography.bodyFontSize}
-            style={{ color: colors.muted, lineHeight: "1.2" }}
-          >
-            {job.company}
-            {job.location && ` · ${job.location}`}
-          </p>
-          {job.bullets && job.bullets.length > 0 && (
-            <BulletList bullets={job.bullets} template={template} />
-          )}
+        <div className="flex gap-3">
+          <div className="w-[130px] shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p
+              className={typography.bodyFontSize}
+              style={{ color: colors.muted, lineHeight: "1.2" }}
+            >
+              {job.company}
+              {job.location && ` · ${job.location}`}
+            </p>
+            {job.bullets && job.bullets.length > 0 && (
+              <BulletList bullets={job.bullets} template={template} />
+            )}
+          </div>
         </div>
       </div>
     );
@@ -618,30 +624,35 @@ export function EducationItem({ edu, template, isFirst }: EducationItemProps) {
   if (datePosition === "left") {
     return (
       <div
-        className={`education-block ${!isFirst ? "mt-1.5" : ""} flex gap-3`}
+        className={`education-block ${!isFirst ? "mt-1.5" : ""}`}
         style={{ breakInside: "avoid", pageBreakInside: "avoid" }}
       >
-        <div className="w-[130px] shrink-0 text-right">
+        <div className="flex items-baseline gap-3">
           <p
-            className="text-[9pt]"
+            className="w-[130px] shrink-0 text-right text-[9pt]"
             style={{ color: colors.muted }}
           >
             {dateStr}
           </p>
+          <div className="flex-1 min-w-0">
+            <p
+              className={`font-semibold ${typography.bodyFontSize}`}
+              style={{ color: colors.heading, lineHeight: "1.2" }}
+            >
+              {edu.degree}
+            </p>
+          </div>
         </div>
-        <div className="flex-1 min-w-0">
-          <p
-            className={`font-semibold ${typography.bodyFontSize}`}
-            style={{ color: colors.heading, lineHeight: "1.2" }}
-          >
-            {edu.degree}
-          </p>
-          <p
-            className={typography.bodyFontSize}
-            style={{ color: colors.muted, lineHeight: "1.2" }}
-          >
-            {edu.school}
-          </p>
+        <div className="flex gap-3">
+          <div className="w-[130px] shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p
+              className={typography.bodyFontSize}
+              style={{ color: colors.muted, lineHeight: "1.2" }}
+            >
+              {edu.school}
+            </p>
+          </div>
         </div>
       </div>
     );
@@ -766,7 +777,7 @@ export function BulletList({ bullets, template }: BulletListProps) {
               </span>
             )}
             {hasHtml ? (
-              <span dangerouslySetInnerHTML={{ __html: bullet }} />
+              <span dangerouslySetInnerHTML={{ __html: sanitizeHtml(bullet) }} />
             ) : (
               bullet
             )}
@@ -880,7 +891,7 @@ export function Summary({ summary, template }: SummaryProps) {
           "--tw-prose-body": colors.body,
           "--tw-prose-headings": colors.heading,
         } as React.CSSProperties}
-        dangerouslySetInnerHTML={{ __html: summary }}
+        dangerouslySetInnerHTML={{ __html: sanitizeHtml(summary) }}
       />
     );
   }

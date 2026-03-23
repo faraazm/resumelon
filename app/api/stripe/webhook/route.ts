@@ -2,6 +2,10 @@ import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "@/convex/_generated/api";
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function POST(req: Request) {
   const body = await req.text();
@@ -85,80 +89,101 @@ export async function POST(req: Request) {
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const clerkUserId = session.metadata?.clerkUserId;
-  const customerId = session.customer as string;
   const subscriptionId = session.subscription as string;
 
-  console.log("Checkout completed:", {
-    clerkUserId,
-    customerId,
-    subscriptionId,
-  });
+  if (!clerkUserId) {
+    console.error("Checkout completed without clerkUserId in metadata");
+    return;
+  }
 
-  // TODO: Store subscription info in your database (Convex)
-  // Example: await convex.mutation(api.subscriptions.create, {
-  //   clerkUserId,
-  //   stripeCustomerId: customerId,
-  //   stripeSubscriptionId: subscriptionId,
-  //   status: "active",
-  // });
+  await convex.mutation(api.users.updateSubscriptionStatus, {
+    clerkId: clerkUserId,
+    subscriptionStatus: "active",
+    stripeSubscriptionId: subscriptionId,
+  });
 }
 
 async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
   const clerkUserId = subscription.metadata?.clerkUserId;
 
-  console.log("Subscription created:", {
-    clerkUserId,
-    subscriptionId: subscription.id,
-    status: subscription.status,
-  });
+  if (!clerkUserId) {
+    console.error("Subscription created without clerkUserId in metadata");
+    return;
+  }
 
-  // TODO: Store subscription in database
+  await convex.mutation(api.users.updateSubscriptionStatus, {
+    clerkId: clerkUserId,
+    subscriptionStatus: subscription.status,
+    stripeSubscriptionId: subscription.id,
+  });
 }
 
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   const clerkUserId = subscription.metadata?.clerkUserId;
 
-  console.log("Subscription updated:", {
-    clerkUserId,
-    subscriptionId: subscription.id,
-    status: subscription.status,
-    cancelAtPeriodEnd: subscription.cancel_at_period_end,
-  });
+  if (!clerkUserId) {
+    console.error("Subscription updated without clerkUserId in metadata");
+    return;
+  }
 
-  // TODO: Update subscription status in database
+  await convex.mutation(api.users.updateSubscriptionStatus, {
+    clerkId: clerkUserId,
+    subscriptionStatus: subscription.status,
+    stripeSubscriptionId: subscription.id,
+  });
 }
 
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   const clerkUserId = subscription.metadata?.clerkUserId;
 
-  console.log("Subscription deleted:", {
-    clerkUserId,
-    subscriptionId: subscription.id,
-  });
+  if (!clerkUserId) {
+    console.error("Subscription deleted without clerkUserId in metadata");
+    return;
+  }
 
-  // TODO: Mark subscription as canceled in database
+  await convex.mutation(api.users.updateSubscriptionStatus, {
+    clerkId: clerkUserId,
+    subscriptionStatus: "canceled",
+    stripeSubscriptionId: subscription.id,
+  });
 }
 
 async function handlePaymentFailed(invoice: Stripe.Invoice) {
-  const customerId = invoice.customer as string;
+  // Try to find the clerkUserId via the subscription metadata
+  const subscriptionId = (invoice as any).subscription as string;
+  if (!subscriptionId) return;
 
-  console.log("Payment failed:", {
-    customerId,
-    invoiceId: invoice.id,
-    amountDue: invoice.amount_due,
-  });
+  try {
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    const clerkUserId = subscription.metadata?.clerkUserId;
 
-  // TODO: Notify user of failed payment, update subscription status
+    if (clerkUserId) {
+      await convex.mutation(api.users.updateSubscriptionStatus, {
+        clerkId: clerkUserId,
+        subscriptionStatus: "past_due",
+      });
+    }
+  } catch (error) {
+    console.error("Failed to handle payment failure:", error);
+  }
 }
 
 async function handleInvoicePaid(invoice: Stripe.Invoice) {
-  const customerId = invoice.customer as string;
+  // Ensure subscription stays active after successful payment
+  const subscriptionId = (invoice as any).subscription as string;
+  if (!subscriptionId) return;
 
-  console.log("Invoice paid:", {
-    customerId,
-    invoiceId: invoice.id,
-    amountPaid: invoice.amount_paid,
-  });
+  try {
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    const clerkUserId = subscription.metadata?.clerkUserId;
 
-  // TODO: Update subscription period, send receipt
+    if (clerkUserId) {
+      await convex.mutation(api.users.updateSubscriptionStatus, {
+        clerkId: clerkUserId,
+        subscriptionStatus: "active",
+      });
+    }
+  } catch (error) {
+    console.error("Failed to handle invoice paid:", error);
+  }
 }

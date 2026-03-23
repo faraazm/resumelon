@@ -1,25 +1,23 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useUser } from "@clerk/nextjs";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { PlusIcon } from "@heroicons/react/24/outline";
+import { PlusIcon, SparklesIcon } from "@heroicons/react/24/outline";
 import { Id } from "@/convex/_generated/dataModel";
 import { ResumeCard } from "@/components/app/dashboard/resume-card";
+import { ResumeTableRow } from "@/components/app/dashboard/resume-table-row";
+import { DocumentTable } from "@/components/app/dashboard/document-table";
+import { ViewToggle } from "@/components/app/dashboard/view-toggle";
+import { BulkActionBar } from "@/components/app/dashboard/bulk-action-bar";
+import { DeleteConfirmDialog } from "@/components/app/dashboard/delete-confirm-dialog";
 import { UpgradeDialog } from "@/components/app/upgrade-dialog";
+import { useSelection } from "@/hooks/use-selection";
+import { useViewPreference } from "@/hooks/use-view-preference";
 
 function FileTextIcon({ className }: { className?: string }) {
   return (
@@ -62,9 +60,14 @@ export default function ResumesPage() {
 
   const deleteResumeMutation = useMutation(api.resumes.deleteResume);
 
+  const { view, setView } = useViewPreference();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [resumeToDelete, setResumeToDelete] = useState<Id<"resumes"> | null>(null);
   const [showUpgrade, setShowUpgrade] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+
+  const selection = useSelection<Id<"resumes">>();
 
   // Redirect to onboarding if user hasn't completed it
   useEffect(() => {
@@ -103,6 +106,23 @@ export default function ResumesPage() {
     setResumeToDelete(null);
   };
 
+  const confirmBulkDelete = async () => {
+    if (!user?.id || selection.selectedCount === 0) return;
+    setIsBulkDeleting(true);
+    try {
+      await Promise.all(
+        Array.from(selection.selected).map((id) =>
+          deleteResumeMutation({ id, clerkId: user!.id })
+        )
+      );
+      selection.clear();
+    } catch (error) {
+      console.error("Error deleting resumes:", error);
+    }
+    setIsBulkDeleting(false);
+    setBulkDeleteOpen(false);
+  };
+
   const isLoading = !isUserLoaded || resumes === undefined || convexUser === undefined;
 
   if (convexUser && !convexUser.hasCompletedOnboarding) {
@@ -113,6 +133,7 @@ export default function ResumesPage() {
     ? [...resumes].sort((a, b) => b.updatedAt - a.updatedAt)
     : [];
   const hasResumes = sortedResumes.length > 0;
+  const allIds = sortedResumes.map((r) => r._id);
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
@@ -131,32 +152,57 @@ export default function ResumesPage() {
             Create, edit, and tailor your resumes
           </p>
         </div>
-        <Button
-          onClick={handleNewResume}
-          className="w-full sm:w-auto text-white border-0"
-          style={{ background: "linear-gradient(135deg, #8b5cf6, #ec4899)" }}
-        >
-          Create Resume
-        </Button>
+        <div className="flex items-center gap-3">
+          {hasResumes && <ViewToggle view={view} onViewChange={setView} />}
+          <Button onClick={handleNewResume}>
+            <SparklesIcon className="h-4 w-4" />
+            Create Resume
+          </Button>
+        </div>
       </motion.div>
 
-      {/* Resume List */}
+      {/* Resume List / Table */}
       {isLoading ? null : hasResumes ? (
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.1 }}
-          className="space-y-6"
         >
-          {sortedResumes.map((resume) => (
-            <ResumeCard
-              key={resume._id}
-              resume={resume}
-              userName={user?.fullName || undefined}
-              onDelete={handleDeleteResume}
-              onTailor={handleTailor}
-            />
-          ))}
+          {view === "list" ? (
+            <div className="space-y-6">
+              {sortedResumes.map((resume) => (
+                <ResumeCard
+                  key={resume._id}
+                  resume={resume}
+                  userName={user?.fullName || undefined}
+                  onDelete={handleDeleteResume}
+                  onTailor={handleTailor}
+                  selected={selection.isSelected(resume._id)}
+                  onSelect={() => selection.toggle(resume._id)}
+                />
+              ))}
+            </div>
+          ) : (
+            <DocumentTable
+              columns={["Title", "Name", "Updated"]}
+              allSelected={selection.isAllSelected(allIds)}
+              onSelectAll={() =>
+                selection.isAllSelected(allIds)
+                  ? selection.clear()
+                  : selection.selectAll(allIds)
+              }
+            >
+              {sortedResumes.map((resume) => (
+                <ResumeTableRow
+                  key={resume._id}
+                  resume={resume}
+                  selected={selection.isSelected(resume._id)}
+                  onSelect={() => selection.toggle(resume._id)}
+                  onDelete={handleDeleteResume}
+                />
+              ))}
+            </DocumentTable>
+          )}
         </motion.div>
       ) : (
         <motion.div
@@ -179,28 +225,31 @@ export default function ResumesPage() {
         </motion.div>
       )}
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Resume?</DialogTitle>
-            <DialogDescription>
-              This resume will be permanently deleted. This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setDeleteDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={confirmDelete}>
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Bulk Action Bar */}
+      <BulkActionBar
+        selectedCount={selection.selectedCount}
+        onDelete={() => setBulkDeleteOpen(true)}
+        onClearSelection={selection.clear}
+        isDeleting={isBulkDeleting}
+      />
+
+      {/* Single Delete Confirmation */}
+      <DeleteConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={confirmDelete}
+        count={1}
+        itemType="resume"
+      />
+
+      {/* Bulk Delete Confirmation */}
+      <DeleteConfirmDialog
+        open={bulkDeleteOpen}
+        onOpenChange={setBulkDeleteOpen}
+        onConfirm={confirmBulkDelete}
+        count={selection.selectedCount}
+        itemType="resume"
+      />
 
       {/* Upgrade Dialog */}
       <UpgradeDialog open={showUpgrade} onOpenChange={setShowUpgrade} />

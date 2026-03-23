@@ -13,6 +13,8 @@ export default defineSchema({
     optimizationCount: v.optional(v.number()),
     monthlyGenerationCount: v.optional(v.number()),
     lastGenerationMonth: v.optional(v.string()),
+    subscriptionStatus: v.optional(v.string()),
+    stripeSubscriptionId: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
   }).index("by_clerk_id", ["clerkId"]),
@@ -158,8 +160,20 @@ export default defineSchema({
       hiringManagerName: v.string(),
       content: v.string(), // Rich text HTML content
     })),
+    // Job description for the cover letter
+    jobDescription: v.optional(v.string()),
     // Legacy field for backwards compatibility
     content: v.optional(v.string()),
+    // Template and styling (matching resume pattern)
+    template: v.optional(v.string()),
+    style: v.optional(v.object({
+      font: v.string(),
+      headingFont: v.optional(v.string()),
+      bodyFont: v.optional(v.string()),
+      spacing: v.string(),
+      accentColor: v.string(),
+      backgroundColor: v.optional(v.string()),
+    })),
     createdAt: v.number(),
     updatedAt: v.number(),
   }).index("by_user", ["userId"])
@@ -168,7 +182,8 @@ export default defineSchema({
   // One-time print tokens for secure PDF generation
   printTokens: defineTable({
     jti: v.string(), // Unique token identifier
-    resumeId: v.id("resumes"),
+    resumeId: v.optional(v.id("resumes")),
+    coverLetterId: v.optional(v.id("coverLetters")),
     userId: v.id("users"),
     expiresAt: v.number(), // Timestamp when token expires
     usedAt: v.optional(v.number()), // Timestamp when token was consumed (null if unused)

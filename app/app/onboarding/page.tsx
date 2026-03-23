@@ -109,6 +109,7 @@ export default function OnboardingPage() {
       const { storageId } = await uploadResponse.json();
 
       const data = await parseDocument({
+        clerkId: user!.id,
         storageId,
         fileType: file.type,
         fileName: file.name,
@@ -225,15 +226,14 @@ export default function OnboardingPage() {
                 className="flex items-center justify-center gap-3"
               >
                 <Image
-                  src="/images/nice-resume-logo.png"
+                  src="/images/resumeclone-logo.png"
                   alt=""
-                  width={28}
-                  height={28}
-                  className="h-7 w-7"
+                  width={24}
+                  height={24}
+                  className="h-6 w-6"
                 />
-                <span className="text-3xl tracking-tight">
-                  <span className="font-light">nice</span>
-                  <span className="font-bold">resume</span>
+                <span className="text-3xl font-semibold tracking-tight">
+                  resumeclone
                 </span>
               </motion.div>
 
@@ -244,7 +244,7 @@ export default function OnboardingPage() {
                 transition={{ duration: 0.5, delay: 0.7 }}
                 className="mt-8 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl"
               >
-                Welcome to NiceResume
+                Welcome to resumeclone
               </motion.h1>
 
               <motion.p

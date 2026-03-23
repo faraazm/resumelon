@@ -117,11 +117,11 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: "NiceResume - Free AI Resume Builder | Create ATS-Optimized Resumes",
-    template: "%s | NiceResume",
+    default: "resumeclone - Mass Apply to Jobs with Tailored, ATS-Optimized Resumes",
+    template: "%s | resumeclone",
   },
   description:
-    "Build professional, ATS-friendly resumes in minutes with NiceResume. Our free AI-powered resume builder helps you create job-winning resumes that pass Applicant Tracking Systems and land interviews.",
+    "Generate ATS-friendly resumes and cover letters tailored to every job you apply to. Upload once, paste job descriptions, and mass apply with customized, optimized applications in seconds. Free AI-powered resume builder.",
   keywords: [
     "resume builder",
     "AI resume builder",
@@ -135,36 +135,44 @@ export const metadata: Metadata = {
     "job application",
     "career",
     "resume templates",
+    "cover letter generator",
+    "mass apply jobs",
+    "tailored resume",
+    "bulk resume generator",
+    "resume optimization",
+    "ATS-optimized resume builder",
+    "job search tool",
+    "resume for job application",
   ],
-  authors: [{ name: "NiceResume" }],
-  creator: "NiceResume",
-  publisher: "NiceResume",
-  metadataBase: new URL("https://niceresume.com"),
+  authors: [{ name: "resumeclone" }],
+  creator: "resumeclone",
+  publisher: "resumeclone",
+  metadataBase: new URL("https://resumeclone.com"),
   alternates: {
     canonical: "/",
   },
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://niceresume.com",
-    siteName: "NiceResume",
-    title: "NiceResume - Free AI Resume Builder | Create ATS-Optimized Resumes",
+    url: "https://resumeclone.com",
+    siteName: "resumeclone",
+    title: "resumeclone - Mass Apply to Jobs with Tailored, ATS-Optimized Resumes",
     description:
-      "Build professional, ATS-friendly resumes in minutes. Our free AI-powered resume builder helps you create job-winning resumes that land interviews.",
+      "Generate ATS-friendly resumes and cover letters for every job. Upload once, paste job descriptions, mass apply in seconds. Free AI resume builder.",
     images: [
       {
         url: "/images/og-image.png",
         width: 1200,
         height: 630,
-        alt: "NiceResume - AI-Powered Resume Builder",
+        alt: "resumeclone - AI-Powered Resume Builder for Mass Applying to Jobs",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "NiceResume - Free AI Resume Builder",
+    title: "resumeclone - Mass Apply with Tailored Resumes in Seconds",
     description:
-      "Build professional, ATS-friendly resumes in minutes with our free AI-powered resume builder.",
+      "Generate ATS-friendly resumes and cover letters tailored to every job. Upload once, mass apply with optimized applications. Free AI resume builder.",
     images: ["/images/og-image.png"],
   },
   robots: {

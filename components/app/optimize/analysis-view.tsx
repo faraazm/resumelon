@@ -3,11 +3,9 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   CheckIcon,
-  XMarkIcon,
   SparklesIcon,
 } from "@heroicons/react/24/outline";
 
@@ -62,6 +60,10 @@ export function AnalysisView({
     );
   };
 
+  const selectAll = () => setSelectedSkills([...analysis.missingSkills]);
+  const deselectAll = () => setSelectedSkills([]);
+  const allSelected = selectedSkills.length === analysis.missingSkills.length;
+
   const circumference = 2 * Math.PI * 40;
   const offset = circumference - (analysis.matchScore / 100) * circumference;
 
@@ -83,7 +85,7 @@ export function AnalysisView({
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">
           Job Match Analysis
         </h1>
-        <p className="mt-1 text-muted-foreground">
+        <p className="mt-1 text-sm text-muted-foreground truncate">
           {analysis.jobTitle}
           {analysis.companyName && ` at ${analysis.companyName}`}
         </p>
@@ -126,28 +128,27 @@ export function AnalysisView({
       </motion.div>
 
       {/* Skills */}
-      <div className="mt-6 grid gap-4 sm:grid-cols-2">
+      <div className="mt-6 grid gap-4 grid-cols-1 sm:grid-cols-2">
         {/* Present Skills */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.2 }}
         >
-          <Card>
+          <Card className="!py-0">
             <CardContent className="p-4">
-              <h3 className="text-sm font-medium text-foreground mb-2">
+              <h3 className="text-sm font-medium text-foreground mb-3">
                 Matching Skills ({analysis.presentSkills.length})
               </h3>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap gap-2">
                 {analysis.presentSkills.map((skill) => (
-                  <Badge
+                  <span
                     key={skill}
-                    variant="secondary"
-                    className="bg-emerald-50 text-emerald-700 text-xs"
+                    className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-200 break-words max-w-full"
                   >
-                    <CheckIcon className="mr-1 h-3 w-3" />
-                    {skill}
-                  </Badge>
+                    <CheckIcon className="h-3 w-3 shrink-0" />
+                    <span className="truncate">{skill}</span>
+                  </span>
                 ))}
                 {analysis.presentSkills.length === 0 && (
                   <p className="text-xs text-muted-foreground">None found</p>
@@ -163,32 +164,50 @@ export function AnalysisView({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.25 }}
         >
-          <Card>
+          <Card className="!py-0">
             <CardContent className="p-4">
-              <h3 className="text-sm font-medium text-foreground mb-2">
-                Missing Skills ({analysis.missingSkills.length})
-              </h3>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-medium text-foreground">
+                  Missing Skills ({analysis.missingSkills.length})
+                </h3>
+                {analysis.missingSkills.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={allSelected ? deselectAll : selectAll}
+                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {allSelected ? "Deselect all" : "Select all"}
+                  </button>
+                )}
+              </div>
+              <p className="text-[11px] text-muted-foreground mb-2.5">
+                Tap to select skills to add to your resume
+              </p>
+              <div className="flex flex-wrap gap-2">
                 {analysis.missingSkills.map((skill) => {
                   const isSelected = selectedSkills.includes(skill);
                   return (
-                    <Badge
+                    <button
                       key={skill}
-                      variant="outline"
-                      className={`text-xs cursor-pointer transition-colors ${
-                        isSelected
-                          ? "bg-primary/10 border-primary/30 text-primary"
-                          : "opacity-60"
-                      }`}
+                      type="button"
                       onClick={() => toggleSkill(skill)}
+                      className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all max-w-full cursor-pointer ring-1 ring-inset ${
+                        isSelected
+                          ? "bg-foreground/5 text-foreground ring-foreground/20"
+                          : "bg-muted/50 text-muted-foreground ring-border hover:bg-muted hover:text-foreground"
+                      }`}
                     >
-                      {isSelected ? (
-                        <CheckIcon className="mr-1 h-3 w-3" />
-                      ) : (
-                        <XMarkIcon className="mr-1 h-3 w-3" />
-                      )}
-                      {skill}
-                    </Badge>
+                      <span
+                        className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-sm border transition-colors ${
+                          isSelected
+                            ? "border-foreground bg-foreground text-white"
+                            : "border-muted-foreground/40"
+                        }`}
+                      >
+                        {isSelected && <CheckIcon className="h-2.5 w-2.5" />}
+                      </span>
+                      <span className="truncate">{skill}</span>
+                    </button>
                   );
                 })}
                 {analysis.missingSkills.length === 0 && (
@@ -208,12 +227,12 @@ export function AnalysisView({
           transition={{ duration: 0.3, delay: 0.3 }}
           className="mt-4"
         >
-          <Card>
+          <Card className="!py-0">
             <CardContent className="p-4">
               <h3 className="text-sm font-medium text-foreground mb-2">
                 Suggested Summary
               </h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
+              <p className="text-sm text-muted-foreground leading-relaxed break-words">
                 {analysis.suggestedSummary}
               </p>
             </CardContent>
@@ -226,31 +245,32 @@ export function AnalysisView({
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: 0.35 }}
-        className="mt-6 flex flex-col sm:flex-row justify-center gap-3"
+        className="mt-6 flex flex-col-reverse sm:flex-row justify-center gap-3"
       >
-        <Button
-          onClick={() => onGenerate(selectedSkills)}
-          disabled={isLoading}
-          className="gap-2"
-        >
-          {isLoading ? (
-            <>
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-              Generating...
-            </>
-          ) : (
-            <>
-              <SparklesIcon className="h-4 w-4" />
-              Generate with Selected Changes
-            </>
-          )}
-        </Button>
         <Button
           variant="outline"
           onClick={onGenerateAll}
           disabled={isLoading}
         >
-          Generate All
+          <SparklesIcon className="h-4 w-4 mr-2" />
+          Add All Missing Skills to Resume
+        </Button>
+        <Button
+          onClick={() => onGenerate(selectedSkills)}
+          disabled={isLoading || selectedSkills.length === 0}
+          className="gap-2"
+        >
+          {isLoading ? (
+            <>
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              Generating Tailored Resume...
+            </>
+          ) : (
+            <>
+              <SparklesIcon className="h-4 w-4" />
+              Add {selectedSkills.length} Selected Skill{selectedSkills.length !== 1 ? "s" : ""} to Resume
+            </>
+          )}
         </Button>
       </motion.div>
     </motion.div>
