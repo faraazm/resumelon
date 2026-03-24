@@ -72,10 +72,19 @@ export function usePagination(
     return result;
   }, [data, template, stableSectionOrder, debug]);
 
-  // Create a stable key for blocks to track when re-measurement is needed
+  // Create a key that changes when block structure OR content changes.
+  // Block IDs are structural (e.g. "header", "summary") and don't change
+  // when text content changes, so we include a content fingerprint.
   const blocksKey = useMemo(
-    () => blocks.map((b) => b.id).join(","),
-    [blocks]
+    () => {
+      const contentFingerprint = JSON.stringify(data) + headingFontId + bodyFontId;
+      let hash = 0;
+      for (let i = 0; i < contentFingerprint.length; i++) {
+        hash = ((hash << 5) - hash + contentFingerprint.charCodeAt(i)) | 0;
+      }
+      return blocks.map((b) => b.id).join(",") + "|" + hash;
+    },
+    [blocks, data, headingFontId, bodyFontId]
   );
 
   // Step 2 & 3: Measurement → Pagination
