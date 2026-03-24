@@ -15,9 +15,11 @@ export default defineSchema({
     lastGenerationMonth: v.optional(v.string()),
     subscriptionStatus: v.optional(v.string()),
     stripeSubscriptionId: v.optional(v.string()),
+    deletedAt: v.optional(v.number()),
     createdAt: v.number(),
     updatedAt: v.number(),
-  }).index("by_clerk_id", ["clerkId"]),
+  }).index("by_clerk_id", ["clerkId"])
+    .index("by_email", ["email"]),
 
   resumes: defineTable({
     userId: v.id("users"),

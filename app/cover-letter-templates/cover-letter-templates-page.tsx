@@ -25,6 +25,7 @@ import { InlineCTA } from "@/components/marketing/inline-cta";
 import { BrandName } from "@/components/marketing/logo";
 import { ScaledCoverLetter } from "@/components/marketing/template-preview";
 import { StackedDocuments, SingleDocument, TemplateGrid } from "@/components/marketing/template-visuals";
+import { PricingPreview } from "@/components/marketing/pricing-preview";
 
 const sectionVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -419,6 +420,9 @@ export function CoverLetterTemplatesPage() {
             })}
           </motion.div>
         </SectionWrapper>
+
+        {/* Pricing */}
+        <PricingPreview />
 
         {/* FAQ */}
         <PageFAQ

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { useUser, useClerk } from "@clerk/nextjs";
 import { useMutation } from "convex/react";
@@ -22,6 +22,18 @@ import {
   ChatBubbleLeftRightIcon,
 } from "@heroicons/react/24/outline";
 import { SupportDialog } from "@/components/app/support-dialog";
+import { UpgradeDialog } from "@/components/app/upgrade-dialog";
+
+interface SubscriptionData {
+  subscribed: boolean;
+  subscription: {
+    id: string;
+    status: string;
+    priceId: string;
+    currentPeriodEnd: number;
+    cancelAtPeriodEnd: boolean;
+  } | null;
+}
 
 export default function SettingsPage() {
   const { user } = useUser();
@@ -32,16 +44,32 @@ export default function SettingsPage() {
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const [supportDialogOpen, setSupportDialogOpen] = useState(false);
+  const [showUpgrade, setShowUpgrade] = useState(false);
 
-  // Mock subscription data - will be replaced with Stripe
-  const subscription = {
-    plan: "free", // "free" | "pro" | "lifetime"
-    status: "active",
-    currentPeriodEnd: null,
-    interval: null as string | null,
-  };
+  // Real subscription data from Stripe
+  const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
+  const [isLoadingSub, setIsLoadingSub] = useState(true);
+  const [isOpeningPortal, setIsOpeningPortal] = useState(false);
 
-  const isPro = subscription.plan === "pro" || subscription.plan === "lifetime";
+  const fetchSubscription = useCallback(async () => {
+    try {
+      const res = await fetch("/api/stripe/subscription");
+      if (res.ok) {
+        const data = await res.json();
+        setSubscription(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch subscription:", error);
+    } finally {
+      setIsLoadingSub(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchSubscription();
+  }, [fetchSubscription]);
+
+  const isPro = subscription?.subscribed === true;
 
   const memberSince = user?.createdAt
     ? new Date(user.createdAt).toLocaleDateString("en-US", {
@@ -50,6 +78,20 @@ export default function SettingsPage() {
         year: "numeric",
       })
     : null;
+
+  const handleManageBilling = async () => {
+    setIsOpeningPortal(true);
+    try {
+      const res = await fetch("/api/stripe/portal", { method: "POST" });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (error) {
+      console.error("Failed to open billing portal:", error);
+      setIsOpeningPortal(false);
+    }
+  };
 
   const handleDeleteAccount = async () => {
     if (deleteConfirmText !== "delete my account") return;
@@ -63,6 +105,31 @@ export default function SettingsPage() {
       setIsDeleting(false);
     }
   };
+
+  // Format subscription details
+  const planLabel = (() => {
+    if (isLoadingSub) return "Loading...";
+    if (!isPro) return "Free Plan";
+    const sub = subscription?.subscription;
+    if (!sub) return "Pro Plan";
+    const monthlyPriceId = process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_PRO_MONTHLY;
+    const isYearly = sub.priceId !== monthlyPriceId;
+    return isYearly ? "Pro Plan (Yearly)" : "Pro Plan (Monthly)";
+  })();
+
+  const renewalInfo = (() => {
+    if (!isPro || !subscription?.subscription) return null;
+    const sub = subscription.subscription;
+    const date = new Date(sub.currentPeriodEnd * 1000).toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+    if (sub.cancelAtPeriodEnd) {
+      return `Your plan will be canceled on ${date}`;
+    }
+    return `Renews on ${date}`;
+  })();
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
@@ -129,24 +196,28 @@ export default function SettingsPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0">
               <div>
-                <CardTitle>
-                  {subscription.plan === "lifetime"
-                    ? "Lifetime Plan"
-                    : isPro
-                      ? "Pro Plan"
-                      : "Free Plan"}
-                </CardTitle>
+                <CardTitle>{planLabel}</CardTitle>
                 <CardDescription>
-                  Manage your subscription and billing
+                  {renewalInfo || "Manage your subscription and billing"}
                 </CardDescription>
               </div>
               {isPro ? (
-                <Button variant="outline" className="gap-2">
+                <Button
+                  variant="outline"
+                  className="gap-2"
+                  onClick={handleManageBilling}
+                  disabled={isOpeningPortal}
+                >
                   <CreditCardIcon className="h-4 w-4" />
-                  Manage
+                  {isOpeningPortal ? "Opening..." : "Manage Billing"}
                 </Button>
               ) : (
-                <Button>Upgrade</Button>
+                <Button
+                  onClick={() => setShowUpgrade(true)}
+                  disabled={isLoadingSub}
+                >
+                  Upgrade
+                </Button>
               )}
             </CardHeader>
           </Card>
@@ -202,6 +273,9 @@ export default function SettingsPage() {
           </Card>
         </motion.div>
       </div>
+
+      {/* Upgrade Dialog */}
+      <UpgradeDialog open={showUpgrade} onOpenChange={setShowUpgrade} />
 
       {/* Support Dialog */}
       <SupportDialog open={supportDialogOpen} onOpenChange={setSupportDialogOpen} />

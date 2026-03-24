@@ -28,6 +28,7 @@ import {
   TemplateGrid,
   SingleDocument,
   FannedDocuments,
+  PricingPreview,
 } from "@/components/marketing";
 import type { FAQItem } from "@/components/marketing";
 
@@ -606,6 +607,17 @@ export function ATSResumeBuilderPage() {
               ))}
             </motion.div>
           </SectionWrapper>
+        </motion.div>
+
+        {/* ---- Pricing ---- */}
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-100px" }}
+          variants={sectionVariants}
+          transition={{ duration: 0.4 }}
+        >
+          <PricingPreview />
         </motion.div>
 
         {/* ---- FAQ ---- */}

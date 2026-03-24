@@ -24,7 +24,7 @@ export function PageHero({
   secondaryCtaHref,
 }: PageHeroProps) {
   return (
-    <SectionWrapper background="default" padding="lg">
+    <SectionWrapper background="default" padding="md">
       <motion.div
         className="mx-auto max-w-3xl text-center"
         initial={{ opacity: 0, y: 20 }}

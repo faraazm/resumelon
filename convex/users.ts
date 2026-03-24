@@ -22,24 +22,48 @@ export const getOrCreateUser = mutation({
     if (!identity) throw new Error("Not authenticated");
     const clerkId = identity.subject;
 
+    // Check for existing user by clerkId
     const existingUser = await ctx.db
       .query("users")
       .withIndex("by_clerk_id", (q) => q.eq("clerkId", clerkId))
       .first();
 
     if (existingUser) {
-      // Update user info if changed
+      // Revive if soft-deleted, or just update profile
       await ctx.db.patch(existingUser._id, {
         email: args.email,
         firstName: args.firstName,
         lastName: args.lastName,
         imageUrl: args.imageUrl,
+        deletedAt: undefined,
         updatedAt: Date.now(),
       });
       return existingUser;
     }
 
-    // Create new user
+    // Check for a soft-deleted user with the same email (re-signup with new Clerk account)
+    // Preserve their usage counts to prevent abuse
+    const deletedUser = await ctx.db
+      .query("users")
+      .withIndex("by_email", (q) => q.eq("email", args.email))
+      .first();
+
+    if (deletedUser && deletedUser.deletedAt) {
+      // Revive the deleted record with new clerkId, preserving usage
+      await ctx.db.patch(deletedUser._id, {
+        clerkId,
+        email: args.email,
+        firstName: args.firstName,
+        lastName: args.lastName,
+        imageUrl: args.imageUrl,
+        hasCompletedOnboarding: false,
+        deletedAt: undefined,
+        updatedAt: Date.now(),
+      });
+      return deletedUser;
+    }
+
+    // Brand new user
     const userId = await ctx.db.insert("users", {
       clerkId,
       email: args.email,
@@ -180,8 +204,20 @@ export const deleteAccount = mutation({
       await ctx.db.delete(token._id);
     }
 
-    // Delete the user
-    await ctx.db.delete(user._id);
+    // Soft-delete the user: clear personal data but preserve usage counts
+    // (monthlyGenerationCount, optimizationCount, lastGenerationMonth)
+    // to prevent abuse when re-creating an account with the same email
+    await ctx.db.patch(user._id, {
+      firstName: undefined,
+      lastName: undefined,
+      imageUrl: undefined,
+      hasCompletedOnboarding: false,
+      primaryResumeId: undefined,
+      subscriptionStatus: undefined,
+      stripeSubscriptionId: undefined,
+      deletedAt: Date.now(),
+      updatedAt: Date.now(),
+    });
   },
 });
 

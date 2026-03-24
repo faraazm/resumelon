@@ -28,6 +28,7 @@ import {
   FannedDocuments,
   TemplateGrid,
   SingleDocument,
+  PricingPreview,
 } from "@/components/marketing";
 import type { FAQItem } from "@/components/marketing";
 
@@ -455,7 +456,12 @@ export function ResumeGeneratorPage() {
           </SectionWrapper>
         </AnimatedSection>
 
-        {/* 7. FAQ */}
+        {/* 7. Pricing */}
+        <AnimatedSection>
+          <PricingPreview />
+        </AnimatedSection>
+
+        {/* 8. FAQ */}
         <AnimatedSection>
           <PageFAQ
             heading="Resume Generator FAQ"

@@ -15,6 +15,7 @@ import {
   FannedDocuments,
   TemplateGrid,
   SingleDocument,
+  PricingPreview,
 } from "@/components/marketing";
 import type { FAQItem } from "@/components/marketing";
 import {
@@ -567,7 +568,18 @@ export function ResumeTemplatesPage() {
           </motion.div>
         </SectionWrapper>
 
-        {/* 7. FAQ */}
+        {/* 7. Pricing */}
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-50px" }}
+          variants={sectionVariants}
+          transition={{ duration: 0.4 }}
+        >
+          <PricingPreview />
+        </motion.div>
+
+        {/* 8. FAQ */}
         <PageFAQ
           heading="Resume Template FAQs"
           description="Answers to the most common questions about our templates, customization options, and compatibility."

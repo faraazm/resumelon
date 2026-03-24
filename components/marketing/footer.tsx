@@ -23,6 +23,11 @@ const footerColumns: FooterColumn[] = [
       { href: "/ats-resume-builder", label: "ATS Resume Builder" },
       { href: "/resume-templates", label: "Resume Templates" },
       { href: "/cover-letter-templates", label: "Cover Letter Templates" },
+      { href: "/resume-tailoring", label: "Resume Tailoring" },
+      { href: "/resume-builder-from-job-description", label: "Resume from Job Description" },
+      { href: "/ats-resume-checker", label: "ATS Resume Checker" },
+      { href: "/resume-builder-for-students", label: "Resume Builder for Students" },
+      { href: "/resume-optimization", label: "Resume Optimization" },
     ],
   },
   {

@@ -14,8 +14,15 @@ const isPublicRoute = createRouteMatcher([
   "/resume-generator(.*)",
   "/cover-letter-generator(.*)",
   "/cover-letter-templates(.*)",
-  "/api/webhooks(.*)",
+  "/resume-tailoring(.*)",
+  "/resume-builder-from-job-description(.*)",
+  "/ats-resume-checker(.*)",
+  "/resume-builder-for-students(.*)",
+  "/resume-optimization(.*)",
+  "/api/(.*)",
   "/print/(.*)",
+  "/sitemap.xml",
+  "/robots.txt",
 ]);
 
 export default clerkMiddleware(async (auth, req) => {

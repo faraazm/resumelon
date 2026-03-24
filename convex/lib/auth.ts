@@ -18,7 +18,7 @@ export async function getAuthenticatedUser(
     .query("users")
     .withIndex("by_clerk_id", (q) => q.eq("clerkId", clerkId))
     .first();
-  if (!user) {
+  if (!user || user.deletedAt) {
     throw new Error("User not found");
   }
   return user;
@@ -37,10 +37,12 @@ export async function getAuthenticatedUserOrNull(
     throw new Error("Not authenticated");
   }
   const clerkId = identity.subject;
-  return await ctx.db
+  const user = await ctx.db
     .query("users")
     .withIndex("by_clerk_id", (q) => q.eq("clerkId", clerkId))
     .first();
+  if (user?.deletedAt) return null;
+  return user;
 }
 
 /**

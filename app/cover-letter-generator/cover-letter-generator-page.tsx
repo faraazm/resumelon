@@ -25,6 +25,7 @@ import { PageFAQ } from "@/components/marketing/page-faq";
 import { FeatureShowcase } from "@/components/marketing/feature-showcase";
 import { BrandName } from "@/components/marketing/logo";
 import { StackedDocuments, SingleDocument, FannedDocuments } from "@/components/marketing/template-visuals";
+import { PricingPreview } from "@/components/marketing/pricing-preview";
 
 const sectionVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -465,6 +466,9 @@ export function CoverLetterGeneratorPage() {
             ))}
           </motion.div>
         </SectionWrapper>
+
+        {/* -------- Pricing -------- */}
+        <PricingPreview />
 
         {/* -------- FAQ -------- */}
         <PageFAQ

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect, useLayoutEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -75,6 +76,8 @@ function MobileMenu({
   onClose: () => void;
 }) {
   const [mounted, setMounted] = useState(false);
+  const pathname = usePathname();
+  const router = useRouter();
 
   useLayoutEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- Hydration safety pattern
@@ -86,11 +89,15 @@ function MobileMenu({
     href: string
   ) => {
     e.preventDefault();
+    onClose();
+    if (pathname !== "/") {
+      router.push("/" + href);
+      return;
+    }
     const element = document.querySelector(href);
     if (element) {
       element.scrollIntoView({ behavior: "smooth" });
     }
-    onClose();
   };
 
   if (!mounted) return null;
@@ -176,6 +183,8 @@ function MobileMenu({
 
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const pathname = usePathname();
+  const router = useRouter();
 
   // Close mobile menu on resize to desktop
   useEffect(() => {
@@ -205,11 +214,15 @@ export function Navbar() {
     href: string
   ) => {
     e.preventDefault();
+    setMobileMenuOpen(false);
+    if (pathname !== "/") {
+      router.push("/" + href);
+      return;
+    }
     const element = document.querySelector(href);
     if (element) {
       element.scrollIntoView({ behavior: "smooth" });
     }
-    setMobileMenuOpen(false);
   };
 
   return (
