@@ -55,7 +55,7 @@ export default function CoverLettersPage() {
       setShowUpgrade(true);
       return;
     }
-    router.push("/app/cover-letters/new");
+    router.push("/cover-letters/new");
   };
 
   const handleDelete = (id: Id<"coverLetters">) => {

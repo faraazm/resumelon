@@ -65,6 +65,16 @@ export default function OnboardingPage() {
     setStep("create-resume");
   };
 
+  const handleSkip = async () => {
+    if (!user?.id) return;
+    try {
+      await completeOnboarding({ clerkId: user.id });
+      router.push("/resumes");
+    } catch (err) {
+      console.error("Error skipping onboarding:", err);
+    }
+  };
+
   const handleStartFromScratch = async () => {
     if (!user?.id || isCreating) return;
 
@@ -78,7 +88,7 @@ export default function OnboardingPage() {
       await completeOnboarding({
         clerkId: user.id,
       });
-      router.push(`/app/resumes/${resumeId}/edit`);
+      router.push(`/resumes/${resumeId}/edit`);
     } catch (err) {
       console.error("Error creating resume:", err);
       setError("Failed to create resume. Please try again.");
@@ -146,7 +156,7 @@ export default function OnboardingPage() {
       await completeOnboarding({
         clerkId: user.id,
       });
-      router.push(`/app/resumes/${resumeId}/edit`);
+      router.push(`/resumes/${resumeId}/edit`);
     } catch (err) {
       console.error("Error uploading document:", err);
       setError(
@@ -424,9 +434,12 @@ export default function OnboardingPage() {
                 transition={{ duration: 0.4, delay: 0.55 }}
                 className="mt-10 flex flex-col items-center gap-2 sm:mt-12"
               >
-                <p className="text-xs text-muted-foreground">
-                  You can create more resumes and tailor them from your dashboard
-                </p>
+                <button
+                  onClick={handleSkip}
+                  className="text-sm text-muted-foreground underline-offset-4 hover:underline hover:text-foreground transition-colors"
+                >
+                  Skip for now
+                </button>
               </motion.div>
             </motion.div>
           )}

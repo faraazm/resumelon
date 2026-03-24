@@ -42,7 +42,7 @@ export default function TailorResumePage() {
     <div className="min-h-screen bg-background">
       <div className="absolute left-6 top-6 z-10">
         <Button variant="outline" size="sm" className="gap-2" asChild>
-          <Link href="/app/resumes/new">
+          <Link href="/resumes/new">
             <ArrowLeftIcon className="h-4 w-4" />
             Back
           </Link>
@@ -79,7 +79,7 @@ export default function TailorResumePage() {
                 <p className="text-muted-foreground">
                   No resumes yet.{" "}
                   <Link
-                    href="/app/resumes/new"
+                    href="/resumes/new"
                     className="text-foreground underline underline-offset-4 hover:text-foreground/80"
                   >
                     Create one first
@@ -98,7 +98,7 @@ export default function TailorResumePage() {
                   <Card
                     onClick={() =>
                       router.push(
-                        `/app/resumes/optimize?resumeId=${resume._id}`
+                        `/resumes/optimize?resumeId=${resume._id}`
                       )
                     }
                     className="!py-0 shadow-none group cursor-pointer transition-all hover:border-foreground/20"

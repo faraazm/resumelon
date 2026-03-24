@@ -188,7 +188,7 @@ function OptimizePageContent() {
         },
       });
 
-      router.push(`/app/resumes/${newResumeId}/edit`);
+      router.push(`/resumes/${newResumeId}/edit`);
     } catch (err) {
       console.error("Generation error:", err);
       setError("Failed to generate tailored resume. Please try again.");
@@ -215,7 +215,7 @@ function OptimizePageContent() {
 
   // If no resumeId provided, redirect back
   if (!resumeId) {
-    router.push("/app/resumes");
+    router.push("/resumes");
     return null;
   }
 
@@ -230,7 +230,7 @@ function OptimizePageContent() {
 
   // Resume not found or access denied
   if (resume === null) {
-    router.push("/app/resumes");
+    router.push("/resumes");
     return null;
   }
 
@@ -250,7 +250,7 @@ function OptimizePageContent() {
           asChild={step === "job-description"}
         >
           {step === "job-description" ? (
-            <Link href="/app/resumes">
+            <Link href="/resumes">
               <ArrowLeftIcon className="h-4 w-4" />
               Back
             </Link>

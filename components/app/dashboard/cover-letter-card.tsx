@@ -181,7 +181,7 @@ export const CoverLetterCard = memo(function CoverLetterCard({
         <div className="flex flex-col sm:flex-row items-stretch">
           {/* Thumbnail Preview */}
           <Link
-            href={`/app/cover-letters/${coverLetter._id}/edit`}
+            href={`/cover-letters/${coverLetter._id}/edit`}
             className="block shrink-0 p-4 sm:p-5"
           >
             <div
@@ -211,7 +211,7 @@ export const CoverLetterCard = memo(function CoverLetterCard({
           {/* Info + Actions */}
           <div className="flex flex-1 flex-col justify-center px-4 pb-4 sm:pl-2 sm:pr-5 sm:py-5">
             <Link
-              href={`/app/cover-letters/${coverLetter._id}/edit`}
+              href={`/cover-letters/${coverLetter._id}/edit`}
               className="block"
             >
               <h2 className="text-xl font-semibold text-foreground">
@@ -251,7 +251,7 @@ export const CoverLetterCard = memo(function CoverLetterCard({
                 className="rounded-full gap-1.5 shadow-none"
                 asChild
               >
-                <Link href={`/app/cover-letters/${coverLetter._id}/edit`}>
+                <Link href={`/cover-letters/${coverLetter._id}/edit`}>
                   <PencilSquareIcon className="h-3.5 w-3.5" />
                   Edit
                 </Link>
@@ -311,7 +311,7 @@ export const CoverLetterCard = memo(function CoverLetterCard({
                   className="shrink-0 rounded-full shadow-none bg-white dark:bg-background w-full sm:w-auto"
                   asChild
                 >
-                  <Link href={`/app/cover-letters/${coverLetter._id}/tailor`}>
+                  <Link href={`/cover-letters/${coverLetter._id}/tailor`}>
                     Tailor
                   </Link>
                 </Button>

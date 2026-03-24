@@ -64,7 +64,7 @@ export function ResumeTableRow({
       </td>
       <td className="px-3 py-3">
         <Link
-          href={`/app/resumes/${resume._id}/edit`}
+          href={`/resumes/${resume._id}/edit`}
           className="font-medium text-foreground hover:underline"
         >
           {resume.title}
@@ -92,7 +92,7 @@ export function ResumeTableRow({
             )}
           </Button>
           <Button variant="ghost" size="icon-xs" asChild title="Edit">
-            <Link href={`/app/resumes/${resume._id}/edit`}>
+            <Link href={`/resumes/${resume._id}/edit`}>
               <PencilSquareIcon className="h-3.5 w-3.5" />
             </Link>
           </Button>

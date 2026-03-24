@@ -160,7 +160,7 @@ function MobileMenu({
                     animate="open"
                   >
                     <Button size="lg" asChild className="w-full">
-                      <Link href="/app/resumes">Go to Dashboard</Link>
+                      <Link href="/resumes">Go to Dashboard</Link>
                     </Button>
                   </motion.div>
                 </SignedIn>
@@ -260,7 +260,7 @@ export function Navbar() {
               </SignedOut>
               <SignedIn>
                 <Button variant="outline" asChild>
-                  <Link href="/app/resumes">Dashboard</Link>
+                  <Link href="/resumes">Dashboard</Link>
                 </Button>
                 <UserButton />
               </SignedIn>

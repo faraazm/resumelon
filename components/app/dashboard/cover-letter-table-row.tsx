@@ -85,7 +85,7 @@ export function CoverLetterTableRow({
       </td>
       <td className="px-3 py-3">
         <Link
-          href={`/app/cover-letters/${coverLetter._id}/edit`}
+          href={`/cover-letters/${coverLetter._id}/edit`}
           className="font-medium text-foreground hover:underline"
         >
           {coverLetter.title}
@@ -113,7 +113,7 @@ export function CoverLetterTableRow({
             )}
           </Button>
           <Button variant="ghost" size="icon-xs" asChild title="Edit">
-            <Link href={`/app/cover-letters/${coverLetter._id}/edit`}>
+            <Link href={`/cover-letters/${coverLetter._id}/edit`}>
               <PencilSquareIcon className="h-3.5 w-3.5" />
             </Link>
           </Button>

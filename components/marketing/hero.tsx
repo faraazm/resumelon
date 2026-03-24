@@ -81,7 +81,7 @@ export function Hero() {
                 </SignedOut>
                 <SignedIn>
                   <Button size="lg" asChild className="text-base gap-1">
-                    <Link href="/app/resumes">
+                    <Link href="/resumes">
                       Go to Dashboard
                       <span>→</span>
                     </Link>

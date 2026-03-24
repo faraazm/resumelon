@@ -75,7 +75,7 @@ export default function ResumesPage() {
   // Redirect to onboarding if user hasn't completed it
   useEffect(() => {
     if (convexUser && !convexUser.hasCompletedOnboarding) {
-      router.push("/app/onboarding");
+      router.push("/onboarding");
     }
   }, [convexUser, router]);
 
@@ -86,11 +86,11 @@ export default function ResumesPage() {
       setShowUpgrade(true);
       return;
     }
-    router.push("/app/resumes/new");
+    router.push("/resumes/new");
   };
 
   const handleTailor = (resumeId: Id<"resumes">) => {
-    router.push(`/app/resumes/optimize?resumeId=${resumeId}`);
+    router.push(`/resumes/optimize?resumeId=${resumeId}`);
   };
 
   const handleDeleteResume = (id: Id<"resumes">) => {

@@ -359,7 +359,7 @@ function ResumeEditorContent() {
             This resume may have been deleted or you don&apos;t have access to it.
           </p>
           <Button asChild>
-            <Link href="/app/resumes">Back to resumes</Link>
+            <Link href="/resumes">Back to resumes</Link>
           </Button>
         </div>
       </div>
@@ -384,7 +384,7 @@ function ResumeEditorContent() {
 
           {/* Home button - hidden below lg, shown in menu instead */}
           <Button variant="outline" size="icon" asChild className="hidden lg:flex cursor-pointer">
-            <Link href="/app/resumes">
+            <Link href="/resumes">
               <HomeIcon className="h-4 w-4" />
             </Link>
           </Button>
@@ -495,7 +495,7 @@ function ResumeEditorContent() {
                 {/* Back to Dashboard */}
                 <div className="p-3 border-b border-border">
                   <Button variant="outline" asChild className="w-full gap-2 cursor-pointer">
-                    <Link href="/app/resumes" onClick={() => setShowMobileMenu(false)}>
+                    <Link href="/resumes" onClick={() => setShowMobileMenu(false)}>
                       <HomeIcon className="h-4 w-4" />
                       Back to Dashboard
                     </Link>

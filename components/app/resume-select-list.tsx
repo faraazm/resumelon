@@ -47,7 +47,7 @@ export function ResumeSelectList({
             <>
               {" "}
               <Link
-                href="/app/resumes/new"
+                href="/resumes/new"
                 className="text-foreground underline underline-offset-4"
               >
                 Create one first

@@ -81,7 +81,7 @@ export default function NewCoverLetterPage() {
       });
 
       // No increment here - "start from scratch" doesn't use AI
-      router.push(`/app/cover-letters/${id}/edit`);
+      router.push(`/cover-letters/${id}/edit`);
     } catch (err) {
       console.error("Error:", err);
       setError("Something went wrong. Please try again.");
@@ -190,7 +190,7 @@ export default function NewCoverLetterPage() {
       });
 
       // No increment here - generateCoverLetterAI already increments count server-side
-      router.push(`/app/cover-letters/${id}/edit`);
+      router.push(`/cover-letters/${id}/edit`);
     } catch (err) {
       console.error("Error creating cover letter:", err);
       setError(
@@ -244,7 +244,7 @@ export default function NewCoverLetterPage() {
           asChild={step === "choose-method"}
         >
           {step === "choose-method" ? (
-            <Link href="/app/cover-letters">
+            <Link href="/cover-letters">
               <ArrowLeftIcon className="h-4 w-4" />
               Back
             </Link>

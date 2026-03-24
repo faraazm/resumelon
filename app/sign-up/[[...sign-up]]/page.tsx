@@ -20,7 +20,7 @@ export default function SignUpPage() {
             footerActionLink: "text-black",
           },
         }}
-        forceRedirectUrl="/app/onboarding"
+        forceRedirectUrl="/onboarding"
         signInUrl="/sign-in"
       />
     </div>

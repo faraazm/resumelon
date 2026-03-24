@@ -117,7 +117,7 @@ export default function TailorCoverLetterPage() {
         },
       });
 
-      router.push(`/app/cover-letters/${coverLetterId}/edit`);
+      router.push(`/cover-letters/${coverLetterId}/edit`);
     } catch (err) {
       console.error("Error generating cover letter:", err);
       setError(
@@ -142,7 +142,7 @@ export default function TailorCoverLetterPage() {
       <div className="flex min-h-screen flex-col items-center justify-center gap-4">
         <p className="text-muted-foreground">Cover letter not found</p>
         <Button asChild>
-          <Link href="/app/cover-letters">Go back</Link>
+          <Link href="/cover-letters">Go back</Link>
         </Button>
       </div>
     );
@@ -156,7 +156,7 @@ export default function TailorCoverLetterPage() {
     <div className="min-h-screen bg-background">
       <div className="absolute left-6 top-6 z-10">
         <Button variant="outline" size="sm" className="gap-2" asChild>
-          <Link href="/app/cover-letters">
+          <Link href="/cover-letters">
             <ArrowLeftIcon className="h-4 w-4" />
             Back
           </Link>

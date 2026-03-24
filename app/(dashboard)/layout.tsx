@@ -16,9 +16,9 @@ import { ViewPreferenceProvider } from "@/hooks/use-view-preference";
 import { DocumentCacheProvider } from "@/hooks/use-document-cache";
 
 const navigation = [
-  { name: "Resumes", href: "/app/resumes", icon: DocumentTextIcon },
-  { name: "Cover Letters", href: "/app/cover-letters", icon: EnvelopeIcon },
-  { name: "Settings", href: "/app/settings", icon: Cog6ToothIcon },
+  { name: "Resumes", href: "/resumes", icon: DocumentTextIcon },
+  { name: "Cover Letters", href: "/cover-letters", icon: EnvelopeIcon },
+  { name: "Settings", href: "/settings", icon: Cog6ToothIcon },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -54,7 +54,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <header className="sticky top-0 z-50 w-full border-b border-border bg-background">
           <div className="mx-auto flex h-14 max-w-4xl items-center justify-between px-4 sm:px-6 lg:px-8">
             {/* Logo */}
-            <Link href="/app/resumes" className="flex items-center gap-1.5 text-[20px] font-semibold tracking-tight">
+            <Link href="/resumes" className="flex items-center gap-1.5 text-[20px] font-semibold tracking-tight">
               <Image
                 src="/images/resumeclone-logo.png"
                 alt=""

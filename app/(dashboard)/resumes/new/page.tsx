@@ -54,7 +54,7 @@ export default function NewResumePage() {
         title: "Untitled Resume",
         source: "scratch",
       });
-      router.push(`/app/resumes/${resumeId}/edit`);
+      router.push(`/resumes/${resumeId}/edit`);
     } catch (err) {
       console.error("Error creating resume:", err);
       setError("Failed to create resume. Please try again.");
@@ -123,7 +123,7 @@ export default function NewResumePage() {
         initialData: parsedResumeData,
       });
 
-      router.push(`/app/resumes/${resumeId}/edit`);
+      router.push(`/resumes/${resumeId}/edit`);
     } catch (err) {
       console.error("Error uploading document:", err);
       setError(
@@ -205,7 +205,7 @@ export default function NewResumePage() {
       setShowUpgrade(true);
       return;
     }
-    router.push("/app/resumes/new/generate");
+    router.push("/resumes/new/generate");
   };
 
   if (!isLoaded) {
@@ -224,7 +224,7 @@ export default function NewResumePage() {
     <div className="min-h-screen bg-background">
       <div className="absolute left-6 top-6 z-10">
         <Button variant="outline" size="sm" className="gap-2" asChild>
-          <Link href="/app/resumes">
+          <Link href="/resumes">
             <ArrowLeftIcon className="h-4 w-4" />
             Back
           </Link>
@@ -371,7 +371,7 @@ export default function NewResumePage() {
                 transition={{ duration: 0.3, delay: 0.35 }}
               >
                 <Card
-                  onClick={() => router.push("/app/resumes/new/tailor")}
+                  onClick={() => router.push("/resumes/new/tailor")}
                   className="!py-0 shadow-none group cursor-pointer transition-all hover:border-foreground/20"
                 >
                   <CardContent className="flex items-center gap-4 px-4 py-3">

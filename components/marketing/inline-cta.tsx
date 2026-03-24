@@ -18,7 +18,7 @@ export function InlineCTA({
   signedOutLabel = "Generate My First Resume",
   signedOutHref = "/sign-up",
   signedInLabel = "Go to Dashboard",
-  signedInHref = "/app/resumes",
+  signedInHref = "/resumes",
   variant = "default",
   size = "lg",
   className = "",

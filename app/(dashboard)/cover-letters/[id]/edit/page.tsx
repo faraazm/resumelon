@@ -233,7 +233,7 @@ function CoverLetterEditorContent() {
       <div className="flex h-screen items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4 text-center">
           <h1 className="text-xl font-semibold">Cover letter not found</h1>
-          <Button asChild><Link href="/app/cover-letters">Back to cover letters</Link></Button>
+          <Button asChild><Link href="/cover-letters">Back to cover letters</Link></Button>
         </div>
       </div>
     );
@@ -253,7 +253,7 @@ function CoverLetterEditorContent() {
             <Bars3Icon className="h-5 w-5" />
           </Button>
           <Button variant="outline" size="icon" asChild className="hidden lg:flex cursor-pointer">
-            <Link href="/app/cover-letters"><HomeIcon className="h-4 w-4" /></Link>
+            <Link href="/cover-letters"><HomeIcon className="h-4 w-4" /></Link>
           </Button>
         </div>
 
@@ -305,7 +305,7 @@ function CoverLetterEditorContent() {
               <div className="flex-1 overflow-auto">
                 <div className="p-3 border-b border-border">
                   <Button variant="outline" asChild className="w-full gap-2 cursor-pointer">
-                    <Link href="/app/cover-letters" onClick={() => setShowMobileMenu(false)}>
+                    <Link href="/cover-letters" onClick={() => setShowMobileMenu(false)}>
                       <HomeIcon className="h-4 w-4" />Back to Dashboard
                     </Link>
                   </Button>
