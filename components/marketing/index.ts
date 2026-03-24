@@ -25,3 +25,15 @@ export { PageHero } from "./page-hero";
 export { PageFAQ } from "./page-faq";
 export type { FAQItem } from "./page-faq";
 export { FeatureShowcase } from "./feature-showcase";
+export {
+  ScaledResume,
+  ScaledCoverLetter,
+  sampleResumeData,
+  sampleCoverLetterData,
+} from "./template-preview";
+export {
+  FannedDocuments,
+  StackedDocuments,
+  TemplateGrid,
+  SingleDocument,
+} from "./template-visuals";

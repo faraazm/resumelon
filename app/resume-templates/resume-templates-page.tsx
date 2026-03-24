@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import Image from "next/image";
 import {
   Navbar,
   Footer,
@@ -12,6 +11,10 @@ import {
   PageHero,
   PageFAQ,
   FeatureShowcase,
+  ScaledResume,
+  FannedDocuments,
+  TemplateGrid,
+  SingleDocument,
 } from "@/components/marketing";
 import type { FAQItem } from "@/components/marketing";
 import {
@@ -27,6 +30,8 @@ import {
   BriefcaseIcon,
   AcademicCapIcon,
   PaintBrushIcon,
+  ArrowDownTrayIcon,
+  EyeIcon,
 } from "@heroicons/react/24/outline";
 
 const sectionVariants = {
@@ -40,40 +45,46 @@ const sectionVariants = {
 
 const templates = [
   {
-    name: "Modern",
-    category: "Modern",
+    name: "ATS Classic",
+    id: "ats-classic",
+    category: "Classic",
     description:
-      "Clean lines and contemporary layout perfect for tech, marketing, and startup roles.",
+      "Traditional ATS format with serif name and clean black line dividers. Time-tested formatting trusted by recruiters across every industry.",
   },
   {
-    name: "Professional",
-    category: "Professional",
+    name: "Bold Modern",
+    id: "bold-modern",
+    category: "Modern",
     description:
-      "Traditional structure with a polished finish, ideal for finance, consulting, and corporate positions.",
+      "Large centered name with strong professional presence. Clean lines and contemporary layout perfect for tech and startup roles.",
   },
   {
     name: "Creative",
+    id: "creative-bold",
     category: "Creative",
     description:
-      "Bold typography and distinctive sections for design, media, and arts professionals.",
+      "Bold design with strong visual hierarchy and distinctive sections for design, media, and arts professionals.",
   },
   {
     name: "Minimal",
+    id: "minimal-clean",
     category: "Minimal",
     description:
-      "Stripped-back elegance that puts your experience front and center with zero distractions.",
+      "Ultra-minimal with maximum whitespace. Stripped-back elegance that puts your experience front and center.",
   },
   {
     name: "Executive",
+    id: "executive-navy",
     category: "Executive",
     description:
-      "Commanding presence for senior leaders, directors, and C-suite candidates.",
+      "Premium design with navy accents for senior leaders, directors, and C-suite candidates.",
   },
   {
-    name: "Classic",
-    category: "Classic",
+    name: "Elegant",
+    id: "elegant-serif",
+    category: "Elegant",
     description:
-      "Time-tested formatting trusted by recruiters across every industry and career level.",
+      "Sophisticated serif typography with centered layout. A polished option for client-facing and premium roles.",
   },
 ];
 
@@ -84,6 +95,7 @@ const categoryColors: Record<string, string> = {
   Minimal: "bg-gray-50 text-gray-700 border-gray-200",
   Executive: "bg-amber-50 text-amber-700 border-amber-200",
   Classic: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  Elegant: "bg-rose-50 text-rose-700 border-rose-200",
 };
 
 const whyDifferent = [
@@ -163,8 +175,21 @@ const showcaseFeatures = [
       "Single and multi-column ATS-safe layouts",
       "Real-time preview of every change",
     ],
-    image: "/images/feature-images/design-tab-customization.png",
-    imageAlt: "Design customization panel with color and font options",
+    visual: (
+      <FannedDocuments
+        type="resume"
+        gradient="bg-gradient-to-br from-violet-50 via-purple-50 to-fuchsia-50"
+        cards={[
+          { templateId: "bold-modern", rotate: -7, x: -40, y: 12, delay: 0.1 },
+          { templateId: "elegant-serif", rotate: 0, x: 0, y: 0, delay: 0.24 },
+          { templateId: "creative-bold", rotate: 6, x: 35, y: -10, delay: 0.38 },
+        ]}
+        badges={[
+          { icon: SwatchIcon, label: "Custom Colors", position: "top-right", delay: 0.7, variant: "accent" },
+          { icon: PaintBrushIcon, label: "Font Pairing", position: "bottom-left", delay: 0.8 },
+        ]}
+      />
+    ),
   },
   {
     title: "ATS Compatibility You Can Trust",
@@ -176,8 +201,18 @@ const showcaseFeatures = [
       "No hidden text boxes, tables, or graphics that break parsing",
       "Built-in resume scoring to catch issues before you apply",
     ],
-    image: "/images/feature-images/resume-scoring.png",
-    imageAlt: "ATS compatibility score and resume analysis view",
+    visual: (
+      <SingleDocument
+        type="resume"
+        templateId="ats-classic"
+        gradient="bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50"
+        rotate={-3}
+        badges={[
+          { icon: ShieldCheckIcon, label: "ATS Score: 98%", position: "top-left", delay: 0.6, variant: "success" },
+          { icon: EyeIcon, label: "Recruiter Approved", position: "bottom-right", delay: 0.8 },
+        ]}
+      />
+    ),
   },
   {
     title: "One-Click Export in Multiple Formats",
@@ -189,8 +224,22 @@ const showcaseFeatures = [
       "Optimized file sizes for email and upload portals",
       "US Letter and A4 paper size support",
     ],
-    image: "/images/feature-images/full-resume-editor.png",
-    imageAlt: "Full resume editor showing export options",
+    visual: (
+      <TemplateGrid
+        type="resume"
+        gradient="bg-gradient-to-br from-sky-50 via-blue-50 to-indigo-50"
+        templates={[
+          { id: "executive-navy", rotate: -2, x: -4, y: 3, delay: 0.1 },
+          { id: "minimal-clean", rotate: 2, x: 4, y: -2, delay: 0.2 },
+          { id: "timeline-blue", rotate: -1, x: -3, y: 2, delay: 0.3 },
+          { id: "coral-two-column", rotate: 3, x: 5, y: -4, delay: 0.4 },
+        ]}
+        badges={[
+          { icon: ArrowDownTrayIcon, label: "PDF & DOCX", position: "top-right", delay: 0.6, variant: "blue" },
+          { icon: SparklesIcon, label: "Pixel Perfect", position: "bottom-left", delay: 0.75 },
+        ]}
+      />
+    ),
   },
 ];
 
@@ -324,14 +373,8 @@ export function ResumeTemplatesPage() {
                 variants={sectionVariants}
                 transition={{ duration: 0.4 }}
               >
-                <div className="relative m-3 mb-0 aspect-video overflow-hidden rounded-lg bg-muted">
-                  <Image
-                    src="/images/feature-images/design-tab-templates.png"
-                    alt={`${template.name} template preview`}
-                    fill
-                    className="object-cover object-top"
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  />
+                <div className="flex items-center justify-center p-4 pb-0 bg-muted/30">
+                  <ScaledResume templateId={template.id} width={260} />
                 </div>
                 <div className="flex flex-1 flex-col gap-2 p-5">
                   <div className="flex items-center justify-between">

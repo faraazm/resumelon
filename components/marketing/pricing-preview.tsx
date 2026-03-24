@@ -30,7 +30,7 @@ const plans = [
     price: "$19.99",
     period: "/month",
     yearlyPrice: "$99.99/year",
-    description: "Everything you need to mass apply and land your dream job",
+    description: "Everything you need to tailor every application and land your dream job",
     features: [
       { text: "Unlimited resumes", included: true },
       { text: "All premium templates", included: true },
@@ -52,7 +52,7 @@ export function PricingPreview() {
       <SectionHeader
         id="pricing-heading"
         heading="Simple, Affordable Pricing"
-        description="Pay less than the cost of one missed opportunity. Start free, upgrade when you're ready to scale."
+        description="Pay less than the cost of one missed opportunity. Start free, upgrade when you're ready."
       />
 
       <div className="mt-12 grid gap-8 lg:grid-cols-2 lg:gap-12 max-w-4xl mx-auto">

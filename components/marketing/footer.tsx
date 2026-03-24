@@ -79,7 +79,7 @@ export function Footer() {
             <Logo />
             <p className="mt-3 max-w-xs text-sm text-muted-foreground leading-relaxed">
               AI-powered resumes and cover letters, tailored for every job you
-              apply to. Mass apply smarter, land more interviews.
+              apply to. Apply smarter, land more interviews.
             </p>
           </div>
 

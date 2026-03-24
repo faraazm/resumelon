@@ -13,12 +13,12 @@ const faqs = [
   {
     question: "What is resumeclone?",
     answer:
-      "resumeclone is an AI-powered resume builder that helps you create, tailor, and optimize resumes and cover letters for every job you apply to. Upload your base resume once, paste job descriptions, and instantly generate ATS-friendly, customized applications at scale.",
+      "resumeclone is an AI-powered resume builder that helps you create, tailor, and optimize resumes and cover letters. Upload your base resume once, paste a job description, and instantly generate an ATS-friendly, customized resume tailored to that role.",
   },
   {
     question: "How does resumeclone work?",
     answer:
-      "It's simple: upload your base resume or fill in your details, paste job descriptions you're interested in, and resumeclone's AI generates tailored resumes and cover letters optimized for each role. Every resume is formatted to pass ATS filters and ready to download as PDF or DOCX.",
+      "It's simple: upload your base resume or fill in your details, paste the job description you're targeting, and resumeclone's AI generates a tailored resume and cover letter optimized for that role. Your resume is formatted to pass ATS filters and ready to download as PDF or DOCX.",
   },
   {
     question: "Are resumeclone templates ATS-friendly?",
@@ -33,12 +33,12 @@ const faqs = [
   {
     question: "Does resumeclone generate cover letters?",
     answer:
-      "Yes. resumeclone Pro generates personalized cover letters for every application. Each cover letter is tailored to the job description and pulls relevant details from your resume, so it reads naturally and complements your application.",
+      "Yes. resumeclone Pro generates a personalized cover letter alongside your tailored resume. Each cover letter is matched to the job description and pulls relevant details from your resume, so it reads naturally and complements your application.",
   },
   {
     question: "How many resumes can I create?",
     answer:
-      "Free users can create 1 resume with basic templates and PDF download. Pro users get unlimited resumes, all premium templates, AI suggestions, cover letters, and DOCX export—everything you need to mass apply at scale.",
+      "Free users can create 1 resume with basic templates and PDF download. Pro users get unlimited resumes, all premium templates, AI suggestions, cover letters, and DOCX export—everything you need to tailor your resume for every application.",
   },
   {
     question: "Is resumeclone suitable for students and new graduates?",

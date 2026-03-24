@@ -117,11 +117,11 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: "resumeclone - Mass Apply to Jobs with Tailored, ATS-Optimized Resumes",
+    default: "resumeclone - Tailored, ATS-Optimized Resumes for Every Job Application",
     template: "%s | resumeclone",
   },
   description:
-    "Generate ATS-friendly resumes and cover letters tailored to every job you apply to. Upload once, paste job descriptions, and mass apply with customized, optimized applications in seconds. Free AI-powered resume builder.",
+    "Generate ATS-friendly resumes and cover letters tailored to any job you apply to. Upload once, paste a job description, and get a customized, optimized application in minutes. Free AI-powered resume builder.",
   keywords: [
     "resume builder",
     "AI resume builder",
@@ -136,9 +136,9 @@ export const metadata: Metadata = {
     "career",
     "resume templates",
     "cover letter generator",
-    "mass apply jobs",
     "tailored resume",
-    "bulk resume generator",
+    "resume tailoring tool",
+    "job-specific resume",
     "resume optimization",
     "ATS-optimized resume builder",
     "job search tool",
@@ -156,23 +156,23 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: "https://resumeclone.com",
     siteName: "resumeclone",
-    title: "resumeclone - Mass Apply to Jobs with Tailored, ATS-Optimized Resumes",
+    title: "resumeclone - Tailored, ATS-Optimized Resumes for Every Job Application",
     description:
-      "Generate ATS-friendly resumes and cover letters for every job. Upload once, paste job descriptions, mass apply in seconds. Free AI resume builder.",
+      "Generate ATS-friendly resumes and cover letters tailored to any job. Upload once, paste a job description, get a customized application in minutes. Free AI resume builder.",
     images: [
       {
         url: "/images/og-image.png",
         width: 1200,
         height: 630,
-        alt: "resumeclone - AI-Powered Resume Builder for Mass Applying to Jobs",
+        alt: "resumeclone - AI-Powered Resume Builder for Tailored Job Applications",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "resumeclone - Mass Apply with Tailored Resumes in Seconds",
+    title: "resumeclone - Tailored Resumes for Every Job Application",
     description:
-      "Generate ATS-friendly resumes and cover letters tailored to every job. Upload once, mass apply with optimized applications. Free AI resume builder.",
+      "Generate ATS-friendly resumes and cover letters tailored to any job. Upload once, get optimized applications in minutes. Free AI resume builder.",
     images: ["/images/og-image.png"],
   },
   robots: {

@@ -39,7 +39,7 @@ export function Hero() {
             </div>
 
             <h1 className="text-4xl font-semibold tracking-tighter text-foreground sm:text-5xl lg:text-6xl">
-              Mass Apply to Jobs with Tailored Resumes{" "}
+              Land More Interviews with Tailored Resumes{" "}
               <span
                 className="italic bg-gradient-to-r from-primary via-blue-500 to-violet-500 bg-clip-text text-transparent pb-1 inline-block font-normal text-[2.75rem] sm:text-[3.25rem] lg:text-[4rem] tracking-[0.02em]"
                 style={{ fontFamily: "var(--font-instrument-serif)" }}
@@ -54,9 +54,9 @@ export function Hero() {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.2 }}
             >
-              resumeclone generates ATS-friendly resumes and cover letters for
-              every job you apply to—customized, optimized, and ready to send in
-              seconds. Stop rewriting. Start interviewing.
+              Paste a job description and resumeclone tailors your resume with
+              the right keywords, skills, and phrasing—ATS-optimized and ready
+              to download. Stop rewriting. Start interviewing.
             </motion.p>
 
             {/* CTAs */}

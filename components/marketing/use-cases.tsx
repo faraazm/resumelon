@@ -15,7 +15,7 @@ const useCases = [
     icon: AcademicCapIcon,
     title: "Students & New Grads",
     description:
-      "Applying to dozens of internships and entry-level roles? Generate tailored resumes for every application without spending your entire semester on it.",
+      "Applying to internships and entry-level roles? Generate a tailored resume for each application without spending hours rewriting every time.",
   },
   {
     icon: ArrowPathIcon,
@@ -27,13 +27,13 @@ const useCases = [
     icon: BriefcaseIcon,
     title: "Experienced Professionals",
     description:
-      "Mass applying to senior roles? Create ATS-optimized, keyword-matched resumes at scale without sacrificing the quality your experience deserves.",
+      "Targeting senior roles? Create an ATS-optimized, keyword-matched resume for each position without sacrificing the quality your experience deserves.",
   },
   {
     icon: UserGroupIcon,
     title: "Active Job Seekers",
     description:
-      "In a competitive market, volume matters. resumeclone lets you apply to more jobs, faster, with resumes that actually get past the filters.",
+      "In a competitive market, every application counts. resumeclone helps you apply with tailored resumes that actually get past the filters.",
   },
 ];
 

@@ -22,23 +22,23 @@ const steps = [
   {
     step: "2",
     icon: DocumentTextIcon,
-    title: "Paste Job Descriptions",
+    title: "Paste a Job Description",
     description:
-      "Add job descriptions one at a time or in bulk. resumeclone analyzes each listing to identify key requirements and keywords.",
+      "Paste the job listing you're applying for. resumeclone analyzes it to identify key requirements and keywords.",
   },
   {
     step: "3",
     icon: SparklesIcon,
-    title: "Generate Tailored Resumes",
+    title: "Generate Your Tailored Resume",
     description:
-      "Our AI instantly creates optimized resumes and cover letters tailored to each job. Keywords, skills, and phrasing are customized automatically.",
+      "Our AI instantly creates an optimized resume and cover letter tailored to the role. Keywords, skills, and phrasing are customized automatically.",
   },
   {
     step: "4",
     icon: ArrowDownTrayIcon,
     title: "Download & Apply",
     description:
-      "Export your ATS-optimized resumes as PDF or DOCX. Apply to dozens of jobs in the time it used to take for one.",
+      "Export your ATS-optimized resume as PDF or DOCX. Apply with a tailored resume in minutes instead of hours.",
   },
 ];
 
@@ -60,7 +60,7 @@ export function HowItWorks() {
     <SectionWrapper background="default" id="how-it-works" ariaLabelledBy="how-it-works-heading">
       <SectionHeader
         id="how-it-works-heading"
-        heading="From One Resume to Hundreds—In Minutes"
+        heading="From Generic to Tailored—In Minutes"
         description="No complicated software. No design skills needed. Four simple steps to a smarter job search."
       />
 

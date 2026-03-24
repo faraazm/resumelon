@@ -7,6 +7,7 @@ import {
   ChartBarIcon,
   UserIcon,
   CheckCircleIcon,
+  ShieldCheckIcon,
   XMarkIcon,
   DocumentCheckIcon,
   AdjustmentsHorizontalIcon,
@@ -24,6 +25,9 @@ import {
   PageHero,
   PageFAQ,
   FeatureShowcase,
+  TemplateGrid,
+  SingleDocument,
+  FannedDocuments,
 } from "@/components/marketing";
 import type { FAQItem } from "@/components/marketing";
 
@@ -130,8 +134,22 @@ const showcaseFeatures = [
       "Professional typography that renders consistently across systems",
       "Customizable colors and spacing without breaking ATS compatibility",
     ],
-    image: "/images/feature-images/design-tab-templates.png",
-    imageAlt: "ATS-safe template gallery with multiple resume designs",
+    visual: (
+      <TemplateGrid
+        type="resume"
+        gradient="bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50"
+        templates={[
+          { id: "ats-classic", rotate: -2, x: -5, y: 4, delay: 0.1 },
+          { id: "bold-modern", rotate: 2, x: 4, y: -2, delay: 0.2 },
+          { id: "executive-navy", rotate: -1, x: -3, y: 2, delay: 0.3 },
+          { id: "creative-bold", rotate: 3, x: 5, y: -4, delay: 0.4 },
+        ]}
+        badges={[
+          { icon: ShieldCheckIcon, label: "100% ATS Safe", position: "top-left", delay: 0.6, variant: "success" },
+          { icon: CheckCircleIcon, label: "Parser Tested", position: "bottom-right", delay: 0.75 },
+        ]}
+      />
+    ),
   },
   {
     title: "Intelligent Keyword Matching",
@@ -143,8 +161,18 @@ const showcaseFeatures = [
       "Context-aware keyword suggestions that read naturally",
       "Industry-specific terminology matching for specialized roles",
     ],
-    image: "/images/feature-images/resume-scoring.png",
-    imageAlt: "Keyword matching and resume analysis dashboard",
+    visual: (
+      <SingleDocument
+        type="resume"
+        templateId="executive-navy"
+        gradient="bg-gradient-to-br from-blue-50 via-indigo-50 to-violet-50"
+        rotate={-3}
+        badges={[
+          { icon: MagnifyingGlassIcon, label: "Keywords Detected", position: "top-right", delay: 0.6, variant: "blue" },
+          { icon: ChartBarIcon, label: "Match Score: 95%", position: "bottom-left", delay: 0.8, variant: "success" },
+        ]}
+      />
+    ),
   },
   {
     title: "Resume Scoring & Feedback",
@@ -156,8 +184,20 @@ const showcaseFeatures = [
       "Keyword density and placement evaluation",
       "Actionable improvement suggestions with one-click fixes",
     ],
-    image: "/images/feature-images/resume-scoring.png",
-    imageAlt: "Resume scoring dashboard with detailed feedback",
+    visual: (
+      <FannedDocuments
+        type="resume"
+        gradient="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50"
+        cards={[
+          { templateId: "minimal-clean", rotate: -6, x: -35, y: 10, delay: 0.1 },
+          { templateId: "creative-bold", rotate: 3, x: 10, y: 0, delay: 0.24 },
+        ]}
+        badges={[
+          { icon: ChartBarIcon, label: "Score: 98/100", position: "top-left", delay: 0.6, variant: "amber" },
+          { icon: DocumentCheckIcon, label: "Issues Fixed", position: "bottom-right", delay: 0.8, variant: "success" },
+        ]}
+      />
+    ),
   },
 ];
 

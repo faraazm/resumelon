@@ -20,9 +20,9 @@ const sectionVariants = {
 const values = [
   {
     icon: RocketLaunchIcon,
-    title: "Speed at Scale",
+    title: "Speed Without Sacrifice",
     description:
-      "Job searching is a numbers game. We build tools that let you apply to more roles, faster, without cutting corners on quality.",
+      "Tailoring a resume shouldn't take hours. We build tools that let you create customized, job-specific resumes faster, without cutting corners on quality.",
   },
   {
     icon: UserGroupIcon,

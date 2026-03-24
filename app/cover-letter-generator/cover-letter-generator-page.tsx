@@ -24,6 +24,7 @@ import { PageHero } from "@/components/marketing/page-hero";
 import { PageFAQ } from "@/components/marketing/page-faq";
 import { FeatureShowcase } from "@/components/marketing/feature-showcase";
 import { BrandName } from "@/components/marketing/logo";
+import { StackedDocuments, SingleDocument, FannedDocuments } from "@/components/marketing/template-visuals";
 
 const sectionVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -124,8 +125,18 @@ const showcaseFeatures = [
       "Adapts tone for different industries and seniority levels",
       "Avoids generic phrases like 'team player' and 'hard worker'",
     ],
-    image: "/images/feature-images/cover-letter-customization.png",
-    imageAlt: "AI-powered cover letter customization panel",
+    visual: (
+      <SingleDocument
+        type="cover-letter"
+        templateId="elegant-serif"
+        gradient="bg-gradient-to-br from-teal-50 via-emerald-50 to-cyan-50"
+        rotate={3}
+        badges={[
+          { icon: SparklesIcon, label: "AI Personalized", position: "top-left", delay: 0.6, variant: "teal" },
+          { icon: ChatBubbleBottomCenterTextIcon, label: "Natural Tone", position: "bottom-right", delay: 0.8 },
+        ]}
+      />
+    ),
   },
   {
     title: "Seamless Resume Integration",
@@ -137,8 +148,21 @@ const showcaseFeatures = [
       "Adds narrative context to key achievements",
       "Keeps formatting consistent across both documents",
     ],
-    image: "/images/feature-images/cover-letter-editor.png",
-    imageAlt: "Cover letter editor with resume integration",
+    visual: (
+      <StackedDocuments
+        type="cover-letter"
+        gradient="bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50"
+        sparkleColor="text-amber-500"
+        cards={[
+          { templateId: "ats-classic", rotate: 5, x: 25, y: 8, delay: 0.1 },
+          { templateId: "bold-modern", rotate: -3, x: -15, y: -5, delay: 0.28 },
+        ]}
+        badges={[
+          { icon: DocumentTextIcon, label: "Auto-Synced", position: "top-right", delay: 0.7, variant: "amber" },
+          { icon: ArrowPathIcon, label: "Always Updated", position: "bottom-left", delay: 0.85, variant: "success" },
+        ]}
+      />
+    ),
   },
   {
     title: "One-Click Generation, Unlimited Revisions",
@@ -150,8 +174,21 @@ const showcaseFeatures = [
       "Shift emphasis between skills, experience, and motivation",
       "Version history so you can compare drafts side by side",
     ],
-    image: "/images/feature-images/dashboard-cover-letters.png",
-    imageAlt: "Cover letter dashboard showing document management",
+    visual: (
+      <FannedDocuments
+        type="cover-letter"
+        gradient="bg-gradient-to-br from-rose-50 via-pink-50 to-fuchsia-50"
+        cards={[
+          { templateId: "executive-navy", rotate: -7, x: -40, y: 12, delay: 0.1 },
+          { templateId: "creative-bold", rotate: 0, x: 0, y: 0, delay: 0.24 },
+          { templateId: "minimal-clean", rotate: 6, x: 35, y: -10, delay: 0.38 },
+        ]}
+        badges={[
+          { icon: ClockIcon, label: "Under 60 Seconds", position: "top-right", delay: 0.7, variant: "rose" },
+          { icon: ArrowPathIcon, label: "Unlimited Revisions", position: "bottom-left", delay: 0.8 },
+        ]}
+      />
+    ),
   },
 ];
 

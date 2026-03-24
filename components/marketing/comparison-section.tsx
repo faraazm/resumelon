@@ -25,10 +25,10 @@ const withoutItems: ComparisonItem[] = [
 ];
 
 const withItems: ComparisonItem[] = [
-  { text: "1–2 minutes per application" },
+  { text: "Minutes per tailored application" },
   { text: "Tailored resumes for every job" },
   { text: "Higher interview rates" },
-  { text: "Scalable, stress-free job search" },
+  { text: "Efficient, stress-free job search" },
   { text: "Personalized cover letters included" },
 ];
 

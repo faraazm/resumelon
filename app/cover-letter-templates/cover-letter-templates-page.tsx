@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { motion } from "framer-motion";
 import {
   DocumentTextIcon,
@@ -13,6 +12,7 @@ import {
   ArrowsRightLeftIcon,
   BuildingOfficeIcon,
   LightBulbIcon,
+  CheckCircleIcon,
 } from "@heroicons/react/24/outline";
 import { Navbar } from "@/components/marketing/navbar";
 import { Footer } from "@/components/marketing/footer";
@@ -23,6 +23,8 @@ import { PageFAQ } from "@/components/marketing/page-faq";
 import { FeatureShowcase } from "@/components/marketing/feature-showcase";
 import { InlineCTA } from "@/components/marketing/inline-cta";
 import { BrandName } from "@/components/marketing/logo";
+import { ScaledCoverLetter } from "@/components/marketing/template-preview";
+import { StackedDocuments, SingleDocument, TemplateGrid } from "@/components/marketing/template-visuals";
 
 const sectionVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -30,12 +32,12 @@ const sectionVariants = {
 };
 
 const templates = [
-  { name: "Classic Professional", tag: "Professional", description: "A clean, traditional layout favored by hiring managers across industries. Structured paragraphs with clear contact headers convey reliability and attention to detail." },
-  { name: "Modern Edge", tag: "Modern", description: "Contemporary design with subtle accent lines and balanced whitespace. Ideal for candidates applying to forward-thinking companies that value fresh presentation." },
-  { name: "Creative Canvas", tag: "Creative", description: "Expressive layout with tasteful design elements that let your personality shine. Perfect for roles in design, marketing, media, and the arts." },
-  { name: "Clean Minimal", tag: "Minimal", description: "Stripped-back elegance that puts your words front and center. A distraction-free format that performs exceptionally well with applicant tracking systems." },
-  { name: "Executive Suite", tag: "Executive", description: "Commanding presence with refined typography suited for senior leadership and C-suite positions. Projects authority and strategic thinking from the first line." },
-  { name: "Elegant Script", tag: "Elegant", description: "Sophisticated styling with graceful typographic choices and harmonious spacing. A polished option for client-facing roles and premium brand environments." },
+  { name: "ATS Classic", id: "ats-classic", tag: "Professional", description: "A clean, traditional layout favored by hiring managers across industries. Structured paragraphs with clear contact headers convey reliability and attention to detail." },
+  { name: "Bold Modern", id: "bold-modern", tag: "Modern", description: "Contemporary design with subtle accent lines and balanced whitespace. Ideal for candidates applying to forward-thinking companies." },
+  { name: "Creative", id: "creative-bold", tag: "Creative", description: "Expressive layout with tasteful design elements that let your personality shine. Perfect for design, marketing, and media roles." },
+  { name: "Minimal", id: "minimal-clean", tag: "Minimal", description: "Stripped-back elegance that puts your words front and center. A distraction-free format that performs well with ATS systems." },
+  { name: "Executive", id: "executive-navy", tag: "Executive", description: "Commanding presence with refined typography suited for senior leadership and C-suite positions." },
+  { name: "Elegant", id: "elegant-serif", tag: "Elegant", description: "Sophisticated styling with graceful typographic choices and harmonious spacing for client-facing and premium roles." },
 ];
 
 const templateFeatures = [
@@ -82,8 +84,18 @@ const showcaseFeatures = [
       "Generates complete drafts in under thirty seconds",
       "Adapts tone for different industries and seniority levels",
     ],
-    image: "/images/feature-images/cover-letter-customization.png",
-    imageAlt: "AI cover letter generation and customization panel",
+    visual: (
+      <SingleDocument
+        type="cover-letter"
+        templateId="elegant-serif"
+        gradient="bg-gradient-to-br from-teal-50 via-emerald-50 to-cyan-50"
+        rotate={3}
+        badges={[
+          { icon: SparklesIcon, label: "AI Generated", position: "top-left", delay: 0.6, variant: "teal" },
+          { icon: PencilSquareIcon, label: "Your Voice", position: "bottom-right", delay: 0.8 },
+        ]}
+      />
+    ),
   },
   {
     title: "Seamless Resume Integration",
@@ -95,8 +107,21 @@ const showcaseFeatures = [
       "Updates automatically when you revise your resume",
       "Creates a unified application package for every job",
     ],
-    image: "/images/feature-images/cover-letter-editor.png",
-    imageAlt: "Cover letter editor with resume integration",
+    visual: (
+      <StackedDocuments
+        type="cover-letter"
+        gradient="bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50"
+        sparkleColor="text-amber-500"
+        cards={[
+          { templateId: "ats-classic", rotate: 5, x: 25, y: 8, delay: 0.1 },
+          { templateId: "bold-modern", rotate: -3, x: -15, y: -5, delay: 0.28 },
+        ]}
+        badges={[
+          { icon: DocumentTextIcon, label: "Resume Synced", position: "top-right", delay: 0.7, variant: "amber" },
+          { icon: CheckCircleIcon, label: "Consistent Style", position: "bottom-left", delay: 0.85 },
+        ]}
+      />
+    ),
   },
   {
     title: "Professional Formatting, Every Time",
@@ -108,8 +133,21 @@ const showcaseFeatures = [
       "Automatic page balancing to avoid awkward page breaks",
       "Export to PDF or DOCX with perfect fidelity",
     ],
-    image: "/images/feature-images/cover-letter-templates.png",
-    imageAlt: "Cover letter template formatting options preview",
+    visual: (
+      <TemplateGrid
+        type="cover-letter"
+        gradient="bg-gradient-to-br from-rose-50 via-pink-50 to-fuchsia-50"
+        templates={[
+          { id: "ats-classic", rotate: -2, x: -4, y: 3, delay: 0.1 },
+          { id: "executive-navy", rotate: 2, x: 4, y: -2, delay: 0.2 },
+          { id: "creative-bold", rotate: -1, x: -3, y: 2, delay: 0.3 },
+          { id: "bold-modern", rotate: 3, x: 5, y: -4, delay: 0.4 },
+        ]}
+        badges={[
+          { icon: DocumentTextIcon, label: "Business Format", position: "top-left", delay: 0.6, variant: "rose" },
+        ]}
+      />
+    ),
   },
 ];
 
@@ -224,14 +262,8 @@ export function CoverLetterTemplatesPage() {
                 variants={sectionVariants}
                 transition={{ duration: 0.4 }}
               >
-                <div className="relative aspect-video overflow-hidden border-b border-border bg-muted">
-                  <Image
-                    src="/images/feature-images/cover-letter-templates.png"
-                    alt={`${template.name} cover letter template preview`}
-                    fill
-                    className="object-cover object-top"
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  />
+                <div className="flex items-center justify-center p-4 pb-0 bg-muted/30">
+                  <ScaledCoverLetter templateId={template.id} width={260} />
                 </div>
                 <div className="p-5">
                   <div className="flex items-center justify-between">

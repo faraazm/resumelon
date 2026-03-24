@@ -30,7 +30,7 @@ const painPoints = [
   },
   {
     icon: FaceFrownIcon,
-    text: "Applying to 50+ jobs feels completely impossible",
+    text: "Tailoring each resume feels completely impossible",
   },
 ];
 

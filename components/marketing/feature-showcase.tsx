@@ -8,8 +8,9 @@ interface FeatureShowcaseItem {
   title: string;
   description: string;
   bullets: string[];
-  image: string;
+  image?: string;
   imageAlt?: string;
+  visual?: React.ReactNode;
 }
 
 interface FeatureShowcaseProps {
@@ -45,8 +46,9 @@ export function FeatureShowcase({ features }: FeatureShowcaseProps) {
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 0.5 }}
           >
+            {/* Content Side */}
             <motion.div
-              className="flex flex-col justify-center gap-y-5 p-8 md:w-1/2 md:p-12"
+              className="flex flex-col justify-center gap-y-6 p-8 md:w-1/2 md:p-12"
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true, margin: "-100px" }}
@@ -77,16 +79,22 @@ export function FeatureShowcase({ features }: FeatureShowcaseProps) {
                 ))}
               </motion.ul>
             </motion.div>
-            <div className="relative flex items-center justify-center bg-muted/20 p-6 md:w-1/2 md:p-8 min-h-[300px]">
-              <div className="relative w-full h-full min-h-[280px] rounded-xl overflow-hidden shadow-lg">
-                <Image
-                  src={feature.image}
-                  alt={feature.imageAlt || feature.title}
-                  fill
-                  className="object-cover object-top"
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                />
-              </div>
+
+            {/* Visual Side — flush to card edges, matching landing page layout */}
+            <div className="relative flex items-center justify-center md:w-1/2 min-h-[400px] sm:min-h-[460px] overflow-hidden rounded-b-2xl md:rounded-b-none md:rounded-r-3xl">
+              {feature.visual ? (
+                feature.visual
+              ) : feature.image ? (
+                <div className="relative w-full h-full min-h-[400px] sm:min-h-[460px]">
+                  <Image
+                    src={feature.image}
+                    alt={feature.imageAlt || feature.title}
+                    fill
+                    className="object-cover object-top"
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                  />
+                </div>
+              ) : null}
             </div>
           </motion.div>
         );

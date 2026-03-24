@@ -8,6 +8,7 @@ import {
   AdjustmentsHorizontalIcon,
   BoltIcon,
   ShieldCheckIcon,
+  MagnifyingGlassIcon,
   DocumentDuplicateIcon,
   UserGroupIcon,
   ClockIcon,
@@ -24,6 +25,9 @@ import {
   PageHero,
   PageFAQ,
   FeatureShowcase,
+  FannedDocuments,
+  TemplateGrid,
+  SingleDocument,
 } from "@/components/marketing";
 import type { FAQItem } from "@/components/marketing";
 
@@ -127,8 +131,20 @@ const showcaseFeatures = [
       "Detects preferred certifications and tools to highlight in your resume",
       "Matches company tone, whether corporate, startup, or creative",
     ],
-    image: "/images/feature-images/resume-scoring.png",
-    imageAlt: "Resume scoring and job description analysis dashboard",
+    visual: (
+      <FannedDocuments
+        type="resume"
+        gradient="bg-gradient-to-br from-blue-50 via-indigo-50 to-violet-50"
+        cards={[
+          { templateId: "ats-classic", rotate: -6, x: -40, y: 12, delay: 0.1 },
+          { templateId: "bold-modern", rotate: 2, x: 5, y: 0, delay: 0.24 },
+        ]}
+        badges={[
+          { icon: MagnifyingGlassIcon, label: "Keywords Found", position: "top-right", delay: 0.6, variant: "blue" },
+          { icon: BoltIcon, label: "Instant Analysis", position: "bottom-left", delay: 0.8, variant: "accent" },
+        ]}
+      />
+    ),
   },
   {
     title: "Professional Templates Built for ATS",
@@ -140,8 +156,22 @@ const showcaseFeatures = [
       "Print-ready PDF and editable DOCX export options",
       "Consistent, polished formatting across every device and viewer",
     ],
-    image: "/images/feature-images/design-tab-templates.png",
-    imageAlt: "ATS-optimized resume template selection panel",
+    visual: (
+      <TemplateGrid
+        type="resume"
+        gradient="bg-gradient-to-br from-violet-50 via-purple-50 to-fuchsia-50"
+        templates={[
+          { id: "executive-navy", rotate: -2, x: -4, y: 4, delay: 0.1 },
+          { id: "minimal-clean", rotate: 2, x: 4, y: -3, delay: 0.2 },
+          { id: "ats-classic", rotate: -1, x: -3, y: 2, delay: 0.3 },
+          { id: "creative-bold", rotate: 3, x: 5, y: -4, delay: 0.4 },
+        ]}
+        badges={[
+          { icon: ShieldCheckIcon, label: "ATS Verified", position: "top-left", delay: 0.6, variant: "success" },
+          { icon: AdjustmentsHorizontalIcon, label: "Fully Customizable", position: "bottom-right", delay: 0.75 },
+        ]}
+      />
+    ),
   },
   {
     title: "AI-Powered Bullet Point Rewriting",
@@ -153,8 +183,18 @@ const showcaseFeatures = [
       "Uses strong action verbs aligned with the target job description",
       "Maintains your authentic voice while elevating professional polish",
     ],
-    image: "/images/feature-images/full-resume-editor.png",
-    imageAlt: "Full resume editor showing AI-powered bullet point editing",
+    visual: (
+      <SingleDocument
+        type="resume"
+        templateId="timeline-blue"
+        gradient="bg-gradient-to-br from-sky-50 via-blue-50 to-indigo-50"
+        rotate={-3}
+        badges={[
+          { icon: SparklesIcon, label: "AI Rewritten", position: "top-left", delay: 0.6, variant: "blue" },
+          { icon: BoltIcon, label: "Results-Driven", position: "bottom-right", delay: 0.8, variant: "success" },
+        ]}
+      />
+    ),
   },
 ];
 

@@ -48,7 +48,7 @@ const organizationSchema = {
   url: "https://resumeclone.com",
   logo: "https://resumeclone.com/images/resumeclone-logo.png",
   description:
-    "AI-powered resume builder that helps job seekers mass apply with tailored, ATS-optimized resumes and cover letters.",
+    "AI-powered resume builder that helps job seekers create tailored, ATS-optimized resumes and cover letters for every application.",
   sameAs: [],
 };
 
@@ -59,7 +59,7 @@ const softwareSchema = {
   applicationCategory: "BusinessApplication",
   operatingSystem: "Web",
   description:
-    "Generate ATS-friendly resumes and cover letters tailored to every job description. Mass apply to jobs with customized, optimized applications in seconds.",
+    "Generate ATS-friendly resumes and cover letters tailored to any job description. Create customized, optimized applications in minutes.",
   offers: [
     {
       "@type": "Offer",
@@ -96,7 +96,7 @@ const faqSchema = {
       name: "What is resumeclone?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "resumeclone is an AI-powered resume builder that helps you create, tailor, and optimize resumes and cover letters for every job you apply to. Upload your base resume once, paste job descriptions, and instantly generate ATS-friendly, customized applications at scale.",
+        text: "resumeclone is an AI-powered resume builder that helps you create, tailor, and optimize resumes and cover letters. Upload your base resume once, paste a job description, and instantly generate an ATS-friendly, customized resume tailored to that role.",
       },
     },
     {
@@ -104,7 +104,7 @@ const faqSchema = {
       name: "How does resumeclone work?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Upload your base resume or fill in your details, paste job descriptions you're interested in, and resumeclone's AI generates tailored resumes and cover letters optimized for each role. Every resume is formatted to pass ATS filters and ready to download as PDF or DOCX.",
+        text: "Upload your base resume or fill in your details, paste the job description you're targeting, and resumeclone's AI generates a tailored resume and cover letter optimized for that role. Your resume is formatted to pass ATS filters and ready to download as PDF or DOCX.",
       },
     },
     {
@@ -128,7 +128,7 @@ const faqSchema = {
       name: "Does resumeclone generate cover letters?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Yes. resumeclone Pro generates personalized cover letters for every application. Each cover letter is tailored to the job description and pulls relevant details from your resume.",
+        text: "Yes. resumeclone Pro generates a personalized cover letter alongside your tailored resume. Each cover letter is matched to the job description and pulls relevant details from your resume.",
       },
     },
     {
@@ -136,7 +136,7 @@ const faqSchema = {
       name: "How many resumes can I create?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Free users can create 1 resume with basic templates and PDF download. Pro users get unlimited resumes, all premium templates, AI suggestions, cover letters, and DOCX export—everything you need to mass apply at scale.",
+        text: "Free users can create 1 resume with basic templates and PDF download. Pro users get unlimited resumes, all premium templates, AI suggestions, cover letters, and DOCX export—everything you need to tailor your resume for every application.",
       },
     },
     {
@@ -164,7 +164,7 @@ const websiteSchema = {
   name: "resumeclone",
   url: "https://resumeclone.com",
   description:
-    "AI-powered resume builder for mass applying to jobs with tailored, ATS-optimized resumes and cover letters.",
+    "AI-powered resume builder for creating tailored, ATS-optimized resumes and cover letters for every application.",
   potentialAction: {
     "@type": "SearchAction",
     target: "https://resumeclone.com/search?q={search_term_string}",

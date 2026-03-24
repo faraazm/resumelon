@@ -21,7 +21,7 @@ const objections = [
   {
     question: "Is this just another generic AI tool?",
     answer:
-      "No. resumeclone is purpose-built for job applications at scale. Unlike general AI writing tools, every feature is designed specifically to help you get past ATS filters and land more interviews.",
+      "No. resumeclone is purpose-built for job applications. Unlike general AI writing tools, every feature is designed specifically to help you get past ATS filters and land more interviews.",
   },
 ];
 

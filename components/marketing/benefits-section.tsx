@@ -16,9 +16,9 @@ import {
 const benefits = [
   {
     icon: RocketLaunchIcon,
-    title: "Apply at Scale",
+    title: "Apply Faster",
     description:
-      "Generate dozens or hundreds of tailored resumes in minutes—not hours. Mass apply to every relevant opening without sacrificing quality.",
+      "Paste a job description and get a tailored resume in minutes—not hours. Spend your time preparing for interviews, not rewriting bullet points.",
   },
   {
     icon: ShieldCheckIcon,
@@ -30,11 +30,11 @@ const benefits = [
     icon: CpuChipIcon,
     title: "Smart Customization",
     description:
-      "Automatically adapts keywords, skills, and phrasing based on each job description. Every resume reads like it was written specifically for that role.",
+      "Automatically adapts keywords, skills, and phrasing based on the job description you provide. Your resume reads like it was written specifically for that role.",
   },
   {
     icon: ClockIcon,
-    title: "Save 10+ Hours Per Week",
+    title: "Save Hours Per Application",
     description:
       "Stop rewriting resumes and cover letters manually. Reclaim your time and focus on preparing for interviews instead.",
   },
@@ -42,7 +42,7 @@ const benefits = [
     icon: DocumentTextIcon,
     title: "Cover Letters Included",
     description:
-      "Generate personalized, compelling cover letters for every application. Each one is tailored to the job description and your experience.",
+      "Generate a personalized, compelling cover letter alongside your resume. Each one is tailored to the job description and your experience.",
   },
   {
     icon: SwatchIcon,
@@ -75,7 +75,7 @@ export function BenefitsSection() {
             Why <BrandName className="text-primary" /> Works
           </>
         }
-        description="Built from the ground up to help you apply faster, smarter, and at scale. Every feature is designed to get you more interviews."
+        description="Built from the ground up to help you apply faster and smarter. Every feature is designed to get you more interviews."
       />
 
       <motion.div

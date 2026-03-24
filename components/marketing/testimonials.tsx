@@ -15,7 +15,7 @@ interface Testimonial {
 const testimonials: Testimonial[] = [
   {
     quote:
-      "I applied to 120 jobs in 2 days and got 8 interviews. resumeclone completely changed my job search.",
+      "I tailored my resume for each role and started getting callbacks within a week. resumeclone completely changed my job search.",
     name: "Sarah M.",
     role: "Software Engineer",
     rating: 5,

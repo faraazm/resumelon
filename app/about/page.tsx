@@ -4,7 +4,7 @@ import { AboutPage } from "./about-page";
 export const metadata: Metadata = {
   title: "About Us",
   description:
-    "Learn about resumeclone — the AI-powered resume builder helping thousands of job seekers mass apply with tailored, ATS-optimized resumes and cover letters.",
+    "Learn about resumeclone — the AI-powered resume builder helping job seekers create tailored, ATS-optimized resumes and cover letters for every application.",
   alternates: {
     canonical: "/about",
   },

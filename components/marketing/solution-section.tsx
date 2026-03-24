@@ -19,15 +19,15 @@ const steps = [
   },
   {
     icon: DocumentTextIcon,
-    text: "Paste job descriptions",
+    text: "Paste a job description",
   },
   {
     icon: SparklesIcon,
-    text: "Instantly generate optimized resumes + cover letters",
+    text: "Get a tailored resume + cover letter in seconds",
   },
   {
     icon: RocketLaunchIcon,
-    text: "Apply faster, smarter, and at scale",
+    text: "Download and apply with confidence",
   },
 ];
 
@@ -54,7 +54,7 @@ export function SolutionSection() {
             Meet <BrandName className="text-primary" />
           </>
         }
-        description="resumeclone automates the entire process of tailoring resumes and cover letters for each job—at scale. One resume in, hundreds of tailored applications out."
+        description="resumeclone automates the tedious parts of tailoring resumes and cover letters. Paste a job description, and get a customized, ATS-optimized resume ready to send."
       />
 
       <motion.div
