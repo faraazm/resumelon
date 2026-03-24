@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { useQuery, useMutation } from "convex/react";
@@ -44,12 +45,12 @@ export default function ResumesPage() {
 
   const convexUser = useQuery(
     api.users.getUserByClerkId,
-    user?.id ? { clerkId: user.id } : "skip"
+    isUserLoaded ? {} : "skip"
   );
 
   const freshResumes = useQuery(
     api.resumes.getResumesByUser,
-    user?.id ? { clerkId: user.id } : "skip"
+    isUserLoaded ? {} : "skip"
   );
 
   // Use cached data while fresh data loads
@@ -58,7 +59,7 @@ export default function ResumesPage() {
   const currentMonth = new Date().toISOString().slice(0, 7);
   const generationLimit = useQuery(
     api.users.getRemainingGenerations,
-    user?.id ? { clerkId: user.id, currentMonth } : "skip"
+    isUserLoaded ? { currentMonth } : "skip"
   );
 
   const deleteResumeMutation = useMutation(api.resumes.deleteResume);
@@ -99,9 +100,9 @@ export default function ResumesPage() {
   };
 
   const confirmDelete = async () => {
-    if (!user?.id || !resumeToDelete) return;
+    if (!resumeToDelete) return;
     try {
-      await deleteResumeMutation({ id: resumeToDelete, clerkId: user.id });
+      await deleteResumeMutation({ id: resumeToDelete });
     } catch (error) {
       console.error("Error deleting resume:", error);
     }
@@ -110,12 +111,12 @@ export default function ResumesPage() {
   };
 
   const confirmBulkDelete = async () => {
-    if (!user?.id || selection.selectedCount === 0) return;
+    if (selection.selectedCount === 0) return;
     setIsBulkDeleting(true);
     try {
       await Promise.all(
         Array.from(selection.selected).map((id) =>
-          deleteResumeMutation({ id, clerkId: user!.id })
+          deleteResumeMutation({ id })
         )
       );
       selection.clear();
@@ -141,7 +142,12 @@ export default function ResumesPage() {
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
       {/* Header */}
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.05 }}
+        className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+      >
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">
             My Resumes
@@ -157,9 +163,14 @@ export default function ResumesPage() {
             Create Resume
           </Button>
         </div>
-      </div>
+      </motion.div>
 
       {/* Resume List / Table */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.1 }}
+      >
       {!isContentReady ? null : hasResumes ? (
         view === "list" ? (
           <div className="space-y-6">
@@ -211,6 +222,7 @@ export default function ResumesPage() {
           </Button>
         </div>
       )}
+      </motion.div>
 
       {/* Bulk Action Bar */}
       <BulkActionBar

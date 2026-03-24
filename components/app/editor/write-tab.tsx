@@ -305,11 +305,10 @@ export function WriteTab({
   const [pendingItemRemove, setPendingItemRemove] = useState<{ label: string; onConfirm: () => void } | null>(null);
 
   // Optimization limit for free users
-  const { user: clerkUser } = useUser();
-  const clerkId = clerkUser?.id;
+  const { isLoaded: isClerkLoaded } = useUser();
   const optimizationLimit = useQuery(
     api.users.getRemainingOptimizations,
-    clerkId ? { clerkId } : "skip"
+    isClerkLoaded ? {} : "skip"
   );
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
   const canOptimize = !optimizationLimit || optimizationLimit.remaining > 0;
@@ -594,7 +593,7 @@ export function WriteTab({
                 {activeSection === "summary" && (
                   <SummaryForm
                     resumeId={resumeId}
-                    clerkId={clerkId}
+
                     data={resumeData.summary}
                     onUpdate={(data) => onUpdate("summary", data)}
                     sectionLabel={currentSectionInfo?.label || "Professional Summary"}
@@ -611,7 +610,7 @@ export function WriteTab({
                 {activeSection === "experience" && (
                   <ExperienceForm
                     resumeId={resumeId}
-                    clerkId={clerkId}
+
                     data={resumeData.experience}
                     onUpdate={(data) => onUpdate("experience", data)}
                     sectionLabel={currentSectionInfo?.label || "Employment History"}
@@ -648,7 +647,7 @@ export function WriteTab({
                 {activeSection === "internships" && (
                   <InternshipsForm
                     resumeId={resumeId}
-                    clerkId={clerkId}
+
                     data={resumeData.internships || []}
                     onUpdate={(data) => onUpdate("internships", data)}
                     sectionLabel={currentSectionInfo?.label || "Internships"}
@@ -706,7 +705,7 @@ export function WriteTab({
                 {activeSection === "hobbies" && (
                   <HobbiesForm
                     resumeId={resumeId}
-                    clerkId={clerkId}
+
                     data={resumeData.hobbies || ""}
                     onUpdate={(data) => onUpdate("hobbies", data)}
                     sectionLabel={currentSectionInfo?.label || "Hobbies & Interests"}
@@ -722,7 +721,7 @@ export function WriteTab({
                 {activeSection === "custom" && (
                   <CustomSectionForm
                     resumeId={resumeId}
-                    clerkId={clerkId}
+
                     data={resumeData.custom || { title: "", content: "" }}
                     onUpdate={(data) => onUpdate("custom", data)}
                     sectionLabel={currentSectionInfo?.label || "Custom Section"}
@@ -1402,7 +1401,7 @@ function ContactForm({
 // Summary Form with Rich Text Editor and AI
 function SummaryForm({
   resumeId,
-  clerkId,
+
   data,
   onUpdate,
   sectionLabel,
@@ -1416,7 +1415,7 @@ function SummaryForm({
   onOptimizationUsed,
 }: {
   resumeId: Id<"resumes">;
-  clerkId?: string;
+
   data: string;
   onUpdate: (data: string) => void;
   sectionLabel: string;
@@ -1504,13 +1503,13 @@ function SummaryForm({
   }, [existingGenerations, skipAutoGen]);
 
   const handleGenerate = useCallback(async (tone: ToneType, isAutoGen = false) => {
-    if (!data || data.trim().length < 10 || !clerkId) return;
+    if (!data || data.trim().length < 10) return;
     if (!isAutoGen && !canOptimize) { onOptimizeLimitReached?.(); return; }
 
     setIsGenerating(true);
     try {
       const result = await generateContent({
-        clerkId,
+      
         content: data,
         fieldType: "summary",
         tone,
@@ -1543,16 +1542,16 @@ function SummaryForm({
     } finally {
       setIsGenerating(false);
     }
-  }, [data, clerkId, generateContent, saveGeneration, resumeId, canOptimize, onOptimizeLimitReached, onOptimizationUsed]);
+  }, [data, generateContent, saveGeneration, resumeId, canOptimize, onOptimizeLimitReached, onOptimizationUsed]);
 
   const handleCustomPrompt = useCallback(async (prompt: string) => {
-    if (!data || data.trim().length < 10 || !clerkId) return;
+    if (!data || data.trim().length < 10) return;
     if (!canOptimize) { onOptimizeLimitReached?.(); return; }
 
     setIsGenerating(true);
     try {
       const result = await generateContent({
-        clerkId,
+      
         content: data,
         fieldType: "summary",
         tone: "custom",
@@ -1637,7 +1636,7 @@ function SummaryForm({
 // Experience Bullets Editor with AI (sub-component for each experience item)
 function ExperienceBulletsEditor({
   resumeId,
-  clerkId,
+
   experienceId,
   bullets,
   onUpdate,
@@ -1649,7 +1648,7 @@ function ExperienceBulletsEditor({
   onOptimizationUsed,
 }: {
   resumeId: Id<"resumes">;
-  clerkId?: string;
+
   experienceId: string;
   bullets: string[];
   onUpdate: (bullets: string[]) => void;
@@ -1752,13 +1751,13 @@ function ExperienceBulletsEditor({
 
   const handleGenerate = useCallback(async (tone: ToneType, isAutoGen = false) => {
     const bulletContent = bullets?.join("\n") || "";
-    if (bulletContent.trim().length < 10 || !clerkId) return;
+    if (bulletContent.trim().length < 10) return;
     if (!isAutoGen && !canOptimize) { onOptimizeLimitReached?.(); return; }
 
     setIsGenerating(true);
     try {
       const result = await generateContent({
-        clerkId,
+      
         content: bulletContent,
         fieldType: "experience_bullets",
         tone,
@@ -1790,17 +1789,17 @@ function ExperienceBulletsEditor({
     } finally {
       setIsGenerating(false);
     }
-  }, [bullets, clerkId, generateContent, saveGeneration, resumeId, experienceId, canOptimize, onOptimizeLimitReached, onOptimizationUsed]);
+  }, [bullets, generateContent, saveGeneration, resumeId, experienceId, canOptimize, onOptimizeLimitReached, onOptimizationUsed]);
 
   const handleCustomPrompt = useCallback(async (prompt: string) => {
     const bulletContent = bullets?.join("\n") || "";
-    if (bulletContent.trim().length < 10 || !clerkId) return;
+    if (bulletContent.trim().length < 10) return;
     if (!canOptimize) { onOptimizeLimitReached?.(); return; }
 
     setIsGenerating(true);
     try {
       const result = await generateContent({
-        clerkId,
+      
         content: bulletContent,
         fieldType: "experience_bullets",
         tone: "custom",
@@ -1887,7 +1886,7 @@ function SortableExperienceCard({
   updateExperience,
   removeExperience,
   resumeId,
-  clerkId,
+
   skipAutoGen,
   getAIUsageState,
   setAIUsageState,
@@ -1902,7 +1901,7 @@ function SortableExperienceCard({
   updateExperience: (index: number, field: string, value: string | boolean | string[]) => void;
   removeExperience: (index: number) => void;
   resumeId: Id<"resumes">;
-  clerkId?: string;
+
   skipAutoGen?: boolean;
   getAIUsageState: (key: string) => AIUsageState | undefined;
   setAIUsageState: (key: string, state: AIUsageState) => void;
@@ -2029,7 +2028,7 @@ function SortableExperienceCard({
               </div>
               <ExperienceBulletsEditor
                 resumeId={resumeId}
-                clerkId={clerkId}
+
                 experienceId={exp.id}
                 bullets={exp.bullets || [""]}
                 onUpdate={(bullets) => updateExperience(index, "bullets", bullets)}
@@ -2061,7 +2060,7 @@ function SortableExperienceCard({
 
 function ExperienceForm({
   resumeId,
-  clerkId,
+
   data,
   onUpdate,
   sectionLabel,
@@ -2076,7 +2075,7 @@ function ExperienceForm({
   onOptimizationUsed,
 }: {
   resumeId: Id<"resumes">;
-  clerkId?: string;
+
   data: ExperienceEntry[];
   onUpdate: (data: ExperienceEntry[]) => void;
   sectionLabel: string;
@@ -2174,7 +2173,7 @@ function ExperienceForm({
                 updateExperience={updateExperience}
                 removeExperience={removeExperience}
                 resumeId={resumeId}
-                clerkId={clerkId}
+
                 skipAutoGen={skipAutoGen}
                 getAIUsageState={getAIUsageState}
                 setAIUsageState={setAIUsageState}
@@ -2653,7 +2652,7 @@ function SkillsForm({
 // Internship Bullets Editor with AI (reuses same pattern as ExperienceBulletsEditor)
 function InternshipBulletsEditor({
   resumeId,
-  clerkId,
+
   internshipId,
   bullets,
   onUpdate,
@@ -2665,7 +2664,7 @@ function InternshipBulletsEditor({
   onOptimizationUsed,
 }: {
   resumeId: Id<"resumes">;
-  clerkId?: string;
+
   internshipId: string;
   bullets: string[];
   onUpdate: (bullets: string[]) => void;
@@ -2764,13 +2763,13 @@ function InternshipBulletsEditor({
 
   const handleGenerate = useCallback(async (tone: ToneType, isAutoGen = false) => {
     const bulletContent = bullets?.join("\n") || "";
-    if (bulletContent.trim().length < 10 || !clerkId) return;
+    if (bulletContent.trim().length < 10) return;
     if (!isAutoGen && !canOptimize) { onOptimizeLimitReached?.(); return; }
 
     setIsGenerating(true);
     try {
       const result = await generateContent({
-        clerkId,
+      
         content: bulletContent,
         fieldType: "internship_bullets",
         tone,
@@ -2802,17 +2801,17 @@ function InternshipBulletsEditor({
     } finally {
       setIsGenerating(false);
     }
-  }, [bullets, clerkId, generateContent, saveGeneration, resumeId, internshipId, canOptimize, onOptimizeLimitReached, onOptimizationUsed]);
+  }, [bullets, generateContent, saveGeneration, resumeId, internshipId, canOptimize, onOptimizeLimitReached, onOptimizationUsed]);
 
   const handleCustomPrompt = useCallback(async (prompt: string) => {
     const bulletContent = bullets?.join("\n") || "";
-    if (bulletContent.trim().length < 10 || !clerkId) return;
+    if (bulletContent.trim().length < 10) return;
     if (!canOptimize) { onOptimizeLimitReached?.(); return; }
 
     setIsGenerating(true);
     try {
       const result = await generateContent({
-        clerkId,
+      
         content: bulletContent,
         fieldType: "internship_bullets",
         tone: "custom",
@@ -2889,7 +2888,7 @@ function InternshipBulletsEditor({
 // Internships Form (similar to Experience)
 function InternshipsForm({
   resumeId,
-  clerkId,
+
   data,
   onUpdate,
   sectionLabel,
@@ -2904,7 +2903,7 @@ function InternshipsForm({
   onOptimizationUsed,
 }: {
   resumeId: Id<"resumes">;
-  clerkId?: string;
+
   data: InternshipEntry[];
   onUpdate: (data: InternshipEntry[]) => void;
   sectionLabel: string;
@@ -3050,7 +3049,7 @@ function InternshipsForm({
                     </div>
                     <InternshipBulletsEditor
                       resumeId={resumeId}
-                      clerkId={clerkId}
+  
                       internshipId={internship.id}
                       bullets={internship.bullets || [""]}
                       onUpdate={(bullets) => updateInternship(index, "bullets", bullets)}
@@ -3597,7 +3596,7 @@ function LinksForm({
 // Hobbies Form with AI
 function HobbiesForm({
   resumeId,
-  clerkId,
+
   data,
   onUpdate,
   sectionLabel,
@@ -3610,7 +3609,7 @@ function HobbiesForm({
   onOptimizationUsed,
 }: {
   resumeId: Id<"resumes">;
-  clerkId?: string;
+
   data: string;
   onUpdate: (data: string) => void;
   sectionLabel: string;
@@ -3691,13 +3690,13 @@ function HobbiesForm({
   }, [existingGenerations]);
 
   const handleGenerate = useCallback(async (tone: ToneType, isAutoGen = false) => {
-    if (!data || data.trim().length < 10 || !clerkId) return;
+    if (!data || data.trim().length < 10) return;
     if (!isAutoGen && !canOptimize) { onOptimizeLimitReached?.(); return; }
 
     setIsGenerating(true);
     try {
       const result = await generateContent({
-        clerkId,
+      
         content: data,
         fieldType: "hobbies",
         tone,
@@ -3729,16 +3728,16 @@ function HobbiesForm({
     } finally {
       setIsGenerating(false);
     }
-  }, [data, clerkId, generateContent, saveGeneration, resumeId, canOptimize, onOptimizeLimitReached, onOptimizationUsed]);
+  }, [data, generateContent, saveGeneration, resumeId, canOptimize, onOptimizeLimitReached, onOptimizationUsed]);
 
   const handleCustomPrompt = useCallback(async (prompt: string) => {
-    if (!data || data.trim().length < 10 || !clerkId) return;
+    if (!data || data.trim().length < 10) return;
     if (!canOptimize) { onOptimizeLimitReached?.(); return; }
 
     setIsGenerating(true);
     try {
       const result = await generateContent({
-        clerkId,
+      
         content: data,
         fieldType: "hobbies",
         tone: "custom",
@@ -3822,7 +3821,7 @@ function HobbiesForm({
 // Custom Section Form with AI
 function CustomSectionForm({
   resumeId,
-  clerkId,
+
   data,
   onUpdate,
   sectionLabel,
@@ -3835,7 +3834,7 @@ function CustomSectionForm({
   onOptimizationUsed,
 }: {
   resumeId: Id<"resumes">;
-  clerkId?: string;
+
   data: { title: string; content: string };
   onUpdate: (data: { title: string; content: string }) => void;
   sectionLabel: string;
@@ -3916,13 +3915,13 @@ function CustomSectionForm({
   }, [existingGenerations]);
 
   const handleGenerate = useCallback(async (tone: ToneType, isAutoGen = false) => {
-    if (!data?.content || data.content.trim().length < 10 || !clerkId) return;
+    if (!data?.content || data.content.trim().length < 10) return;
     if (!isAutoGen && !canOptimize) { onOptimizeLimitReached?.(); return; }
 
     setIsGenerating(true);
     try {
       const result = await generateContent({
-        clerkId,
+      
         content: data.content,
         fieldType: "custom",
         tone,
@@ -3954,16 +3953,16 @@ function CustomSectionForm({
     } finally {
       setIsGenerating(false);
     }
-  }, [data?.content, clerkId, generateContent, saveGeneration, resumeId, canOptimize, onOptimizeLimitReached, onOptimizationUsed]);
+  }, [data?.content, generateContent, saveGeneration, resumeId, canOptimize, onOptimizeLimitReached, onOptimizationUsed]);
 
   const handleCustomPrompt = useCallback(async (prompt: string) => {
-    if (!data?.content || data.content.trim().length < 10 || !clerkId) return;
+    if (!data?.content || data.content.trim().length < 10) return;
     if (!canOptimize) { onOptimizeLimitReached?.(); return; }
 
     setIsGenerating(true);
     try {
       const result = await generateContent({
-        clerkId,
+      
         content: data.content,
         fieldType: "custom",
         tone: "custom",

@@ -12,6 +12,7 @@ import type * as ai from "../ai.js";
 import type * as aiGenerations from "../aiGenerations.js";
 import type * as coverLetters from "../coverLetters.js";
 import type * as files from "../files.js";
+import type * as lib_auth from "../lib/auth.js";
 import type * as migrations from "../migrations.js";
 import type * as printTokens from "../printTokens.js";
 import type * as resumes from "../resumes.js";
@@ -29,6 +30,7 @@ declare const fullApi: ApiFromModules<{
   aiGenerations: typeof aiGenerations;
   coverLetters: typeof coverLetters;
   files: typeof files;
+  "lib/auth": typeof lib_auth;
   migrations: typeof migrations;
   printTokens: typeof printTokens;
   resumes: typeof resumes;

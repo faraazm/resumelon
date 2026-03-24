@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query, internalMutation } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
+import { getAuthenticatedUser } from "./lib/auth";
 
 const TOKEN_EXPIRY_MS = 2 * 60 * 1000; // 2 minutes
 
@@ -22,18 +23,9 @@ function generateJti(): string {
 export const createPrintToken = mutation({
   args: {
     resumeId: v.id("resumes"),
-    clerkId: v.string(),
   },
   handler: async (ctx, args) => {
-    // Verify user exists
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
-      .first();
-
-    if (!user) {
-      throw new Error("User not found");
-    }
+    const user = await getAuthenticatedUser(ctx);
 
     // Verify resume exists and user owns it
     const resume = await ctx.db.get(args.resumeId);
@@ -152,17 +144,9 @@ export const consumePrintToken = mutation({
 export const createCoverLetterPrintToken = mutation({
   args: {
     coverLetterId: v.id("coverLetters"),
-    clerkId: v.string(),
   },
   handler: async (ctx, args) => {
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
-      .first();
-
-    if (!user) {
-      throw new Error("User not found");
-    }
+    const user = await getAuthenticatedUser(ctx);
 
     const coverLetter = await ctx.db.get(args.coverLetterId);
     if (!coverLetter) {

@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query, internalQuery, internalMutation } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
+import { getAuthenticatedUser, getAuthenticatedUserOrNull } from "./lib/auth";
 
 // Type for onboarding completion update
 interface OnboardingCompleteUpdate {
@@ -11,16 +12,19 @@ interface OnboardingCompleteUpdate {
 
 export const getOrCreateUser = mutation({
   args: {
-    clerkId: v.string(),
     email: v.string(),
     firstName: v.optional(v.string()),
     lastName: v.optional(v.string()),
     imageUrl: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
+    const clerkId = identity.subject;
+
     const existingUser = await ctx.db
       .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", clerkId))
       .first();
 
     if (existingUser) {
@@ -37,7 +41,7 @@ export const getOrCreateUser = mutation({
 
     // Create new user
     const userId = await ctx.db.insert("users", {
-      clerkId: args.clerkId,
+      clerkId,
       email: args.email,
       firstName: args.firstName,
       lastName: args.lastName,
@@ -52,12 +56,9 @@ export const getOrCreateUser = mutation({
 });
 
 export const getUserByClerkId = query({
-  args: { clerkId: v.string() },
-  handler: async (ctx, args) => {
-    return await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
-      .first();
+  args: {},
+  handler: async (ctx) => {
+    return await getAuthenticatedUserOrNull(ctx);
   },
 });
 
@@ -66,12 +67,9 @@ const PRO_MONTHLY_GENERATION_LIMIT = 500;
 const PRO_TOTAL_OPTIMIZATION_LIMIT = 2000;
 
 export const getRemainingGenerations = query({
-  args: { clerkId: v.string(), currentMonth: v.string() },
+  args: { currentMonth: v.string() },
   handler: async (ctx, args) => {
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
-      .first();
+    const user = await getAuthenticatedUserOrNull(ctx);
 
     if (!user) {
       return { remaining: 0, total: 5, used: 0, isPro: false };
@@ -95,12 +93,9 @@ export const getRemainingGenerations = query({
 });
 
 export const getRemainingOptimizations = query({
-  args: { clerkId: v.string() },
-  handler: async (ctx, args) => {
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
-      .first();
+  args: {},
+  handler: async (ctx) => {
+    const user = await getAuthenticatedUserOrNull(ctx);
 
     if (!user) {
       return { remaining: 0, total: 10, used: 0, isPro: false };
@@ -124,18 +119,10 @@ export const getRemainingOptimizations = query({
 
 export const completeOnboarding = mutation({
   args: {
-    clerkId: v.string(),
     primaryResumeId: v.optional(v.id("resumes")),
   },
   handler: async (ctx, args) => {
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
-      .first();
-
-    if (!user) {
-      throw new Error("User not found");
-    }
+    const user = await getAuthenticatedUser(ctx);
 
     const patchData: OnboardingCompleteUpdate = {
       hasCompletedOnboarding: true,
@@ -153,16 +140,9 @@ export const completeOnboarding = mutation({
 });
 
 export const deleteAccount = mutation({
-  args: { clerkId: v.string() },
-  handler: async (ctx, args) => {
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
-      .first();
-
-    if (!user) {
-      throw new Error("User not found");
-    }
+  args: {},
+  handler: async (ctx) => {
+    const user = await getAuthenticatedUser(ctx);
 
     // Delete all resumes and their AI generations
     const resumes = await ctx.db
@@ -307,8 +287,14 @@ export const updateSubscriptionStatus = mutation({
     clerkId: v.string(),
     subscriptionStatus: v.string(),
     stripeSubscriptionId: v.optional(v.string()),
+    webhookSecret: v.string(),
   },
   handler: async (ctx, args) => {
+    const expectedSecret = process.env.WEBHOOK_SECRET;
+    if (!expectedSecret || args.webhookSecret !== expectedSecret) {
+      throw new Error("Unauthorized");
+    }
+
     const user = await ctx.db
       .query("users")
       .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))

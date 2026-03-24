@@ -1,27 +1,8 @@
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
-import { Id } from "@/convex/_generated/dataModel";
 
 // Create a server-side Convex client
 const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL!;
-
-/**
- * Get resume by ID with ownership verification (requires clerkId)
- */
-export async function getResumeById(resumeId: string, clerkId: string) {
-  const client = new ConvexHttpClient(convexUrl);
-
-  try {
-    const resume = await client.query(api.resumes.getResume, {
-      id: resumeId as Id<"resumes">,
-      clerkId,
-    });
-    return resume;
-  } catch (error) {
-    console.error("Failed to fetch resume:", error);
-    return null;
-  }
-}
 
 /**
  * Get resume for printing using a secure print token

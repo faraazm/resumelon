@@ -3,6 +3,7 @@
 import { v } from "convex/values";
 import { action } from "./_generated/server";
 import { api } from "./_generated/api";
+import { getAuthenticatedClerkId } from "./lib/auth";
 
 interface ParsedResumeData {
   personalDetails: {
@@ -40,12 +41,12 @@ interface ParsedResumeData {
 // Parse a document and extract text (then AI will structure it)
 export const parseDocument = action({
   args: {
-    clerkId: v.string(),
     storageId: v.id("_storage"),
     fileType: v.string(),
     fileName: v.string(),
   },
   handler: async (ctx, args): Promise<ParsedResumeData> => {
+    const clerkId = await getAuthenticatedClerkId(ctx);
     // Get the file URL
     const fileUrl = await ctx.storage.getUrl(args.storageId);
     if (!fileUrl) {
@@ -103,7 +104,6 @@ export const parseDocument = action({
 
     // Use AI to parse the extracted text into structured data
     const parsedData = await ctx.runAction(api.ai.parseResumeWithAI, {
-      clerkId: args.clerkId,
       extractedText: text,
     });
 
@@ -119,6 +119,9 @@ export const extractTextFromFile = action({
     fileName: v.string(),
   },
   handler: async (ctx, args): Promise<string> => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
+
     const fileUrl = await ctx.storage.getUrl(args.storageId);
     if (!fileUrl) {
       throw new Error("File not found in storage");
@@ -184,6 +187,9 @@ export const extractText = action({
     fileName: v.string(),
   },
   handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
+
     const fileUrl = await ctx.storage.getUrl(args.storageId);
     if (!fileUrl) {
       throw new Error("File not found in storage");

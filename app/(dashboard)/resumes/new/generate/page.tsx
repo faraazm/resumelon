@@ -28,7 +28,7 @@ interface UploadedFile {
 
 export default function GenerateResumePage() {
   const router = useRouter();
-  const { user, isLoaded } = useUser();
+  const { isLoaded } = useUser();
   const [step, setStep] = useState<Step>("upload");
   const [error, setError] = useState<string | null>(null);
   const [files, setFiles] = useState<UploadedFile[]>([]);
@@ -45,7 +45,7 @@ export default function GenerateResumePage() {
   const currentMonth = new Date().toISOString().slice(0, 7);
   const generationLimit = useQuery(
     api.users.getRemainingGenerations,
-    user?.id ? { clerkId: user.id, currentMonth } : "skip"
+    isLoaded ? { currentMonth } : "skip"
   );
 
   const canGenerate = !generationLimit || generationLimit.remaining > 0;
@@ -111,7 +111,7 @@ export default function GenerateResumePage() {
   };
 
   const handleGenerate = async () => {
-    if (!user?.id || files.length === 0) return;
+    if (!isLoaded || files.length === 0) return;
     if (!canGenerate) {
       setShowUpgrade(true);
       return;
@@ -149,7 +149,6 @@ export default function GenerateResumePage() {
       const documentsText = textParts.join("\n\n");
 
       const result = await generateResumeFromDocuments({
-        clerkId: user.id,
         documentsText,
         additionalInfo: additionalInfo.trim() || undefined,
       });
@@ -160,7 +159,6 @@ export default function GenerateResumePage() {
       const resumeTitle = fullName ? `${fullName}'s Resume` : "Untitled Resume";
 
       const resumeId = await createResume({
-        clerkId: user.id,
         title: resumeTitle,
         source: "ai_generated",
         initialData: {

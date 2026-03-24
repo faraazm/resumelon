@@ -105,7 +105,6 @@ export function SectionCard({
           : currentSummary;
 
         const result = await generateImprovedContent({
-          clerkId: user.id,
           content: prompt,
           fieldType: "summary",
           tone: "professional",
@@ -145,7 +144,6 @@ export function SectionCard({
             .join("\n\n");
 
           const result = await generateImprovedContent({
-            clerkId: user.id,
             content: batchPrompt,
             fieldType: "experience_bullets",
             tone: "custom",
@@ -173,7 +171,6 @@ export function SectionCard({
         if (currentSkills.length < 5) {
           // Too few — add more
           const result = await generateImprovedContent({
-            clerkId: user.id,
             content: `Current skills: ${currentSkills.join(", ")}\nJob title: ${jobTitle}\nExperience: ${experienceContext}\n\nSuggest ${10 - currentSkills.length} additional relevant skills.`,
             fieldType: "skills",
             tone: "custom",
@@ -184,7 +181,6 @@ export function SectionCard({
         } else if (currentSkills.length > 15) {
           // Too many — ask AI to pick the best 12
           const result = await generateImprovedContent({
-            clerkId: user.id,
             content: `All skills: ${currentSkills.join(", ")}\nJob title: ${jobTitle}\nExperience: ${experienceContext}\n\nPick the 12 most relevant and impactful skills for this profile.`,
             fieldType: "skills",
             tone: "custom",

@@ -15,7 +15,6 @@ export function useSyncUser() {
     const syncUser = async () => {
       try {
         await getOrCreateUser({
-          clerkId: user.id,
           email: user.emailAddresses[0]?.emailAddress || "",
           firstName: user.firstName || undefined,
           lastName: user.lastName || undefined,

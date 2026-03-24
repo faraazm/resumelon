@@ -52,11 +52,11 @@ export default function SettingsPage() {
     : null;
 
   const handleDeleteAccount = async () => {
-    if (!user?.id || deleteConfirmText !== "delete my account") return;
+    if (deleteConfirmText !== "delete my account") return;
 
     setIsDeleting(true);
     try {
-      await deleteAccountMutation({ clerkId: user.id });
+      await deleteAccountMutation({});
       await signOut({ redirectUrl: "/" });
     } catch (error) {
       console.error("Error deleting account:", error);

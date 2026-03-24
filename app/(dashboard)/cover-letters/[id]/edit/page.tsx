@@ -98,8 +98,7 @@ export default function CoverLetterEditorPage() {
 function CoverLetterEditorContent() {
   const params = useParams();
   const coverLetterId = params.id as Id<"coverLetters">;
-  const { user, isLoaded: isUserLoaded } = useUser();
-  const clerkId = user?.id;
+  const { isLoaded: isUserLoaded } = useUser();
 
   const [activeTab, setActiveTab] = useState<"write" | "design">("write");
   const [_isSaving, setIsSaving] = useState(false);
@@ -113,16 +112,11 @@ function CoverLetterEditorContent() {
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const hasInitializedRef = useRef(false);
   const pendingUpdatesRef = useRef<Partial<typeof localData>>({});
-  const clerkIdRef = useRef(clerkId);
   const [isDownloading, setIsDownloading] = useState(false);
-
-  useEffect(() => {
-    clerkIdRef.current = clerkId;
-  }, [clerkId]);
 
   const coverLetter = useQuery(
     api.coverLetters.getCoverLetter,
-    clerkId ? { id: coverLetterId, clerkId } : "skip"
+    isUserLoaded ? { id: coverLetterId } : "skip"
   );
   const updateCoverLetter = useMutation(api.coverLetters.updateCoverLetter);
 
@@ -152,20 +146,11 @@ function CoverLetterEditorContent() {
       const updates = pendingUpdatesRef.current;
       if (Object.keys(updates).length === 0) { setShowSaving(false); return; }
 
-      const currentClerkId = clerkIdRef.current;
-      if (!currentClerkId) {
-        saveTimeoutRef.current = setTimeout(() => {
-          if (Object.keys(pendingUpdatesRef.current).length > 0) scheduleSave();
-        }, 500);
-        return;
-      }
-
       setIsSaving(true);
       const saveStartTime = Date.now();
       try {
         await updateCoverLetter({
           id: coverLetterId,
-          clerkId: currentClerkId,
           updates: updates as Parameters<typeof updateCoverLetter>[0]["updates"],
         });
         pendingUpdatesRef.current = {};
@@ -212,17 +197,6 @@ function CoverLetterEditorContent() {
         <div className="flex flex-col items-center gap-4">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
           <p className="text-sm text-muted-foreground">Loading cover letter...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!clerkId) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4 text-center">
-          <h1 className="text-xl font-semibold">Please sign in</h1>
-          <Button asChild><Link href="/sign-in">Sign in</Link></Button>
         </div>
       </div>
     );

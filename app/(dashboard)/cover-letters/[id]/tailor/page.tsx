@@ -24,7 +24,7 @@ export default function TailorCoverLetterPage() {
   const router = useRouter();
   const params = useParams();
   const coverLetterId = params.id as Id<"coverLetters">;
-  const { user, isLoaded } = useUser();
+  const { isLoaded } = useUser();
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,12 +35,12 @@ export default function TailorCoverLetterPage() {
 
   const coverLetter = useQuery(
     api.coverLetters.getCoverLetter,
-    user?.id ? { id: coverLetterId, clerkId: user.id } : "skip"
+    isLoaded ? { id: coverLetterId } : "skip"
   );
 
   const resumes = useQuery(
     api.resumes.getResumesByUser,
-    user?.id ? { clerkId: user.id } : "skip"
+    isLoaded ? {} : "skip"
   );
 
   const updateCoverLetter = useMutation(api.coverLetters.updateCoverLetter);
@@ -52,14 +52,13 @@ export default function TailorCoverLetterPage() {
   const canGenerate = hasResume && hasJobDescription;
 
   const handleGenerate = async () => {
-    if (!user?.id || !canGenerate || !selectedResume) return;
+    if (!canGenerate || !selectedResume) return;
 
     setIsGenerating(true);
     setError(null);
 
     try {
       const result = await generateCoverLetterAI({
-        clerkId: user.id,
         resumeData: {
           personalDetails: {
             firstName: selectedResume.personalDetails.firstName,
@@ -98,7 +97,6 @@ export default function TailorCoverLetterPage() {
       // Update the cover letter with the new content
       await updateCoverLetter({
         id: coverLetterId,
-        clerkId: user.id,
         updates: {
           title: newTitle,
           personalDetails: {

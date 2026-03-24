@@ -27,7 +27,7 @@ type Step = "choose-method" | "generate" | "loading";
 
 export default function NewCoverLetterPage() {
   const router = useRouter();
-  const { user, isLoaded } = useUser();
+  const { isLoaded } = useUser();
   const [step, setStep] = useState<Step>("choose-method");
   const [error, setError] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
@@ -39,13 +39,13 @@ export default function NewCoverLetterPage() {
 
   const resumes = useQuery(
     api.resumes.getResumesByUser,
-    user?.id ? { clerkId: user.id } : "skip"
+    isLoaded ? {} : "skip"
   );
 
   const currentMonth = new Date().toISOString().slice(0, 7);
   const generationLimit = useQuery(
     api.users.getRemainingGenerations,
-    user?.id ? { clerkId: user.id, currentMonth } : "skip"
+    isLoaded ? { currentMonth } : "skip"
   );
 
   const canGenerate = !generationLimit || generationLimit.remaining > 0;
@@ -54,7 +54,7 @@ export default function NewCoverLetterPage() {
   const generateCoverLetterAI = useAction(api.ai.generateCoverLetter);
 
   const handleStartFromScratch = async () => {
-    if (!user?.id || isCreating) return;
+    if (!isLoaded || isCreating) return;
     if (!canGenerate) {
       setShowUpgrade(true);
       return;
@@ -63,7 +63,6 @@ export default function NewCoverLetterPage() {
     setIsCreating(true);
     try {
       const id = await createCoverLetter({
-        clerkId: user.id,
         title: "Untitled Cover Letter",
         personalDetails: {
           firstName: "",
@@ -103,7 +102,7 @@ export default function NewCoverLetterPage() {
   const canCreate = hasResume || hasJobDescription;
 
   const handleGenerate = async () => {
-    if (!user?.id || !canCreate) return;
+    if (!canCreate) return;
     if (!canGenerate) {
       setShowUpgrade(true);
       return;
@@ -136,7 +135,6 @@ export default function NewCoverLetterPage() {
       // If we have both resume and job description, use AI to generate
       if (hasResume && hasJobDescription && selectedResume) {
         const result = await generateCoverLetterAI({
-          clerkId: user.id,
           resumeData: {
             personalDetails: {
               firstName: selectedResume.personalDetails.firstName,
@@ -177,7 +175,6 @@ export default function NewCoverLetterPage() {
           : "Untitled Cover Letter";
 
       const id = await createCoverLetter({
-        clerkId: user.id,
         resumeId: selectedResumeId ?? undefined,
         title,
         personalDetails,

@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { getAuthenticatedUser } from "./lib/auth";
 
 const defaultResumeData = {
   personalDetails: {
@@ -28,7 +29,6 @@ const defaultResumeData = {
 
 export const createResume = mutation({
   args: {
-    clerkId: v.string(),
     title: v.optional(v.string()),
     source: v.optional(v.string()),
     jobDescription: v.optional(v.string()),
@@ -82,14 +82,7 @@ export const createResume = mutation({
     ),
   },
   handler: async (ctx, args) => {
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
-      .first();
-
-    if (!user) {
-      throw new Error("User not found");
-    }
+    const user = await getAuthenticatedUser(ctx);
 
     const resumeId = await ctx.db.insert("resumes", {
       userId: user._id,
@@ -113,20 +106,17 @@ export const createResume = mutation({
 });
 
 export const getResume = query({
-  args: { id: v.id("resumes"), clerkId: v.string() },
+  args: { id: v.id("resumes") },
   handler: async (ctx, args) => {
+    const user = await getAuthenticatedUser(ctx);
+
     const resume = await ctx.db.get(args.id);
     if (!resume) {
       return null;
     }
 
     // Verify ownership
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
-      .first();
-
-    if (!user || resume.userId !== user._id) {
+    if (resume.userId !== user._id) {
       throw new Error("Access denied: You do not own this resume");
     }
 
@@ -135,16 +125,9 @@ export const getResume = query({
 });
 
 export const getResumesByUser = query({
-  args: { clerkId: v.string() },
+  args: {},
   handler: async (ctx, args) => {
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
-      .first();
-
-    if (!user) {
-      return [];
-    }
+    const user = await getAuthenticatedUser(ctx);
 
     return await ctx.db
       .query("resumes")
@@ -156,7 +139,6 @@ export const getResumesByUser = query({
 export const updateResume = mutation({
   args: {
     id: v.id("resumes"),
-    clerkId: v.string(),
     updates: v.object({
       title: v.optional(v.string()),
       personalDetails: v.optional(
@@ -272,7 +254,8 @@ export const updateResume = mutation({
     }),
   },
   handler: async (ctx, args) => {
-    const { id, clerkId, updates } = args;
+    const { id, updates } = args;
+    const user = await getAuthenticatedUser(ctx);
 
     // Verify ownership
     const resume = await ctx.db.get(id);
@@ -280,12 +263,7 @@ export const updateResume = mutation({
       throw new Error("Resume not found");
     }
 
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", clerkId))
-      .first();
-
-    if (!user || resume.userId !== user._id) {
+    if (resume.userId !== user._id) {
       throw new Error("Access denied: You do not own this resume");
     }
 
@@ -299,16 +277,9 @@ export const updateResume = mutation({
 });
 
 export const getPrimaryResume = query({
-  args: { clerkId: v.string() },
+  args: {},
   handler: async (ctx, args) => {
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
-      .first();
-
-    if (!user) {
-      return null;
-    }
+    const user = await getAuthenticatedUser(ctx);
 
     // Use the index to find primary resume
     const primaryResume = await ctx.db
@@ -323,16 +294,9 @@ export const getPrimaryResume = query({
 });
 
 export const getOptimizedResumes = query({
-  args: { clerkId: v.string() },
+  args: {},
   handler: async (ctx, args) => {
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
-      .first();
-
-    if (!user) {
-      return [];
-    }
+    const user = await getAuthenticatedUser(ctx);
 
     const resumes = await ctx.db
       .query("resumes")
@@ -348,7 +312,6 @@ export const getOptimizedResumes = query({
 
 export const createPrimaryResume = mutation({
   args: {
-    clerkId: v.string(),
     title: v.optional(v.string()),
     initialData: v.optional(
       v.object({
@@ -400,14 +363,7 @@ export const createPrimaryResume = mutation({
     ),
   },
   handler: async (ctx, args) => {
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
-      .first();
-
-    if (!user) {
-      throw new Error("User not found");
-    }
+    const user = await getAuthenticatedUser(ctx);
 
     // Enforce one primary resume per user
     const existingPrimary = await ctx.db
@@ -449,7 +405,6 @@ export const createPrimaryResume = mutation({
 
 export const createOptimizedResume = mutation({
   args: {
-    clerkId: v.string(),
     title: v.string(),
     parentResumeId: v.id("resumes"),
     jobDescription: v.string(),
@@ -510,14 +465,7 @@ export const createOptimizedResume = mutation({
     })),
   },
   handler: async (ctx, args) => {
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
-      .first();
-
-    if (!user) {
-      throw new Error("User not found");
-    }
+    const user = await getAuthenticatedUser(ctx);
 
     // Verify parent resume exists and belongs to user
     const parentResume = await ctx.db.get(args.parentResumeId);
@@ -552,20 +500,17 @@ export const createOptimizedResume = mutation({
 });
 
 export const deleteResume = mutation({
-  args: { id: v.id("resumes"), clerkId: v.string() },
+  args: { id: v.id("resumes") },
   handler: async (ctx, args) => {
+    const user = await getAuthenticatedUser(ctx);
+
     // Verify ownership
     const resume = await ctx.db.get(args.id);
     if (!resume) {
       throw new Error("Resume not found");
     }
 
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
-      .first();
-
-    if (!user || resume.userId !== user._id) {
+    if (resume.userId !== user._id) {
       throw new Error("Access denied: You do not own this resume");
     }
 

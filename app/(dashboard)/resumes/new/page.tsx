@@ -23,7 +23,7 @@ type Step = "choose-method" | "loading";
 
 export default function NewResumePage() {
   const router = useRouter();
-  const { user, isLoaded } = useUser();
+  const { isLoaded } = useUser();
   const [step, setStep] = useState<Step>("choose-method");
   const [error, setError] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
@@ -39,18 +39,17 @@ export default function NewResumePage() {
   const currentMonth = new Date().toISOString().slice(0, 7);
   const generationLimit = useQuery(
     api.users.getRemainingGenerations,
-    user?.id ? { clerkId: user.id, currentMonth } : "skip"
+    isLoaded ? { currentMonth } : "skip"
   );
 
   const canGenerate = !generationLimit || generationLimit.remaining > 0;
 
   const handleStartFromScratch = async () => {
-    if (!user?.id || isCreating) return;
+    if (!isLoaded || isCreating) return;
 
     setIsCreating(true);
     try {
       const resumeId = await createResume({
-        clerkId: user.id,
         title: "Untitled Resume",
         source: "scratch",
       });
@@ -63,7 +62,7 @@ export default function NewResumePage() {
   };
 
   const handleFileUpload = async (file: File) => {
-    if (!user?.id) return;
+    if (!isLoaded) return;
     if (!canGenerate) {
       setShowUpgrade(true);
       return;
@@ -89,7 +88,6 @@ export default function NewResumePage() {
       const { storageId } = await uploadResponse.json();
 
       const data = await parseDocument({
-        clerkId: user.id,
         storageId,
         fileType: file.type,
         fileName: file.name,
@@ -117,7 +115,6 @@ export default function NewResumePage() {
       const resumeTitle = fullName ? `${fullName}'s Resume` : "Untitled Resume";
 
       const resumeId = await createResume({
-        clerkId: user.id,
         title: resumeTitle,
         source: "upload",
         initialData: parsedResumeData,

@@ -155,8 +155,7 @@ function ResumeEditorContent() {
   const params = useParams();
   const searchParams = useSearchParams();
   const resumeId = params.id as Id<"resumes">;
-  const { user, isLoaded: isUserLoaded } = useUser();
-  const clerkId = user?.id;
+  const { isLoaded: isUserLoaded } = useUser();
 
   // Read ?section= param to deep-link into a specific write section
   const initialSection = searchParams.get("section") || "personalDetails";
@@ -182,18 +181,12 @@ function ResumeEditorContent() {
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const hasInitializedRef = useRef(false);
   const pendingUpdatesRef = useRef<Partial<typeof localData>>({});
-  const clerkIdRef = useRef(clerkId);
   const [isDownloading, setIsDownloading] = useState(false);
-
-  // Keep clerkId ref in sync with latest value
-  useEffect(() => {
-    clerkIdRef.current = clerkId;
-  }, [clerkId]);
 
   // Fetch resume data from Convex (only when user is loaded)
   const resume = useQuery(
     api.resumes.getResume,
-    clerkId ? { id: resumeId, clerkId } : "skip"
+    isUserLoaded ? { id: resumeId } : "skip"
   );
   const updateResume = useMutation(api.resumes.updateResume);
 
@@ -242,19 +235,6 @@ function ResumeEditorContent() {
         return;
       }
 
-      // Get latest clerkId from ref to avoid stale closure
-      const currentClerkId = clerkIdRef.current;
-      if (!currentClerkId) {
-        // User not authenticated yet, reschedule save
-        console.log("Waiting for authentication, rescheduling save...");
-        saveTimeoutRef.current = setTimeout(() => {
-          if (Object.keys(pendingUpdatesRef.current).length > 0) {
-            scheduleSave();
-          }
-        }, 500);
-        return;
-      }
-
       setIsSaving(true);
       const saveStartTime = Date.now();
       try {
@@ -276,7 +256,6 @@ function ResumeEditorContent() {
 
         await updateResume({
           id: resumeId,
-          clerkId: currentClerkId,
           updates: convexUpdates as Parameters<typeof updateResume>[0]["updates"],
         });
         pendingUpdatesRef.current = {};
@@ -327,23 +306,6 @@ function ResumeEditorContent() {
         <div className="flex flex-col items-center gap-4">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
           <p className="text-sm text-muted-foreground">Loading resume...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Not authenticated
-  if (!clerkId) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4 text-center">
-          <h1 className="text-xl font-semibold">Please sign in</h1>
-          <p className="text-sm text-muted-foreground">
-            You need to be signed in to edit resumes.
-          </p>
-          <Button asChild>
-            <Link href="/sign-in">Sign in</Link>
-          </Button>
         </div>
       </div>
     );

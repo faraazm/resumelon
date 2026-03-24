@@ -66,9 +66,9 @@ export default function OnboardingPage() {
   };
 
   const handleSkip = async () => {
-    if (!user?.id) return;
+    if (!user) return;
     try {
-      await completeOnboarding({ clerkId: user.id });
+      await completeOnboarding({});
       router.push("/resumes");
     } catch (err) {
       console.error("Error skipping onboarding:", err);
@@ -76,18 +76,15 @@ export default function OnboardingPage() {
   };
 
   const handleStartFromScratch = async () => {
-    if (!user?.id || isCreating) return;
+    if (!user || isCreating) return;
 
     setIsCreating(true);
     try {
       const resumeId = await createResume({
-        clerkId: user.id,
         title: "Untitled Resume",
         source: "scratch",
       });
-      await completeOnboarding({
-        clerkId: user.id,
-      });
+      await completeOnboarding({});
       router.push(`/resumes/${resumeId}/edit`);
     } catch (err) {
       console.error("Error creating resume:", err);
@@ -97,7 +94,7 @@ export default function OnboardingPage() {
   };
 
   const handleFileUpload = async (file: File) => {
-    if (!user?.id) return;
+    if (!user) return;
 
     setIsUploading(true);
     setError(null);
@@ -119,7 +116,6 @@ export default function OnboardingPage() {
       const { storageId } = await uploadResponse.json();
 
       const data = await parseDocument({
-        clerkId: user!.id,
         storageId,
         fileType: file.type,
         fileName: file.name,
@@ -147,15 +143,12 @@ export default function OnboardingPage() {
       const resumeTitle = fullName ? `${fullName}'s Resume` : "Untitled Resume";
 
       const resumeId = await createResume({
-        clerkId: user.id,
         title: resumeTitle,
         source: "upload",
         initialData: parsedResumeData,
       });
 
-      await completeOnboarding({
-        clerkId: user.id,
-      });
+      await completeOnboarding({});
       router.push(`/resumes/${resumeId}/edit`);
     } catch (err) {
       console.error("Error uploading document:", err);

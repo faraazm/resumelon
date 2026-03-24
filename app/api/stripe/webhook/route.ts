@@ -100,6 +100,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     clerkId: clerkUserId,
     subscriptionStatus: "active",
     stripeSubscriptionId: subscriptionId,
+    webhookSecret: process.env.WEBHOOK_SECRET!,
   });
 }
 
@@ -115,6 +116,7 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
     clerkId: clerkUserId,
     subscriptionStatus: subscription.status,
     stripeSubscriptionId: subscription.id,
+    webhookSecret: process.env.WEBHOOK_SECRET!,
   });
 }
 
@@ -130,6 +132,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     clerkId: clerkUserId,
     subscriptionStatus: subscription.status,
     stripeSubscriptionId: subscription.id,
+    webhookSecret: process.env.WEBHOOK_SECRET!,
   });
 }
 
@@ -145,6 +148,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     clerkId: clerkUserId,
     subscriptionStatus: "canceled",
     stripeSubscriptionId: subscription.id,
+    webhookSecret: process.env.WEBHOOK_SECRET!,
   });
 }
 
@@ -164,6 +168,7 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
       await convex.mutation(api.users.updateSubscriptionStatus, {
         clerkId: clerkUserId,
         subscriptionStatus: "past_due",
+        webhookSecret: process.env.WEBHOOK_SECRET!,
       });
     }
   } catch (error) {
@@ -187,6 +192,7 @@ async function handleInvoicePaid(invoice: Stripe.Invoice) {
       await convex.mutation(api.users.updateSubscriptionStatus, {
         clerkId: clerkUserId,
         subscriptionStatus: "active",
+        webhookSecret: process.env.WEBHOOK_SECRET!,
       });
     }
   } catch (error) {

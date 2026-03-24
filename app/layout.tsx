@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Instrument_Serif, Inter, Roboto, Lato, Open_Sans, Merriweather, Playfair_Display, Lora, Montserrat, Raleway, Source_Sans_3, Crimson_Text, Libre_Baskerville, EB_Garamond, Poppins, Nunito } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ConvexClientProvider } from "@/components/providers/convex-client-provider";
+import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
@@ -209,6 +210,7 @@ export default function RootLayout({
             suppressHydrationWarning
           >
             {children}
+            <Analytics />
             <Toaster />
           </body>
         </html>

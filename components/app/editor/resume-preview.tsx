@@ -335,7 +335,7 @@ export const ResumePreview = forwardRef<ResumePreviewHandle, ResumePreviewProps>
           >
             {!hasContent ? (
               <EmptyState />
-            ) : isReady && pages[currentPage] ? (
+            ) : pages[currentPage] ? (
               <PageRenderer
                 page={pages[currentPage]}
                 template={adjustedTemplate}

@@ -47,7 +47,8 @@ export async function POST(request: NextRequest) {
 
   try {
     // Require authentication
-    const { userId: clerkId } = await auth();
+    const authResult = await auth();
+    const clerkId = authResult.userId;
 
     if (!clerkId) {
       return NextResponse.json(
@@ -76,11 +77,16 @@ export async function POST(request: NextRequest) {
 
     const client = new ConvexHttpClient(convexUrl);
 
+    // Set Clerk auth token so Convex can authenticate the user
+    const convexToken = await authResult.getToken({ template: "convex" });
+    if (convexToken) {
+      client.setAuth(convexToken);
+    }
+
     let tokenResult;
     try {
       tokenResult = await client.mutation(api.printTokens.createPrintToken, {
         resumeId: resumeId as Id<"resumes">,
-        clerkId,
       });
     } catch (error) {
       console.error("Failed to create print token:", error);
@@ -93,10 +99,7 @@ export async function POST(request: NextRequest) {
     const { token } = tokenResult;
 
     // Get the base URL from the request or environment
-    const baseUrl =
-      process.env.NEXT_PUBLIC_APP_URL ||
-      request.headers.get("origin") ||
-      `${request.headers.get("x-forwarded-proto") || "http"}://${request.headers.get("host")}`;
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
     const printUrl = `${baseUrl}/print/${resumeId}?token=${encodeURIComponent(token)}`;
 
@@ -217,10 +220,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("PDF generation error:", error);
     return NextResponse.json(
-      {
-        error: "Failed to generate PDF",
-        details: error instanceof Error ? error.message : "Unknown error",
-      },
+      { error: "Failed to generate PDF" },
       { status: 500 }
     );
   } finally {

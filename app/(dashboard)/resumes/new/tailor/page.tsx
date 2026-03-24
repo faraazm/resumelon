@@ -15,11 +15,11 @@ import {
 
 export default function TailorResumePage() {
   const router = useRouter();
-  const { user, isLoaded } = useUser();
+  const { isLoaded } = useUser();
 
   const resumes = useQuery(
     api.resumes.getResumesByUser,
-    user?.id ? { clerkId: user.id } : "skip"
+    isLoaded ? {} : "skip"
   );
 
   if (!isLoaded) {

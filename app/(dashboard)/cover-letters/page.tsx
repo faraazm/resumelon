@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { useQuery, useMutation } from "convex/react";
@@ -21,11 +22,11 @@ import { useCachedCoverLetters } from "@/hooks/use-document-cache";
 
 export default function CoverLettersPage() {
   const router = useRouter();
-  const { user, isLoaded: isUserLoaded } = useUser();
+  const { isLoaded: isUserLoaded } = useUser();
 
   const freshCoverLetters = useQuery(
     api.coverLetters.getCoverLettersByUser,
-    user?.id ? { clerkId: user.id } : "skip"
+    isUserLoaded ? {} : "skip"
   );
 
   // Use cached data while fresh data loads
@@ -34,7 +35,7 @@ export default function CoverLettersPage() {
   const currentMonth = new Date().toISOString().slice(0, 7);
   const generationLimit = useQuery(
     api.users.getRemainingGenerations,
-    user?.id ? { clerkId: user.id, currentMonth } : "skip"
+    isUserLoaded ? { currentMonth } : "skip"
   );
 
   const deleteCoverLetterMutation = useMutation(api.coverLetters.deleteCoverLetter);
@@ -64,9 +65,9 @@ export default function CoverLettersPage() {
   };
 
   const confirmDelete = async () => {
-    if (!user?.id || !letterToDelete) return;
+    if (!letterToDelete) return;
     try {
-      await deleteCoverLetterMutation({ id: letterToDelete, clerkId: user.id });
+      await deleteCoverLetterMutation({ id: letterToDelete });
     } catch (error) {
       console.error("Error deleting cover letter:", error);
     }
@@ -75,12 +76,12 @@ export default function CoverLettersPage() {
   };
 
   const confirmBulkDelete = async () => {
-    if (!user?.id || selection.selectedCount === 0) return;
+    if (selection.selectedCount === 0) return;
     setIsBulkDeleting(true);
     try {
       await Promise.all(
         Array.from(selection.selected).map((id) =>
-          deleteCoverLetterMutation({ id, clerkId: user!.id })
+          deleteCoverLetterMutation({ id })
         )
       );
       selection.clear();
@@ -102,7 +103,12 @@ export default function CoverLettersPage() {
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
       {/* Header */}
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.05 }}
+        className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+      >
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">
             Cover Letters
@@ -118,9 +124,14 @@ export default function CoverLettersPage() {
             Create Cover Letter
           </Button>
         </div>
-      </div>
+      </motion.div>
 
       {/* Cover Letter List / Table */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.1 }}
+      >
       {!isContentReady ? null : hasLetters ? (
         view === "list" ? (
           <div className="space-y-6">
@@ -170,6 +181,7 @@ export default function CoverLettersPage() {
           </Button>
         </div>
       )}
+      </motion.div>
 
       {/* Bulk Action Bar */}
       <BulkActionBar

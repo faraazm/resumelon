@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useCallback, ReactNode } from "react";
+import { useMemo, useState, useCallback, useRef, ReactNode } from "react";
 import { createElement } from "react";
 import { ResumeData, TemplateConfig } from "@/lib/templates/types";
 import { LETTER_HEIGHT_PX, PAGE_BOTTOM_SAFETY_PX } from "@/lib/pdf-constants";
@@ -94,41 +94,27 @@ export function usePagination(
   // isReady is true when we have pages and the measured key matches current blocks
   const isReady = pages.length > 0 && measuredKey === blocksKey;
 
+  // Keep blocksKey in a ref so onMeasured can read the latest value
+  const blocksKeyRef = useRef(blocksKey);
+  blocksKeyRef.current = blocksKey;
+
   const onMeasured = useCallback(
     (measuredBlocks: Block[]) => {
-      // Always log for debugging
-      console.log("[usePagination] Blocks measured:", measuredBlocks.length);
-      console.log("[usePagination] Page content height:", pageContentHeight);
-
-      const totalMeasured = measuredBlocks.reduce((sum, b) => sum + (b.measuredHeight || 0), 0);
-      console.log("[usePagination] Total measured height:", totalMeasured);
-
-      measuredBlocks.forEach((b, i) => {
-        console.log(`  Block ${i} (${b.type}): ${b.measuredHeight}px`);
-      });
+      if (debug) {
+        console.log("[usePagination] Blocks measured:", measuredBlocks.length);
+      }
 
       // Run pagination
-      const result = paginateBlocks(measuredBlocks, pageContentHeight, { debug: true });
-
-      console.log("[usePagination] Pages created:", result.length);
-      result.forEach((page, i) => {
-        const pageHeight = page.blocks.reduce((sum, b) => sum + (b.measuredHeight || 0), 0);
-        console.log(`  Page ${i}: ${page.blocks.length} blocks, ${pageHeight}px`);
-      });
+      const result = paginateBlocks(measuredBlocks, pageContentHeight, { debug });
 
       // Validate the result
       const validation = validatePagination(result, pageContentHeight);
-      if (!validation.valid) {
-        console.warn("[usePagination] PAGINATION OVERFLOW DETECTED:");
-        validation.overflows.forEach((overflow) => {
-          console.warn(
-            `  Page ${overflow.pageIndex}: ${overflow.height}px exceeds ${pageContentHeight}px by ${overflow.excess}px`
-          );
-        });
+      if (!validation.valid && debug) {
+        console.warn("[usePagination] PAGINATION OVERFLOW DETECTED");
       }
 
       setPages(result);
-      setMeasuredKey(measuredBlocks.map((b) => b.id).join(","));
+      setMeasuredKey(blocksKeyRef.current);
     },
     [pageContentHeight, debug]
   );

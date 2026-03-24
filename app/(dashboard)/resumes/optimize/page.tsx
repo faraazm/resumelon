@@ -51,7 +51,7 @@ export default function OptimizePage() {
 function OptimizePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, isLoaded } = useUser();
+  const { isLoaded } = useUser();
   const [step, setStep] = useState<Step>("job-description");
   const [jobDescription, setJobDescription] = useState("");
   const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null);
@@ -64,13 +64,13 @@ function OptimizePageContent() {
 
   const resume = useQuery(
     api.resumes.getResume,
-    user?.id && resumeId ? { id: resumeId, clerkId: user.id } : "skip"
+    isLoaded && resumeId ? { id: resumeId } : "skip"
   );
 
   const currentMonth = new Date().toISOString().slice(0, 7);
   const generationLimit = useQuery(
     api.users.getRemainingGenerations,
-    user?.id ? { clerkId: user.id, currentMonth } : "skip"
+    isLoaded ? { currentMonth } : "skip"
   );
 
   const canGenerate = !generationLimit || generationLimit.remaining > 0;
@@ -88,7 +88,7 @@ function OptimizePageContent() {
   };
 
   const handleAnalyzeFirst = async () => {
-    if (!user?.id || !resume || isAnalyzing) return;
+    if (!resume || isAnalyzing) return;
     if (!checkUsageLimits()) return;
 
     setIsAnalyzing(true);
@@ -96,7 +96,6 @@ function OptimizePageContent() {
 
     try {
       const result = await analyzeJobMatch({
-        clerkId: user.id,
         resumeData: {
           personalDetails: {
             firstName: resume.personalDetails.firstName,
@@ -126,24 +125,24 @@ function OptimizePageContent() {
   };
 
   const handleGenerateInstantly = async () => {
-    if (!user?.id || !resume) return;
+    if (!resume) return;
     if (!checkUsageLimits()) return;
 
     await generateAndCreate();
   };
 
   const handleGenerateFromAnalysis = async (_selectedSkills: string[]) => {
-    if (!user?.id || !resume) return;
+    if (!resume) return;
     await generateAndCreate();
   };
 
   const handleGenerateAll = async () => {
-    if (!user?.id || !resume) return;
+    if (!resume) return;
     await generateAndCreate();
   };
 
   const generateAndCreate = async () => {
-    if (!user?.id || !resume || isGenerating) return;
+    if (!resume || isGenerating) return;
     if (!checkUsageLimits()) return;
 
     setIsGenerating(true);
@@ -151,7 +150,6 @@ function OptimizePageContent() {
 
     try {
       const result = await generateOptimizedResume({
-        clerkId: user!.id,
         resumeData: {
           personalDetails: resume.personalDetails,
           contact: resume.contact,
@@ -168,7 +166,6 @@ function OptimizePageContent() {
         : result.jobTitle || "Tailored Resume";
 
       const newResumeId = await createResume({
-        clerkId: user!.id,
         title,
         source: "optimized",
         jobDescription: jobDescription.trim(),

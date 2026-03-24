@@ -1,9 +1,9 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { getAuthenticatedUser } from "./lib/auth";
 
 export const createCoverLetter = mutation({
   args: {
-    clerkId: v.string(),
     title: v.string(),
     personalDetails: v.object({
       firstName: v.string(),
@@ -22,14 +22,7 @@ export const createCoverLetter = mutation({
     jobDescription: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
-      .first();
-
-    if (!user) {
-      throw new Error("User not found");
-    }
+    const user = await getAuthenticatedUser(ctx);
 
     // If resumeId provided, verify ownership
     if (args.resumeId) {
@@ -55,16 +48,9 @@ export const createCoverLetter = mutation({
 });
 
 export const getCoverLetter = query({
-  args: { id: v.id("coverLetters"), clerkId: v.string() },
+  args: { id: v.id("coverLetters") },
   handler: async (ctx, args) => {
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
-      .first();
-
-    if (!user) {
-      return null;
-    }
+    const user = await getAuthenticatedUser(ctx);
 
     const coverLetter = await ctx.db.get(args.id);
     if (!coverLetter || coverLetter.userId !== user._id) {
@@ -76,16 +62,9 @@ export const getCoverLetter = query({
 });
 
 export const getCoverLetterByResume = query({
-  args: { resumeId: v.id("resumes"), clerkId: v.string() },
+  args: { resumeId: v.id("resumes") },
   handler: async (ctx, args) => {
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
-      .first();
-
-    if (!user) {
-      return null;
-    }
+    const user = await getAuthenticatedUser(ctx);
 
     return await ctx.db
       .query("coverLetters")
@@ -95,16 +74,9 @@ export const getCoverLetterByResume = query({
 });
 
 export const getCoverLettersByUser = query({
-  args: { clerkId: v.string() },
-  handler: async (ctx, args) => {
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
-      .first();
-
-    if (!user) {
-      return [];
-    }
+  args: {},
+  handler: async (ctx) => {
+    const user = await getAuthenticatedUser(ctx);
 
     return await ctx.db
       .query("coverLetters")
@@ -116,7 +88,6 @@ export const getCoverLettersByUser = query({
 export const updateCoverLetter = mutation({
   args: {
     id: v.id("coverLetters"),
-    clerkId: v.string(),
     updates: v.object({
       title: v.optional(v.string()),
       personalDetails: v.optional(v.object({
@@ -144,14 +115,7 @@ export const updateCoverLetter = mutation({
     }),
   },
   handler: async (ctx, args) => {
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
-      .first();
-
-    if (!user) {
-      throw new Error("User not found");
-    }
+    const user = await getAuthenticatedUser(ctx);
 
     const coverLetter = await ctx.db.get(args.id);
     if (!coverLetter || coverLetter.userId !== user._id) {
@@ -166,16 +130,9 @@ export const updateCoverLetter = mutation({
 });
 
 export const deleteCoverLetter = mutation({
-  args: { id: v.id("coverLetters"), clerkId: v.string() },
+  args: { id: v.id("coverLetters") },
   handler: async (ctx, args) => {
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
-      .first();
-
-    if (!user) {
-      throw new Error("User not found");
-    }
+    const user = await getAuthenticatedUser(ctx);
 
     const coverLetter = await ctx.db.get(args.id);
     if (!coverLetter || coverLetter.userId !== user._id) {
