@@ -4,15 +4,15 @@ import { AboutPage } from "./about-page";
 export const metadata: Metadata = {
   title: "About Us",
   description:
-    "Learn about resumeclone — the AI-powered resume builder helping job seekers create tailored, ATS-optimized resumes and cover letters for every application.",
+    "Learn about resumelon — the AI-powered resume builder helping job seekers create tailored, ATS-optimized resumes and cover letters for every application.",
   alternates: {
     canonical: "/about",
   },
   openGraph: {
-    title: "About Us | resumeclone",
+    title: "About Us | resumelon",
     description:
-      "Learn about resumeclone — the AI-powered resume builder helping job seekers land more interviews.",
-    url: "https://resumeclone.com/about",
+      "Learn about resumelon — the AI-powered resume builder helping job seekers land more interviews.",
+    url: "https://resumelon.com/about",
   },
 };
 

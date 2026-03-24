@@ -34,7 +34,7 @@ export function TermsPage() {
 
             <div className="mt-10 space-y-8 text-muted-foreground leading-relaxed [&_h2]:text-lg [&_h2]:font-semibold [&_h2]:text-foreground [&_h2]:mt-10 [&_h2]:mb-3 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-1.5">
               <p>
-                Welcome to resumeclone. By accessing or using our website and
+                Welcome to resumelon. By accessing or using our website and
                 services, you agree to be bound by these Terms of Service. If
                 you do not agree to these terms, please do not use our
                 services.
@@ -42,7 +42,7 @@ export function TermsPage() {
 
               <h2>1. Acceptance of Terms</h2>
               <p>
-                By creating an account or using any part of the resumeclone
+                By creating an account or using any part of the resumelon
                 platform, you acknowledge that you have read, understood, and
                 agree to be bound by these Terms of Service and our{" "}
                 <Link href="/privacy" className="text-primary underline underline-offset-2 hover:text-primary/80">
@@ -53,7 +53,7 @@ export function TermsPage() {
 
               <h2>2. Description of Service</h2>
               <p>
-                resumeclone provides an AI-powered resume and cover letter
+                resumelon provides an AI-powered resume and cover letter
                 builder that helps users create, customize, and optimize
                 professional documents for job applications. Our services
                 include resume creation, AI-assisted content generation,
@@ -106,8 +106,8 @@ export function TermsPage() {
 
               <h2>5. Intellectual Property</h2>
               <p>
-                The resumeclone platform, including its design, code, templates,
-                and branding, is owned by resumeclone and protected by
+                The resumelon platform, including its design, code, templates,
+                and branding, is owned by resumelon and protected by
                 intellectual property laws. You retain ownership of the content
                 you create using our service (your resume text, personal
                 information, etc.). By using our templates and AI features, you
@@ -141,23 +141,23 @@ export function TermsPage() {
 
               <h2>7. AI-Generated Content</h2>
               <p>
-                resumeclone uses artificial intelligence to assist in generating
+                resumelon uses artificial intelligence to assist in generating
                 resume and cover letter content. While we strive for high
                 quality, AI-generated content may contain errors or
                 inaccuracies. You are responsible for reviewing and verifying
-                all content before using it in job applications. resumeclone
+                all content before using it in job applications. resumelon
                 does not guarantee that AI-generated content will result in
                 employment outcomes.
               </p>
 
               <h2>8. Limitation of Liability</h2>
               <p>
-                resumeclone is provided &ldquo;as is&rdquo; and &ldquo;as
+                resumelon is provided &ldquo;as is&rdquo; and &ldquo;as
                 available&rdquo; without warranties of any kind, either express
                 or implied. We do not guarantee that the service will be
                 uninterrupted, error-free, or that it will meet your specific
                 requirements. To the fullest extent permitted by law,
-                resumeclone shall not be liable for any indirect, incidental,
+                resumelon shall not be liable for any indirect, incidental,
                 special, consequential, or punitive damages arising from your
                 use of the service.
               </p>

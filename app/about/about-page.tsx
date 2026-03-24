@@ -28,7 +28,7 @@ const values = [
     icon: UserGroupIcon,
     title: "Built for Everyone",
     description:
-      "Whether you're a student, career switcher, or seasoned professional — resumeclone adapts to your experience level and goals.",
+      "Whether you're a student, career switcher, or seasoned professional — resumelon adapts to your experience level and goals.",
   },
   {
     icon: ShieldCheckIcon,
@@ -66,10 +66,10 @@ export function AboutPage() {
             transition={{ duration: 0.4 }}
           >
             <h1 className="text-4xl font-semibold tracking-tighter text-foreground sm:text-5xl">
-              About resumeclone
+              About resumelon
             </h1>
             <p className="mt-6 text-lg text-muted-foreground leading-relaxed">
-              We started resumeclone because applying to jobs shouldn&apos;t be
+              We started resumelon because applying to jobs shouldn&apos;t be
               harder than the job itself. The traditional process — rewriting
               resumes for every listing, guessing at ATS keywords, crafting
               cover letters from scratch — is broken. We&apos;re here to fix it.
@@ -100,7 +100,7 @@ export function AboutPage() {
                   nothing back.
                 </p>
                 <p>
-                  resumeclone uses AI to generate tailored, ATS-optimized
+                  resumelon uses AI to generate tailored, ATS-optimized
                   resumes and cover letters for every job description you
                   target. Upload your base resume once, paste the job listings
                   you care about, and get customized applications ready to send

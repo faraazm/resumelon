@@ -1,8 +1,8 @@
-# resumeclone Core Product Flow
+# resumelon Core Product Flow
 
 ## Product Philosophy
 
-resumeclone is not just a resume builder.
+resumelon is not just a resume builder.
 
 It is a recurring optimization tool designed to help users tailor their resume for every job they apply to.
 

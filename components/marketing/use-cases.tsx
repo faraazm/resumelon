@@ -21,7 +21,7 @@ const useCases = [
     icon: ArrowPathIcon,
     title: "Career Switchers",
     description:
-      "Transitioning to a new industry? resumeclone helps you reframe your existing experience to match new job requirements and highlight transferable skills.",
+      "Transitioning to a new industry? resumelon helps you reframe your existing experience to match new job requirements and highlight transferable skills.",
   },
   {
     icon: BriefcaseIcon,
@@ -33,7 +33,7 @@ const useCases = [
     icon: UserGroupIcon,
     title: "Active Job Seekers",
     description:
-      "In a competitive market, every application counts. resumeclone helps you apply with tailored resumes that actually get past the filters.",
+      "In a competitive market, every application counts. resumelon helps you apply with tailored resumes that actually get past the filters.",
   },
 ];
 
@@ -56,7 +56,7 @@ export function UseCases() {
       <SectionHeader
         id="use-cases-heading"
         heading="Built for Every Type of Job Seeker"
-        description="Whether you're just starting out or making a career move, resumeclone adapts to your needs."
+        description="Whether you're just starting out or making a career move, resumelon adapts to your needs."
       />
 
       <motion.div

@@ -56,13 +56,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             {/* Logo */}
             <Link href="/resumes" className="flex items-center gap-1.5 text-[20px] font-semibold tracking-tight">
               <Image
-                src="/images/resumeclone-logo.png"
+                src="/images/resumelon-logo.png"
                 alt=""
                 width={24}
                 height={24}
                 className="h-6 w-6"
               />
-              <span>resumeclone</span>
+              <span>resumelon</span>
             </Link>
 
             {/* Navigation */}

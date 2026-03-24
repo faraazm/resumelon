@@ -67,13 +67,13 @@ export function UpgradeDialog({ open, onOpenChange }: UpgradeDialogProps) {
           <div className="flex justify-center">
             <div className="flex items-center gap-1.5 text-xl font-semibold tracking-tight">
               <Image
-                src="/images/resumeclone-logo.png"
+                src="/images/resumelon-logo.png"
                 alt=""
                 width={24}
                 height={24}
                 className="h-6 w-6"
               />
-              <span>resumeclone</span>
+              <span>resumelon</span>
             </div>
           </div>
 

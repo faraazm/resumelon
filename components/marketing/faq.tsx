@@ -11,19 +11,19 @@ import { SectionHeader } from "./section-header";
 
 const faqs = [
   {
-    question: "What is resumeclone?",
+    question: "What is resumelon?",
     answer:
-      "resumeclone is an AI-powered resume builder that helps you create, tailor, and optimize resumes and cover letters. Upload your base resume once, paste a job description, and instantly generate an ATS-friendly, customized resume tailored to that role.",
+      "resumelon is an AI-powered resume builder that helps you create, tailor, and optimize resumes and cover letters. Upload your base resume once, paste a job description, and instantly generate an ATS-friendly, customized resume tailored to that role.",
   },
   {
-    question: "How does resumeclone work?",
+    question: "How does resumelon work?",
     answer:
-      "It's simple: upload your base resume or fill in your details, paste the job description you're targeting, and resumeclone's AI generates a tailored resume and cover letter optimized for that role. Your resume is formatted to pass ATS filters and ready to download as PDF or DOCX.",
+      "It's simple: upload your base resume or fill in your details, paste the job description you're targeting, and resumelon's AI generates a tailored resume and cover letter optimized for that role. Your resume is formatted to pass ATS filters and ready to download as PDF or DOCX.",
   },
   {
-    question: "Are resumeclone templates ATS-friendly?",
+    question: "Are resumelon templates ATS-friendly?",
     answer:
-      "Yes, 100%. Every resumeclone template is designed from the ground up to be ATS-compatible. We use clean formatting, standard fonts, proper heading structures, and text-based PDFs that parse correctly through any Applicant Tracking System used by employers.",
+      "Yes, 100%. Every resumelon template is designed from the ground up to be ATS-compatible. We use clean formatting, standard fonts, proper heading structures, and text-based PDFs that parse correctly through any Applicant Tracking System used by employers.",
   },
   {
     question: "Can I customize my resumes after they're generated?",
@@ -31,9 +31,9 @@ const faqs = [
       "Absolutely. While every generated resume is ready to send immediately, you have full control to edit any section, adjust wording, reorder content, or customize the design. Think of the AI output as a strong first draft that you can refine to your liking.",
   },
   {
-    question: "Does resumeclone generate cover letters?",
+    question: "Does resumelon generate cover letters?",
     answer:
-      "Yes. resumeclone Pro generates a personalized cover letter alongside your tailored resume. Each cover letter is matched to the job description and pulls relevant details from your resume, so it reads naturally and complements your application.",
+      "Yes. resumelon Pro generates a personalized cover letter alongside your tailored resume. Each cover letter is matched to the job description and pulls relevant details from your resume, so it reads naturally and complements your application.",
   },
   {
     question: "How many resumes can I create?",
@@ -41,22 +41,22 @@ const faqs = [
       "Free users can create 1 resume with basic templates and PDF download. Pro users get unlimited resumes, all premium templates, AI suggestions, cover letters, and DOCX export—everything you need to tailor your resume for every application.",
   },
   {
-    question: "Is resumeclone suitable for students and new graduates?",
+    question: "Is resumelon suitable for students and new graduates?",
     answer:
-      "Yes. resumeclone is built for all job seekers—students applying to internships, new graduates entering the job market, career switchers, and experienced professionals. The AI adapts to your experience level and helps you present your background in the strongest way possible.",
+      "Yes. resumelon is built for all job seekers—students applying to internships, new graduates entering the job market, career switchers, and experienced professionals. The AI adapts to your experience level and helps you present your background in the strongest way possible.",
   },
   {
-    question: "Does resumeclone work for all industries?",
+    question: "Does resumelon work for all industries?",
     answer:
       "Yes. Our templates and AI optimization work across all industries—tech, finance, healthcare, marketing, education, and more. The AI tailors your resume based on the specific job description, so it's always relevant to the role and industry you're targeting.",
   },
   {
-    question: "Is the resumeclone resume builder really free?",
+    question: "Is the resumelon resume builder really free?",
     answer:
       "Yes! You can create one resume, choose from basic templates, and download it as a PDF completely free. No credit card required. Our Pro plan ($19.99/month or $99.99/year) unlocks unlimited resumes, all premium templates, AI writing assistance, cover letters, and more.",
   },
   {
-    question: "Is resumeclone a secure and trustworthy platform?",
+    question: "Is resumelon a secure and trustworthy platform?",
     answer:
       "Yes. We use industry-standard encryption to protect your data, never share your information with third parties, and comply with GDPR and other privacy regulations. You can delete your account and all associated data at any time.",
   },
@@ -68,7 +68,7 @@ export function FAQ() {
       <SectionHeader
         id="faq-heading"
         heading="Frequently Asked Questions"
-        description="Everything you need to know about resumeclone and how it can transform your job search."
+        description="Everything you need to know about resumelon and how it can transform your job search."
       />
 
       <Accordion type="single" collapsible className="mt-12">

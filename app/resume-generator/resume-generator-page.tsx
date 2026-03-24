@@ -422,7 +422,7 @@ export function ResumeGeneratorPage() {
           <SectionWrapper background="muted" padding="md" id="comparison" ariaLabelledBy="comparison-heading">
             <SectionHeader
               id="comparison-heading"
-              heading="Manual Resume Writing vs. resumeclone"
+              heading="Manual Resume Writing vs. resumelon"
               description="See exactly how the AI resume generator transforms your job search workflow from painful to effortless."
             />
             <div className="mx-auto mt-12 max-w-4xl overflow-hidden rounded-2xl border border-border bg-background">

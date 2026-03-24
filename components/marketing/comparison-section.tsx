@@ -88,12 +88,12 @@ export function ComparisonSection() {
         transition={{ duration: 0.5 }}
       >
         <ComparisonColumn
-          title="Without resumeclone"
+          title="Without resumelon"
           items={withoutItems}
           variant="negative"
         />
         <ComparisonColumn
-          title="With resumeclone"
+          title="With resumelon"
           items={withItems}
           variant="positive"
         />

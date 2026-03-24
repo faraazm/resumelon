@@ -118,8 +118,8 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: "resumeclone - Tailored, ATS-Optimized Resumes for Every Job Application",
-    template: "%s | resumeclone",
+    default: "resumelon - Tailored, ATS-Optimized Resumes for Every Job Application",
+    template: "%s | resumelon",
   },
   description:
     "Generate ATS-friendly resumes and cover letters tailored to any job you apply to. Upload once, paste a job description, and get a customized, optimized application in minutes. Free AI-powered resume builder.",
@@ -145,19 +145,19 @@ export const metadata: Metadata = {
     "job search tool",
     "resume for job application",
   ],
-  authors: [{ name: "resumeclone" }],
-  creator: "resumeclone",
-  publisher: "resumeclone",
-  metadataBase: new URL("https://resumeclone.com"),
+  authors: [{ name: "resumelon" }],
+  creator: "resumelon",
+  publisher: "resumelon",
+  metadataBase: new URL("https://resumelon.com"),
   alternates: {
     canonical: "/",
   },
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://resumeclone.com",
-    siteName: "resumeclone",
-    title: "resumeclone - Tailored, ATS-Optimized Resumes for Every Job Application",
+    url: "https://resumelon.com",
+    siteName: "resumelon",
+    title: "resumelon - Tailored, ATS-Optimized Resumes for Every Job Application",
     description:
       "Generate ATS-friendly resumes and cover letters tailored to any job. Upload once, paste a job description, get a customized application in minutes. Free AI resume builder.",
     images: [
@@ -165,13 +165,13 @@ export const metadata: Metadata = {
         url: "/images/og-image.png",
         width: 1200,
         height: 630,
-        alt: "resumeclone - AI-Powered Resume Builder for Tailored Job Applications",
+        alt: "resumelon - AI-Powered Resume Builder for Tailored Job Applications",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "resumeclone - Tailored Resumes for Every Job Application",
+    title: "resumelon - Tailored Resumes for Every Job Application",
     description:
       "Generate ATS-friendly resumes and cover letters tailored to any job. Upload once, get optimized applications in minutes. Free AI resume builder.",
     images: ["/images/og-image.png"],

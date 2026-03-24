@@ -44,9 +44,9 @@ function AnimatedSection({ children }: { children: React.ReactNode }) {
 const organizationSchema = {
   "@context": "https://schema.org",
   "@type": "Organization",
-  name: "resumeclone",
-  url: "https://resumeclone.com",
-  logo: "https://resumeclone.com/images/resumeclone-logo.png",
+  name: "resumelon",
+  url: "https://resumelon.com",
+  logo: "https://resumelon.com/images/resumelon-logo.png",
   description:
     "AI-powered resume builder that helps job seekers create tailored, ATS-optimized resumes and cover letters for every application.",
   sameAs: [],
@@ -55,7 +55,7 @@ const organizationSchema = {
 const softwareSchema = {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
-  name: "resumeclone",
+  name: "resumelon",
   applicationCategory: "BusinessApplication",
   operatingSystem: "Web",
   description:
@@ -93,31 +93,31 @@ const faqSchema = {
   mainEntity: [
     {
       "@type": "Question",
-      name: "What is resumeclone?",
+      name: "What is resumelon?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "resumeclone is an AI-powered resume builder that helps you create, tailor, and optimize resumes and cover letters. Upload your base resume once, paste a job description, and instantly generate an ATS-friendly, customized resume tailored to that role.",
+        text: "resumelon is an AI-powered resume builder that helps you create, tailor, and optimize resumes and cover letters. Upload your base resume once, paste a job description, and instantly generate an ATS-friendly, customized resume tailored to that role.",
       },
     },
     {
       "@type": "Question",
-      name: "How does resumeclone work?",
+      name: "How does resumelon work?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Upload your base resume or fill in your details, paste the job description you're targeting, and resumeclone's AI generates a tailored resume and cover letter optimized for that role. Your resume is formatted to pass ATS filters and ready to download as PDF or DOCX.",
+        text: "Upload your base resume or fill in your details, paste the job description you're targeting, and resumelon's AI generates a tailored resume and cover letter optimized for that role. Your resume is formatted to pass ATS filters and ready to download as PDF or DOCX.",
       },
     },
     {
       "@type": "Question",
-      name: "Are resumeclone templates ATS-friendly?",
+      name: "Are resumelon templates ATS-friendly?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Yes, 100%. Every resumeclone template is designed from the ground up to be ATS-compatible. We use clean formatting, standard fonts, proper heading structures, and text-based PDFs that parse correctly through any Applicant Tracking System.",
+        text: "Yes, 100%. Every resumelon template is designed from the ground up to be ATS-compatible. We use clean formatting, standard fonts, proper heading structures, and text-based PDFs that parse correctly through any Applicant Tracking System.",
       },
     },
     {
       "@type": "Question",
-      name: "Is the resumeclone resume builder really free?",
+      name: "Is the resumelon resume builder really free?",
       acceptedAnswer: {
         "@type": "Answer",
         text: "Yes! You can create one resume, choose from basic templates, and download it as a PDF completely free. No credit card required. Our Pro plan ($19.99/month or $99.99/year) unlocks unlimited resumes, all premium templates, AI writing assistance, cover letters, and more.",
@@ -125,10 +125,10 @@ const faqSchema = {
     },
     {
       "@type": "Question",
-      name: "Does resumeclone generate cover letters?",
+      name: "Does resumelon generate cover letters?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Yes. resumeclone Pro generates a personalized cover letter alongside your tailored resume. Each cover letter is matched to the job description and pulls relevant details from your resume.",
+        text: "Yes. resumelon Pro generates a personalized cover letter alongside your tailored resume. Each cover letter is matched to the job description and pulls relevant details from your resume.",
       },
     },
     {
@@ -141,15 +141,15 @@ const faqSchema = {
     },
     {
       "@type": "Question",
-      name: "Is resumeclone suitable for students and new graduates?",
+      name: "Is resumelon suitable for students and new graduates?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Yes. resumeclone is built for all job seekers—students applying to internships, new graduates entering the job market, career switchers, and experienced professionals. The AI adapts to your experience level.",
+        text: "Yes. resumelon is built for all job seekers—students applying to internships, new graduates entering the job market, career switchers, and experienced professionals. The AI adapts to your experience level.",
       },
     },
     {
       "@type": "Question",
-      name: "Does resumeclone work for all industries?",
+      name: "Does resumelon work for all industries?",
       acceptedAnswer: {
         "@type": "Answer",
         text: "Yes. Our templates and AI optimization work across all industries—tech, finance, healthcare, marketing, education, and more. The AI tailors your resume based on the specific job description.",
@@ -161,13 +161,13 @@ const faqSchema = {
 const websiteSchema = {
   "@context": "https://schema.org",
   "@type": "WebSite",
-  name: "resumeclone",
-  url: "https://resumeclone.com",
+  name: "resumelon",
+  url: "https://resumelon.com",
   description:
     "AI-powered resume builder for creating tailored, ATS-optimized resumes and cover letters for every application.",
   potentialAction: {
     "@type": "SearchAction",
-    target: "https://resumeclone.com/search?q={search_term_string}",
+    target: "https://resumelon.com/search?q={search_term_string}",
     "query-input": "required name=search_term_string",
   },
 };

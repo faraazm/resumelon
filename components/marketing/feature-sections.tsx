@@ -79,7 +79,7 @@ const featureData: Feature[] = [
   {
     title: "AI-Powered Cover Letters",
     description:
-      "Stop writing cover letters from scratch. resumeclone generates personalized, compelling cover letters that complement your tailored resume for each application.",
+      "Stop writing cover letters from scratch. resumelon generates personalized, compelling cover letters that complement your tailored resume for each application.",
     features: [
       "Pulls key details from your resume automatically",
       "Matches tone and language to the job description",

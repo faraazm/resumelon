@@ -469,7 +469,7 @@ export function CoverLetterGeneratorPage() {
         {/* -------- FAQ -------- */}
         <PageFAQ
           heading="Cover Letter Generator FAQ"
-          description="Common questions about creating AI-powered cover letters with resumeclone."
+          description="Common questions about creating AI-powered cover letters with resumelon."
           faqs={faqs}
           id="cover-letter-faq"
         />

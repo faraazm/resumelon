@@ -168,7 +168,7 @@ const showcaseFeatures = [
   {
     title: "Design Customization That Goes Beyond Color Swaps",
     description:
-      "Most resume builders let you pick a color and call it customization. With resumeclone, you control every visual detail. Adjust font sizes independently for headings and body text, set custom margins for print, and choose between single-column and multi-column layouts that still pass ATS checks. The result is a resume that looks intentionally designed, not generated from a rigid template.",
+      "Most resume builders let you pick a color and call it customization. With resumelon, you control every visual detail. Adjust font sizes independently for headings and body text, set custom margins for print, and choose between single-column and multi-column layouts that still pass ATS checks. The result is a resume that looks intentionally designed, not generated from a rigid template.",
     bullets: [
       "Independent heading and body font controls",
       "Custom margin and padding adjustments",
@@ -405,7 +405,7 @@ export function ResumeTemplatesPage() {
             id="why-heading"
             heading="What Makes Our Templates Different"
             description="Plenty of sites offer free resume templates. Here is why job seekers choose ours over generic downloads and overpriced builders."
-            badge="Why resumeclone"
+            badge="Why resumelon"
           />
           <motion.div
             className="mt-12 grid gap-8 sm:grid-cols-2"

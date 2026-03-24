@@ -229,14 +229,14 @@ export default function OnboardingPage() {
                 className="flex items-center justify-center gap-3"
               >
                 <Image
-                  src="/images/resumeclone-logo.png"
+                  src="/images/resumelon-logo.png"
                   alt=""
                   width={24}
                   height={24}
                   className="h-6 w-6"
                 />
                 <span className="text-3xl font-semibold tracking-tight">
-                  resumeclone
+                  resumelon
                 </span>
               </motion.div>
 
@@ -247,7 +247,7 @@ export default function OnboardingPage() {
                 transition={{ duration: 0.5, delay: 0.7 }}
                 className="mt-8 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl"
               >
-                Welcome to resumeclone
+                Welcome to resumelon
               </motion.h1>
 
               <motion.p

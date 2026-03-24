@@ -12,13 +12,13 @@ export function Logo({ className }: LogoProps) {
       className={`flex items-center gap-1.5 text-[22px] font-semibold tracking-tight ${className ?? ""}`}
     >
       <Image
-        src="/images/resumeclone-logo.png"
+        src="/images/resumelon-logo.png"
         alt=""
         width={24}
         height={24}
         className="h-6 w-6"
       />
-      <span>resumeclone</span>
+      <span>resumelon</span>
     </Link>
   );
 }
@@ -29,6 +29,6 @@ interface BrandNameProps {
 
 export function BrandName({ className = "" }: BrandNameProps) {
   return (
-    <span className={`font-semibold ${className}`}>resumeclone</span>
+    <span className={`font-semibold ${className}`}>resumelon</span>
   );
 }

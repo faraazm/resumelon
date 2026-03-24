@@ -50,7 +50,7 @@ export function DocumentLoading({ message = "AI is analyzing your resume..." }: 
             transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
           />
           <Image
-            src="/images/resumeclone-logo.png"
+            src="/images/resumelon-logo.png"
             alt=""
             width={24}
             height={24}

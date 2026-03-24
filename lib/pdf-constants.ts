@@ -48,9 +48,8 @@ export const TYPOGRAPHY = {
 export const SIDEBAR_CONTENT_PADDING_PX = 24;
 
 // Safety buffer subtracted from page content height to prevent sub-pixel overflow
-// Increased to 20px to handle font rendering variations, line-height differences,
-// and ensure content never bleeds past page boundaries
-export const PAGE_BOTTOM_SAFETY_PX = 20;
+// Kept minimal since block measurements are accurate with overflow:hidden BFC
+export const PAGE_BOTTOM_SAFETY_PX = 2;
 
 // Page format for Playwright PDF generation
 export const PDF_FORMAT = "Letter" as const;

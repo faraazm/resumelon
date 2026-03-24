@@ -15,21 +15,21 @@ interface Testimonial {
 const testimonials: Testimonial[] = [
   {
     quote:
-      "I tailored my resume for each role and started getting callbacks within a week. resumeclone completely changed my job search.",
+      "I tailored my resume for each role and started getting callbacks within a week. resumelon completely changed my job search.",
     name: "Sarah M.",
     role: "Software Engineer",
     rating: 5,
   },
   {
     quote:
-      "As a new grad, I had no idea how to tailor my resume. resumeclone made it effortless—I landed my first role in 3 weeks.",
+      "As a new grad, I had no idea how to tailor my resume. resumelon made it effortless—I landed my first role in 3 weeks.",
     name: "James L.",
     role: "Recent Graduate",
     rating: 5,
   },
   {
     quote:
-      "resumeclone saved me during recruiting season. I went from zero callbacks to multiple offers.",
+      "resumelon saved me during recruiting season. I went from zero callbacks to multiple offers.",
     name: "Priya K.",
     role: "Product Manager",
     rating: 5,
@@ -43,14 +43,14 @@ const testimonials: Testimonial[] = [
   },
   {
     quote:
-      "The ATS optimization actually works. I started getting recruiter calls within a week of switching to resumeclone.",
+      "The ATS optimization actually works. I started getting recruiter calls within a week of switching to resumelon.",
     name: "Emily R.",
     role: "Data Analyst",
     rating: 5,
   },
   {
     quote:
-      "Switching careers felt impossible until I found resumeclone. It helped me reframe my experience perfectly for a new industry.",
+      "Switching careers felt impossible until I found resumelon. It helped me reframe my experience perfectly for a new industry.",
     name: "David T.",
     role: "Career Switcher",
     rating: 5,
@@ -98,7 +98,7 @@ export function Testimonials() {
       <SectionHeader
         id="testimonials-heading"
         heading="Real Results from Real Job Seekers"
-        description="Thousands of job seekers have landed interviews faster with resumeclone. Here's what they have to say."
+        description="Thousands of job seekers have landed interviews faster with resumelon. Here's what they have to say."
       />
 
       <motion.div

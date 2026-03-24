@@ -72,13 +72,13 @@ export async function POST(req: Request) {
       },
       body: JSON.stringify({
         sender: {
-          name: "resumeclone Contact Form",
+          name: "resumelon Contact Form",
           email: RECIPIENT_EMAIL,
         },
         to: [
           {
             email: RECIPIENT_EMAIL,
-            name: "resumeclone",
+            name: "resumelon",
           },
         ],
         replyTo: {

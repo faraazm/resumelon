@@ -12,7 +12,7 @@ export function CTABanner() {
         </h2>
         <p className="mt-4 text-lg text-primary-foreground/80">
           Join thousands of job seekers who have landed their dream jobs with
-          resumeclone. Every day you wait is another missed opportunity.
+          resumelon. Every day you wait is another missed opportunity.
         </p>
         <div className="mt-8 flex justify-center">
           <InlineCTA

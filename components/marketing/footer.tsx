@@ -108,7 +108,7 @@ export function Footer() {
 
         <div className="mt-10 pt-6">
           <p className="text-center text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} resumeclone. All rights reserved.
+            &copy; {new Date().getFullYear()} resumelon. All rights reserved.
           </p>
         </div>
       </div>

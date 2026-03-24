@@ -34,7 +34,7 @@ export function PrivacyPage() {
 
             <div className="mt-10 space-y-8 text-muted-foreground leading-relaxed [&_h2]:text-lg [&_h2]:font-semibold [&_h2]:text-foreground [&_h2]:mt-10 [&_h2]:mb-3 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-1.5">
               <p>
-                At resumeclone, your privacy is important to us. This Privacy
+                At resumelon, your privacy is important to us. This Privacy
                 Policy explains how we collect, use, store, and protect your
                 personal information when you use our website and services.
               </p>
@@ -73,7 +73,7 @@ export function PrivacyPage() {
               <h2>2. How We Use Your Information</h2>
               <p>We use your information to:</p>
               <ul>
-                <li>Provide and maintain the resumeclone service.</li>
+                <li>Provide and maintain the resumelon service.</li>
                 <li>
                   Generate, customize, and optimize your resumes and cover
                   letters.
@@ -164,7 +164,7 @@ export function PrivacyPage() {
 
               <h2>7. Children&apos;s Privacy</h2>
               <p>
-                resumeclone is not intended for use by individuals under the
+                resumelon is not intended for use by individuals under the
                 age of 16. We do not knowingly collect personal information
                 from children. If we become aware that we have collected data
                 from a child under 16, we will take steps to delete that

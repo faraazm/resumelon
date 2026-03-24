@@ -24,7 +24,7 @@ const steps = [
     icon: DocumentTextIcon,
     title: "Paste a Job Description",
     description:
-      "Paste the job listing you're applying for. resumeclone analyzes it to identify key requirements and keywords.",
+      "Paste the job listing you're applying for. resumelon analyzes it to identify key requirements and keywords.",
   },
   {
     step: "3",

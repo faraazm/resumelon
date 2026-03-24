@@ -54,7 +54,7 @@ export function SolutionSection() {
             Meet <BrandName className="text-primary" />
           </>
         }
-        description="resumeclone automates the tedious parts of tailoring resumes and cover letters. Paste a job description, and get a customized, ATS-optimized resume ready to send."
+        description="resumelon automates the tedious parts of tailoring resumes and cover letters. Paste a job description, and get a customized, ATS-optimized resume ready to send."
       />
 
       <motion.div

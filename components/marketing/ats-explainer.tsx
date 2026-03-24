@@ -91,7 +91,7 @@ export function ATSExplainer() {
             <CheckCircleIcon className="h-6 w-6 shrink-0 text-green-600" aria-hidden="true" />
             <p className="text-sm text-green-800">
               <strong>100% ATS compatible.</strong> Every resume you create
-              with resumeclone is guaranteed to parse correctly through any
+              with resumelon is guaranteed to parse correctly through any
               Applicant Tracking System.
             </p>
           </div>

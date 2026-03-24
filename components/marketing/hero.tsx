@@ -54,7 +54,7 @@ export function Hero() {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.2 }}
             >
-              Paste a job description and resumeclone tailors your resume with
+              Paste a job description and resumelon tailors your resume with
               the right keywords, skills, and phrasing—ATS-optimized and ready
               to download. Stop rewriting. Start interviewing.
             </motion.p>
