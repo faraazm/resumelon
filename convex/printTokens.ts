@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation, query, internalQuery, internalMutation } from "./_generated/server";
+import { mutation, query, internalMutation } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
 
 const TOKEN_EXPIRY_MS = 2 * 60 * 1000; // 2 minutes

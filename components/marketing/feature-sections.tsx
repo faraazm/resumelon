@@ -1,17 +1,18 @@
 "use client";
 
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { CheckIcon } from "@heroicons/react/24/outline";
 import { ArrowUpRightIcon } from "@heroicons/react/20/solid";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ImagePlaceholder } from "./image-placeholder";
 
 interface Feature {
   title: string;
   description: string;
   features: string[];
-  imagePlaceholder: string;
+  image: string;
+  imageAlt: string;
   cta?: {
     label: string;
     href: string;
@@ -29,7 +30,8 @@ const featureData: Feature[] = [
       "Batch processing for multiple job descriptions",
       "Each resume reads like it was hand-crafted",
     ],
-    imagePlaceholder: "Bulk generation interface",
+    image: "/images/feature-images/dashboard-resumes.png",
+    imageAlt: "Dashboard showing multiple tailored resumes",
     cta: {
       label: "Start generating",
       href: "/sign-up",
@@ -45,7 +47,8 @@ const featureData: Feature[] = [
       "Highlights your most relevant experience",
       "Ready to send in seconds, not hours",
     ],
-    imagePlaceholder: "Cover letter generator preview",
+    image: "/images/feature-images/cover-letter-editor.png",
+    imageAlt: "AI-powered cover letter editor interface",
     cta: {
       label: "Try cover letters",
       href: "/sign-up",
@@ -61,7 +64,8 @@ const featureData: Feature[] = [
       "High-quality PDF and DOCX export",
       "Version management for all your resumes",
     ],
-    imagePlaceholder: "Template library preview",
+    image: "/images/feature-images/design-tab-templates.png",
+    imageAlt: "Template selection panel with ATS-optimized designs",
     cta: {
       label: "Browse templates",
       href: "/sign-up",
@@ -158,12 +162,16 @@ function FeatureSection({
         </motion.div>
 
         {/* Visual Side */}
-        <div className="relative flex flex-col justify-center bg-muted/20 p-8 md:w-1/2 md:p-12 min-h-[300px]">
-          <ImagePlaceholder
-            label={feature.imagePlaceholder}
-            aspectRatio="auto"
-            className="h-full min-h-[250px]"
-          />
+        <div className="relative flex items-center justify-center bg-muted/20 p-6 md:w-1/2 md:p-8 min-h-[300px]">
+          <div className="relative w-full h-full min-h-[280px] rounded-xl overflow-hidden shadow-lg">
+            <Image
+              src={feature.image}
+              alt={feature.imageAlt}
+              fill
+              className="object-cover object-top"
+              sizes="(max-width: 768px) 100vw, 50vw"
+            />
+          </div>
         </div>
       </motion.div>
     </div>

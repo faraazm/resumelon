@@ -43,7 +43,7 @@ export function JobDescriptionStep({
           Optimize for a new job
         </h1>
         <p className="mt-2 text-muted-foreground">
-          Paste the job description and we'll tailor your resume to match
+          Paste the job description and we&apos;ll tailor your resume to match
         </p>
       </motion.div>
 

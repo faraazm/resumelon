@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback, forwardRef, useImperativeHandle } from "react";
+import { useState, useRef, useEffect, useLayoutEffect, useCallback, forwardRef, useImperativeHandle } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
@@ -56,12 +56,12 @@ interface ResumePreviewProps {
     }>;
     skills: string[];
     template: string;
-    style: {
-      font: string;
+    style?: {
+      font?: string;
       headingFont?: string;
       bodyFont?: string;
-      spacing: string;
-      accentColor: string;
+      spacing?: string;
+      accentColor?: string;
       backgroundColor?: string;
       showPhoto?: boolean;
       showDividers?: boolean;
@@ -246,11 +246,16 @@ export const ResumePreview = forwardRef<ResumePreviewHandle, ResumePreviewProps>
   }));
 
   // Keep currentPage in bounds when totalPages changes
-  useEffect(() => {
-    if (currentPage >= totalPages && totalPages > 0) {
-      setCurrentPage(Math.max(0, totalPages - 1));
+  const clampedPage = totalPages > 0 && currentPage >= totalPages
+    ? Math.max(0, totalPages - 1)
+    : currentPage;
+
+  useLayoutEffect(() => {
+    if (clampedPage !== currentPage) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Sync derived state
+      setCurrentPage(clampedPage);
     }
-  }, [currentPage, totalPages]);
+  }, [clampedPage, currentPage]);
 
   // Calculate scale to fit container
   const calculateScale = useCallback(() => {
@@ -270,8 +275,12 @@ export const ResumePreview = forwardRef<ResumePreviewHandle, ResumePreviewProps>
     setScale(newScale);
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- DOM measurement requires effect
     calculateScale();
+  }, [calculateScale]);
+
+  useEffect(() => {
     const handleResize = () => calculateScale();
     window.addEventListener("resize", handleResize);
 

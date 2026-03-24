@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
 import { useUser } from "@clerk/nextjs";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -18,6 +17,7 @@ import { DeleteConfirmDialog } from "@/components/app/dashboard/delete-confirm-d
 import { UpgradeDialog } from "@/components/app/upgrade-dialog";
 import { useSelection } from "@/hooks/use-selection";
 import { useViewPreference } from "@/hooks/use-view-preference";
+import { useCachedResumes } from "@/hooks/use-document-cache";
 
 function FileTextIcon({ className }: { className?: string }) {
   return (
@@ -47,10 +47,13 @@ export default function ResumesPage() {
     user?.id ? { clerkId: user.id } : "skip"
   );
 
-  const resumes = useQuery(
+  const freshResumes = useQuery(
     api.resumes.getResumesByUser,
     user?.id ? { clerkId: user.id } : "skip"
   );
+
+  // Use cached data while fresh data loads
+  const resumes = useCachedResumes(freshResumes);
 
   const currentMonth = new Date().toISOString().slice(0, 7);
   const generationLimit = useQuery(
@@ -123,27 +126,22 @@ export default function ResumesPage() {
     setBulkDeleteOpen(false);
   };
 
-  const isLoading = !isUserLoaded || resumes === undefined || convexUser === undefined;
+  const sortedResumes = useMemo(
+    () => (resumes ? [...resumes].sort((a, b) => b.updatedAt - a.updatedAt) : []),
+    [resumes]
+  );
+  const hasResumes = sortedResumes.length > 0;
+  const allIds = useMemo(() => sortedResumes.map((r) => r._id), [sortedResumes]);
+  const isContentReady = isUserLoaded && resumes !== undefined;
 
   if (convexUser && !convexUser.hasCompletedOnboarding) {
     return null;
   }
 
-  const sortedResumes = resumes
-    ? [...resumes].sort((a, b) => b.updatedAt - a.updatedAt)
-    : [];
-  const hasResumes = sortedResumes.length > 0;
-  const allIds = sortedResumes.map((r) => r._id);
-
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
       {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.05 }}
-        className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-      >
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">
             My Resumes
@@ -153,64 +151,53 @@ export default function ResumesPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          {hasResumes && <ViewToggle view={view} onViewChange={setView} />}
+          {isContentReady && hasResumes && <ViewToggle view={view} onViewChange={setView} />}
           <Button onClick={handleNewResume}>
             <SparklesIcon className="h-4 w-4" />
             Create Resume
           </Button>
         </div>
-      </motion.div>
+      </div>
 
       {/* Resume List / Table */}
-      {isLoading ? null : hasResumes ? (
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.1 }}
-        >
-          {view === "list" ? (
-            <div className="space-y-6">
-              {sortedResumes.map((resume) => (
-                <ResumeCard
-                  key={resume._id}
-                  resume={resume}
-                  userName={user?.fullName || undefined}
-                  onDelete={handleDeleteResume}
-                  onTailor={handleTailor}
-                  selected={selection.isSelected(resume._id)}
-                  onSelect={() => selection.toggle(resume._id)}
-                />
-              ))}
-            </div>
-          ) : (
-            <DocumentTable
-              columns={["Title", "Name", "Updated"]}
-              allSelected={selection.isAllSelected(allIds)}
-              onSelectAll={() =>
-                selection.isAllSelected(allIds)
-                  ? selection.clear()
-                  : selection.selectAll(allIds)
-              }
-            >
-              {sortedResumes.map((resume) => (
-                <ResumeTableRow
-                  key={resume._id}
-                  resume={resume}
-                  selected={selection.isSelected(resume._id)}
-                  onSelect={() => selection.toggle(resume._id)}
-                  onDelete={handleDeleteResume}
-                />
-              ))}
-            </DocumentTable>
-          )}
-        </motion.div>
+      {!isContentReady ? null : hasResumes ? (
+        view === "list" ? (
+          <div className="space-y-6">
+            {sortedResumes.map((resume) => (
+              <ResumeCard
+                key={resume._id}
+                resume={resume}
+                userName={user?.fullName || undefined}
+                onDelete={handleDeleteResume}
+                onTailor={handleTailor}
+                selected={selection.isSelected(resume._id)}
+                onSelect={() => selection.toggle(resume._id)}
+              />
+            ))}
+          </div>
+        ) : (
+          <DocumentTable
+            columns={["Title", "Name", "Updated"]}
+            allSelected={selection.isAllSelected(allIds)}
+            onSelectAll={() =>
+              selection.isAllSelected(allIds)
+                ? selection.clear()
+                : selection.selectAll(allIds)
+            }
+          >
+            {sortedResumes.map((resume) => (
+              <ResumeTableRow
+                key={resume._id}
+                resume={resume}
+                selected={selection.isSelected(resume._id)}
+                onSelect={() => selection.toggle(resume._id)}
+                onDelete={handleDeleteResume}
+              />
+            ))}
+          </DocumentTable>
+        )
       ) : (
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.1 }}
-          className="flex flex-col items-center justify-center py-16 text-center"
-        >
+        <div className="flex flex-col items-center justify-center py-16 text-center">
           <div className="mb-4 rounded-full bg-muted p-4">
             <FileTextIcon className="h-8 w-8 text-muted-foreground" />
           </div>
@@ -222,7 +209,7 @@ export default function ResumesPage() {
             <PlusIcon className="h-4 w-4" />
             Create Resume
           </Button>
-        </motion.div>
+        </div>
       )}
 
       {/* Bulk Action Bar */}

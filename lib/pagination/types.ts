@@ -6,8 +6,11 @@ export type BlockType =
   | "summary"         // Summary paragraph or HTML
   | "experience-meta" // Job title + company + date row (no bullets)
   | "bullet"          // Single <li> from a job's bullet list
-  | "education-item"  // Degree + school + date
-  | "skills"          // Entire skills display
+  | "education-item"  // Degree + school + date (legacy, kept for compatibility)
+  | "education-degree" // Just the degree line
+  | "education-school" // School + dates line
+  | "skills"          // Entire skills display (legacy)
+  | "skill-row"       // A row/chunk of skills for finer pagination
   | "sidebar";        // Full sidebar content (sidebar templates only, page 1)
 
 export interface Block {
@@ -52,7 +55,26 @@ export interface EducationItemBlockData {
   edu: ResumeData["education"][0];
 }
 
+// Fine-grained education blocks
+export interface EducationDegreeBlockData {
+  degree: string;
+  field: string;
+}
+
+export interface EducationSchoolBlockData {
+  school: string;
+  location: string;
+  startDate: string;
+  endDate: string;
+  current: boolean;
+}
+
 export interface SkillsBlockData {
+  skills: string[];
+}
+
+// Fine-grained skills block
+export interface SkillRowBlockData {
   skills: string[];
 }
 

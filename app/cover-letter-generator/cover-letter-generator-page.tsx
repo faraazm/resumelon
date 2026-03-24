@@ -15,7 +15,6 @@ import {
   ChatBubbleBottomCenterTextIcon,
   KeyIcon,
 } from "@heroicons/react/24/outline";
-import { CheckIcon } from "@heroicons/react/24/solid";
 import { Navbar } from "@/components/marketing/navbar";
 import { Footer } from "@/components/marketing/footer";
 import { SectionWrapper } from "@/components/marketing/section-wrapper";
@@ -125,7 +124,8 @@ const showcaseFeatures = [
       "Adapts tone for different industries and seniority levels",
       "Avoids generic phrases like 'team player' and 'hard worker'",
     ],
-    imagePlaceholder: "AI personalization engine",
+    image: "/images/feature-images/cover-letter-customization.png",
+    imageAlt: "AI-powered cover letter customization panel",
   },
   {
     title: "Seamless Resume Integration",
@@ -137,7 +137,8 @@ const showcaseFeatures = [
       "Adds narrative context to key achievements",
       "Keeps formatting consistent across both documents",
     ],
-    imagePlaceholder: "Resume-to-cover-letter sync",
+    image: "/images/feature-images/cover-letter-editor.png",
+    imageAlt: "Cover letter editor with resume integration",
   },
   {
     title: "One-Click Generation, Unlimited Revisions",
@@ -149,7 +150,8 @@ const showcaseFeatures = [
       "Shift emphasis between skills, experience, and motivation",
       "Version history so you can compare drafts side by side",
     ],
-    imagePlaceholder: "One-click generation interface",
+    image: "/images/feature-images/dashboard-cover-letters.png",
+    imageAlt: "Cover letter dashboard showing document management",
   },
 ];
 

@@ -14,8 +14,13 @@ import { JobDescriptionStep } from "@/components/app/optimize/job-description-st
 import { AnalysisView } from "@/components/app/optimize/analysis-view";
 import { UpgradeDialog } from "@/components/app/upgrade-dialog";
 import { Id } from "@/convex/_generated/dataModel";
+import type { ResumeData } from "@/lib/templates/types";
 
 type Step = "job-description" | "analysis" | "loading";
+
+// Type aliases for cleaner code
+type ExperienceEntry = ResumeData["experience"][number];
+type EducationEntry = ResumeData["education"][number];
 
 interface AnalysisData {
   jobTitle: string;
@@ -171,11 +176,11 @@ function OptimizePageContent() {
           personalDetails: result.personalDetails,
           contact: result.contact,
           summary: result.summary,
-          experience: result.experience.map((exp: any) => ({
+          experience: result.experience.map((exp: ExperienceEntry) => ({
             ...exp,
             id: exp.id || `exp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
           })),
-          education: result.education.map((edu: any) => ({
+          education: result.education.map((edu: EducationEntry) => ({
             ...edu,
             id: edu.id || `edu-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
           })),

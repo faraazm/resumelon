@@ -80,6 +80,69 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { sanitizeText, sanitizeEmail, sanitizePhone, sanitizeUrl, sanitizeHtml } from "@/lib/sanitize";
+import { ResumeData } from "@/lib/templates/types";
+
+// Type for icon components
+type IconComponent = React.ComponentType<{ className?: string }>;
+
+// Section configuration type
+interface SectionConfig {
+  defaultLabel: string;
+  icon: IconComponent;
+  description: string;
+  isDefault: boolean;
+}
+
+// Section item type for sections array
+interface SectionItem {
+  id: string;
+  label: string;
+  icon: IconComponent;
+}
+
+// Extract entry types from ResumeData for forms
+type ExperienceEntry = ResumeData["experience"][number];
+type EducationEntry = ResumeData["education"][number];
+
+// Generic entry type for internships, courses, references, languages, links
+interface InternshipEntry {
+  id: string;
+  title: string;
+  company: string;
+  location: string;
+  startDate: string;
+  endDate: string;
+  current?: boolean;
+  bullets: string[];
+}
+
+interface CourseEntry {
+  id: string;
+  name: string;
+  institution: string;
+  date: string;
+}
+
+interface ReferenceEntry {
+  id: string;
+  name: string;
+  title: string;
+  company: string;
+  email: string;
+  phone: string;
+}
+
+interface LanguageEntry {
+  id: string;
+  language: string;
+  proficiency: string;
+}
+
+interface LinkEntry {
+  id: string;
+  label: string;
+  url: string;
+}
 
 // Animation variants for content transitions
 const contentVariants = {
@@ -137,20 +200,47 @@ function SectionHeader({
   );
 }
 
+interface EditorResumeData extends ResumeData {
+  jobDescription?: string;
+  title?: string;
+  template?: string;
+  style?: {
+    font?: string;
+    headingFont?: string;
+    bodyFont?: string;
+    spacing?: "compact" | "normal" | "spacious";
+    accentColor?: string;
+    backgroundColor?: string;
+    showPhoto?: boolean;
+    showDividers?: boolean;
+  };
+  // Additional optional sections
+  internships?: InternshipEntry[];
+  courses?: CourseEntry[];
+  references?: ReferenceEntry[];
+  languages?: LanguageEntry[];
+  links?: LinkEntry[];
+  hobbies?: string;
+  custom?: {
+    title: string;
+    content: string;
+  };
+}
+
 interface WriteTabProps {
   resumeId: Id<"resumes">;
-  resumeData: any;
+  resumeData: EditorResumeData;
   resumeSource?: string;
-  onUpdate: (section: string, data: any) => void;
+  onUpdate: (section: string, data: unknown) => void;
   onSectionOrderChange?: (sectionOrder: string[]) => void;
   // For mobile menu integration
-  onSectionsChange?: (sections: Array<{ id: string; label: string; icon: any }>) => void;
+  onSectionsChange?: (sections: SectionItem[]) => void;
   onActiveSectionChange?: (sectionId: string) => void;
   externalActiveSection?: string;
 }
 
 // All available sections with their default labels and descriptions
-const allSectionsConfig: Record<string, { defaultLabel: string; icon: any; description: string; isDefault: boolean }> = {
+const allSectionsConfig: Record<string, SectionConfig> = {
   personalDetails: { defaultLabel: "Personal Details", icon: UserIcon, description: "Basic information that appears at the top", isDefault: true },
   contact: { defaultLabel: "Contact Information", icon: PhoneIcon, description: "How employers can reach you", isDefault: true },
   summary: { defaultLabel: "Professional Summary", icon: DocumentTextIcon, description: "A brief overview of your experience", isDefault: true },
@@ -167,7 +257,7 @@ const allSectionsConfig: Record<string, { defaultLabel: string; icon: any; descr
 };
 
 // Initial sections when editing a resume
-export const initialSections = [
+export const initialSections: SectionItem[] = [
   { id: "personalDetails", label: "Personal Details", icon: UserIcon },
   { id: "contact", label: "Contact Information", icon: PhoneIcon },
   { id: "summary", label: "Professional Summary", icon: DocumentTextIcon },
@@ -326,11 +416,11 @@ export function WriteTab({
     }
   };
 
-  const handleDragStart = (index: number) => {
+  const _handleDragStart = (index: number) => {
     setDraggedIndex(index);
   };
 
-  const handleDragOver = (e: React.DragEvent, index: number) => {
+  const _handleDragOver = (e: React.DragEvent, index: number) => {
     e.preventDefault();
     if (draggedIndex === null || draggedIndex === index) return;
 
@@ -341,7 +431,7 @@ export function WriteTab({
     setDraggedIndex(index);
   };
 
-  const handleDragEnd = () => {
+  const _handleDragEnd = () => {
     setDraggedIndex(null);
   };
 
@@ -785,7 +875,7 @@ export function WriteTab({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Section</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete the "{currentSectionInfo?.label}" section?
+              Are you sure you want to delete the &quot;{currentSectionInfo?.label}&quot; section?
               This will remove all data in this section. You can add it back later from the Add Section menu.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -924,8 +1014,8 @@ function PersonalDetailsForm({
   onEdit,
   onDelete,
 }: {
-  data: any;
-  onUpdate: (data: any) => void;
+  data: ResumeData["personalDetails"];
+  onUpdate: (data: ResumeData["personalDetails"]) => void;
   sectionLabel: string;
   onEdit: () => void;
   onDelete: () => void;
@@ -1021,9 +1111,9 @@ function PersonalDetailsForm({
     const isEnabled = enabledOptionalFields.has(fieldId);
     if (isEnabled) {
       // Remove the field
-      const newData = { ...data };
+      const newData = { ...data } as Record<string, unknown>;
       delete newData[fieldId];
-      onUpdate(newData);
+      onUpdate(newData as typeof data);
       setEnabledOptionalFields((prev) => {
         const next = new Set(prev);
         next.delete(fieldId);
@@ -1076,7 +1166,7 @@ function PersonalDetailsForm({
           onChange={(e) => handleChange("jobTitle", sanitizeText(e.target.value, 100))}
         />
         <p className="text-xs text-muted-foreground">
-          The role you're applying for
+          The role you&apos;re applying for
         </p>
       </div>
 
@@ -1240,8 +1330,8 @@ function ContactForm({
   onEdit,
   onDelete,
 }: {
-  data: any;
-  onUpdate: (data: any) => void;
+  data: ResumeData["contact"];
+  onUpdate: (data: ResumeData["contact"]) => void;
   sectionLabel: string;
   onEdit: () => void;
   onDelete: () => void;
@@ -1805,11 +1895,11 @@ function SortableExperienceCard({
   onOptimizeLimitReached,
   onOptimizationUsed,
 }: {
-  exp: any;
+  exp: ExperienceEntry;
   index: number;
   expandedId: string | null;
   setExpandedId: (id: string | null) => void;
-  updateExperience: (index: number, field: string, value: any) => void;
+  updateExperience: (index: number, field: string, value: string | boolean | string[]) => void;
   removeExperience: (index: number) => void;
   resumeId: Id<"resumes">;
   clerkId?: string;
@@ -1987,8 +2077,8 @@ function ExperienceForm({
 }: {
   resumeId: Id<"resumes">;
   clerkId?: string;
-  data: any[];
-  onUpdate: (data: any[]) => void;
+  data: ExperienceEntry[];
+  onUpdate: (data: ExperienceEntry[]) => void;
   sectionLabel: string;
   onEdit: () => void;
   onDelete: () => void;
@@ -2013,7 +2103,7 @@ function ExperienceForm({
 
   const addExperience = () => {
     const newId = Date.now().toString();
-    const newExp = {
+    const newExp: ExperienceEntry = {
       id: newId,
       title: "",
       company: "",
@@ -2027,7 +2117,7 @@ function ExperienceForm({
     setExpandedId(newId);
   };
 
-  const updateExperience = (index: number, field: string, value: any) => {
+  const updateExperience = (index: number, field: string, value: string | boolean | string[]) => {
     const updated = [...data];
     updated[index] = { ...updated[index], [field]: value };
     onUpdate(updated);
@@ -2047,15 +2137,15 @@ function ExperienceForm({
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (over && active.id !== over.id) {
-      const oldIndex = data.findIndex((item: any) => item.id === active.id);
-      const newIndex = data.findIndex((item: any) => item.id === over.id);
+      const oldIndex = data.findIndex((item) => item.id === active.id);
+      const newIndex = data.findIndex((item) => item.id === over.id);
       if (oldIndex !== -1 && newIndex !== -1) {
         onUpdate(arrayMove(data, oldIndex, newIndex));
       }
     }
   };
 
-  const itemIds = data?.map((exp: any) => exp.id) || [];
+  const itemIds = data?.map((exp) => exp.id) || [];
 
   return (
     <div className="space-y-6">
@@ -2115,11 +2205,11 @@ function SortableEducationCard({
   updateEducation,
   removeEducation,
 }: {
-  edu: any;
+  edu: EducationEntry;
   index: number;
   expandedId: string | null;
   setExpandedId: (id: string | null) => void;
-  updateEducation: (index: number, field: string, value: any) => void;
+  updateEducation: (index: number, field: string, value: string) => void;
   removeEducation: (index: number) => void;
 }) {
   const {
@@ -2265,8 +2355,8 @@ function EducationForm({
   onDelete,
   onConfirmRemove,
 }: {
-  data: any[];
-  onUpdate: (data: any[]) => void;
+  data: EducationEntry[];
+  onUpdate: (data: EducationEntry[]) => void;
   sectionLabel: string;
   onEdit: () => void;
   onDelete: () => void;
@@ -2285,11 +2375,10 @@ function EducationForm({
 
   const addEducation = () => {
     const newId = Date.now().toString();
-    const newEdu = {
+    const newEdu: EducationEntry = {
       id: newId,
       degree: "",
       school: "",
-      location: "",
       startDate: "",
       endDate: "",
     };
@@ -2297,7 +2386,7 @@ function EducationForm({
     setExpandedId(newId);
   };
 
-  const updateEducation = (index: number, field: string, value: any) => {
+  const updateEducation = (index: number, field: string, value: string) => {
     const updated = [...data];
     updated[index] = { ...updated[index], [field]: value };
     onUpdate(updated);
@@ -2317,15 +2406,15 @@ function EducationForm({
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (over && active.id !== over.id) {
-      const oldIndex = data.findIndex((item: any) => item.id === active.id);
-      const newIndex = data.findIndex((item: any) => item.id === over.id);
+      const oldIndex = data.findIndex((item) => item.id === active.id);
+      const newIndex = data.findIndex((item) => item.id === over.id);
       if (oldIndex !== -1 && newIndex !== -1) {
         onUpdate(arrayMove(data, oldIndex, newIndex));
       }
     }
   };
 
-  const itemIds = data?.map((edu: any) => edu.id) || [];
+  const itemIds = data?.map((edu) => edu.id) || [];
 
   return (
     <div className="space-y-6">
@@ -2816,8 +2905,8 @@ function InternshipsForm({
 }: {
   resumeId: Id<"resumes">;
   clerkId?: string;
-  data: any[];
-  onUpdate: (data: any[]) => void;
+  data: InternshipEntry[];
+  onUpdate: (data: InternshipEntry[]) => void;
   sectionLabel: string;
   onEdit: () => void;
   onDelete: () => void;
@@ -2846,7 +2935,7 @@ function InternshipsForm({
     setExpandedId(newId);
   };
 
-  const updateInternship = (index: number, field: string, value: any) => {
+  const updateInternship = (index: number, field: string, value: string | boolean | string[]) => {
     const updated = [...data];
     updated[index] = { ...updated[index], [field]: value };
     onUpdate(updated);
@@ -3008,8 +3097,8 @@ function CoursesForm({
   onDelete,
   onConfirmRemove,
 }: {
-  data: any[];
-  onUpdate: (data: any[]) => void;
+  data: CourseEntry[];
+  onUpdate: (data: CourseEntry[]) => void;
   sectionLabel: string;
   onEdit: () => void;
   onDelete: () => void;
@@ -3029,7 +3118,7 @@ function CoursesForm({
     setExpandedId(newId);
   };
 
-  const updateCourse = (index: number, field: string, value: any) => {
+  const updateCourse = (index: number, field: string, value: string) => {
     const updated = [...data];
     updated[index] = { ...updated[index], [field]: value };
     onUpdate(updated);
@@ -3152,8 +3241,8 @@ function ReferencesForm({
   onDelete,
   onConfirmRemove,
 }: {
-  data: any[];
-  onUpdate: (data: any[]) => void;
+  data: ReferenceEntry[];
+  onUpdate: (data: ReferenceEntry[]) => void;
   sectionLabel: string;
   onEdit: () => void;
   onDelete: () => void;
@@ -3175,7 +3264,7 @@ function ReferencesForm({
     setExpandedId(newId);
   };
 
-  const updateReference = (index: number, field: string, value: any) => {
+  const updateReference = (index: number, field: string, value: string) => {
     const updated = [...data];
     updated[index] = { ...updated[index], [field]: value };
     onUpdate(updated);
@@ -3324,8 +3413,8 @@ function LanguagesForm({
   onDelete,
   onConfirmRemove,
 }: {
-  data: any[];
-  onUpdate: (data: any[]) => void;
+  data: LanguageEntry[];
+  onUpdate: (data: LanguageEntry[]) => void;
   sectionLabel: string;
   onEdit: () => void;
   onDelete: () => void;
@@ -3340,7 +3429,7 @@ function LanguagesForm({
     onUpdate([...data, newLanguage]);
   };
 
-  const updateLanguage = (index: number, field: string, value: any) => {
+  const updateLanguage = (index: number, field: string, value: string) => {
     const updated = [...data];
     updated[index] = { ...updated[index], [field]: value };
     onUpdate(updated);
@@ -3425,8 +3514,8 @@ function LinksForm({
   onDelete,
   onConfirmRemove,
 }: {
-  data: any[];
-  onUpdate: (data: any[]) => void;
+  data: LinkEntry[];
+  onUpdate: (data: LinkEntry[]) => void;
   sectionLabel: string;
   onEdit: () => void;
   onDelete: () => void;
@@ -3441,7 +3530,7 @@ function LinksForm({
     onUpdate([...data, newLink]);
   };
 
-  const updateLink = (index: number, field: string, value: any) => {
+  const updateLink = (index: number, field: string, value: string) => {
     const updated = [...data];
     updated[index] = { ...updated[index], [field]: value };
     onUpdate(updated);

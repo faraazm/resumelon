@@ -84,7 +84,7 @@ export function ContactPage() {
               Contact Us
             </h1>
             <p className="mt-4 text-lg text-muted-foreground">
-              Have a question, suggestion, or need help? We'd love to hear from
+              Have a question, suggestion, or need help? We&apos;d love to hear from
               you.
             </p>
           </motion.div>

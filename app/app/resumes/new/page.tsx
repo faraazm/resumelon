@@ -35,7 +35,6 @@ export default function NewResumePage() {
   const createResume = useMutation(api.resumes.createResume);
   const generateUploadUrl = useMutation(api.storage.generateUploadUrl);
   const parseDocument = useAction(api.files.parseDocument);
-  const incrementGeneration = useMutation(api.users.incrementGenerationCount);
 
   const currentMonth = new Date().toISOString().slice(0, 7);
   const generationLimit = useQuery(
@@ -47,10 +46,6 @@ export default function NewResumePage() {
 
   const handleStartFromScratch = async () => {
     if (!user?.id || isCreating) return;
-    if (!canGenerate) {
-      setShowUpgrade(true);
-      return;
-    }
 
     setIsCreating(true);
     try {
@@ -59,7 +54,6 @@ export default function NewResumePage() {
         title: "Untitled Resume",
         source: "scratch",
       });
-      await incrementGeneration({ clerkId: user.id });
       router.push(`/app/resumes/${resumeId}/edit`);
     } catch (err) {
       console.error("Error creating resume:", err);

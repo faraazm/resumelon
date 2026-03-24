@@ -31,8 +31,60 @@ import { ImproveTab } from "@/components/app/editor/improve-tab";
 import { ResumePreview } from "@/components/app/editor/resume-preview";
 import { generateResumePDF } from "@/lib/pdf-generator";
 
+interface ResumeStyleOverrides {
+  font?: string;
+  headingFont?: string;
+  bodyFont?: string;
+  spacing?: "compact" | "normal" | "spacious";
+  accentColor?: string;
+  backgroundColor?: string;
+  showPhoto?: boolean;
+  showDividers?: boolean;
+}
+
+interface ResumeLocalData {
+  title: string;
+  jobDescription: string;
+  personalDetails: {
+    firstName: string;
+    lastName: string;
+    jobTitle: string;
+    photo: string | null;
+    nationality?: string;
+    driverLicense?: string;
+    birthDate?: string;
+  };
+  contact: {
+    email: string;
+    phone: string;
+    linkedin: string;
+    location: string;
+  };
+  summary: string;
+  experience: Array<{
+    id: string;
+    title: string;
+    company: string;
+    location: string;
+    startDate: string;
+    endDate: string;
+    current: boolean;
+    bullets: string[];
+  }>;
+  education: Array<{
+    id: string;
+    degree: string;
+    school: string;
+    startDate: string;
+    endDate: string;
+  }>;
+  skills: string[];
+  template: string;
+  style: ResumeStyleOverrides;
+}
+
 // Default empty resume data for initial state
-const defaultResumeData = {
+const defaultResumeData: ResumeLocalData = {
   title: "Untitled Resume",
   jobDescription: "",
   personalDetails: {
@@ -110,11 +162,11 @@ function ResumeEditorContent() {
   const initialSection = searchParams.get("section") || "personalDetails";
 
   const [activeTab, setActiveTab] = useState<"write" | "design" | "improve">("write");
-  const [isSaving, setIsSaving] = useState(false);
+  const [_isSaving, setIsSaving] = useState(false);
   const [showSaving, setShowSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const savingMinTimeRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [localData, setLocalData] = useState(defaultResumeData);
+  const [localData, setLocalData] = useState<ResumeLocalData>(defaultResumeData);
   const [sectionOrder, setSectionOrder] = useState<string[]>([
     "personalDetails",
     "contact",
@@ -163,7 +215,7 @@ function ResumeEditorContent() {
         education: resume.education,
         skills: resume.skills,
         template: resume.template,
-        style: resume.style,
+        style: (resume.style as ResumeLocalData["style"]) || defaultResumeData.style,
       });
       setLastSaved(new Date(resume.updatedAt));
     }
@@ -246,7 +298,7 @@ function ResumeEditorContent() {
 
 
 
-  const updateResumeData = useCallback((section: string, data: any) => {
+  const updateResumeData = useCallback((section: string, data: unknown) => {
     setLocalData((prev) => ({
       ...prev,
       [section]: data,
@@ -304,7 +356,7 @@ function ResumeEditorContent() {
         <div className="flex flex-col items-center gap-4 text-center">
           <h1 className="text-xl font-semibold">Resume not found</h1>
           <p className="text-sm text-muted-foreground">
-            This resume may have been deleted or you don't have access to it.
+            This resume may have been deleted or you don&apos;t have access to it.
           </p>
           <Button asChild>
             <Link href="/app/resumes">Back to resumes</Link>
@@ -315,19 +367,9 @@ function ResumeEditorContent() {
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.25 }}
-      className="flex h-screen flex-col bg-background"
-    >
+    <div className="flex h-screen flex-col bg-background">
       {/* Top Bar */}
-      <motion.header
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.25, delay: 0.05 }}
-        className="relative flex h-14 shrink-0 items-center justify-between border-b border-border px-3 md:px-4"
-      >
+      <header className="relative flex h-14 shrink-0 items-center justify-between border-b border-border px-3 md:px-4">
         {/* Left Section */}
         <div className="flex items-center gap-2 lg:gap-4">
           {/* Mobile/Tablet Menu Toggle */}
@@ -412,7 +454,7 @@ function ResumeEditorContent() {
             <span className="hidden lg:inline">{isDownloading ? "Generating..." : "Download"}</span>
           </Button>
         </div>
-      </motion.header>
+      </header>
 
       {/* Mobile Menu Overlay */}
       <AnimatePresence>
@@ -581,22 +623,17 @@ function ResumeEditorContent() {
       </AnimatePresence>
 
       {/* Main Editor Area */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.3, delay: 0.1 }}
-        className="flex flex-1 overflow-hidden relative"
-      >
+      <div className="flex flex-1 overflow-hidden relative">
         {/* Left Panel + Center Panel */}
         <div className={`flex flex-1 min-w-0 overflow-hidden ${showMobilePreview ? 'hidden lg:flex' : ''}`}>
           <AnimatePresence mode="wait" initial={false}>
             {activeTab === "write" && (
               <motion.div
                 key="write"
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.2, ease: "easeInOut" }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
                 className="flex flex-1 min-w-0 overflow-hidden"
               >
                 <WriteTab
@@ -614,10 +651,10 @@ function ResumeEditorContent() {
             {activeTab === "design" && (
               <motion.div
                 key="design"
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.2, ease: "easeInOut" }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
                 className="flex flex-1 min-w-0 overflow-hidden"
               >
                 <DesignTab
@@ -629,10 +666,10 @@ function ResumeEditorContent() {
             {activeTab === "improve" && (
               <motion.div
                 key="improve"
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.2, ease: "easeInOut" }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
                 className="flex flex-1 min-w-0 overflow-hidden"
               >
                 <ImproveTab
@@ -677,7 +714,7 @@ function ResumeEditorContent() {
             <ResumePreview data={localData} sectionOrder={sectionOrder} />
           </div>
         </div>
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 }

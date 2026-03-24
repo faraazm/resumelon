@@ -7,7 +7,6 @@ import { Id } from "@/convex/_generated/dataModel";
 import {
   LETTER_WIDTH_PX,
   LETTER_HEIGHT_PX,
-  PDF_FORMAT,
 } from "@/lib/pdf-constants";
 
 /**

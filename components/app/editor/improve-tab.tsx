@@ -5,12 +5,13 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { scoreResume } from "@/lib/resume-scoring";
 import { ScoreOverview } from "@/components/app/review/score-overview";
 import { SectionCard } from "@/components/app/review/section-card";
+import { ResumeData } from "@/lib/templates/types";
 
 interface ImproveTabProps {
-  resumeData: any;
+  resumeData: ResumeData;
   resumeId: string;
   onNavigate: (section: string) => void;
-  onUpdate?: (section: string, data: any) => void;
+  onUpdate?: (section: string, data: unknown) => void;
 }
 
 export function ImproveTab({ resumeData, resumeId, onNavigate, onUpdate }: ImproveTabProps) {

@@ -18,6 +18,13 @@ import {
 } from "@heroicons/react/24/solid";
 import { PencilSquareIcon, SparklesIcon } from "@heroicons/react/24/outline";
 import type { SectionScore } from "@/lib/resume-scoring";
+import type { ResumeData } from "@/lib/templates/types";
+
+// Type alias for experience entry
+type ExperienceEntry = ResumeData["experience"][number];
+
+// Union type for section data updates
+type SectionUpdateData = string | string[] | ExperienceEntry[];
 
 const statusConfig = {
   complete: {
@@ -61,9 +68,9 @@ export function SectionCard({
 }: {
   section: SectionScore;
   resumeId: string;
-  resumeData?: any;
+  resumeData?: ResumeData;
   onNavigate?: (section: string) => void;
-  onUpdateResume?: (section: string, data: any) => void;
+  onUpdateResume?: (section: string, data: SectionUpdateData) => void;
 }) {
   const { user } = useUser();
   const generateImprovedContent = useAction(api.ai.generateImprovedContent);
@@ -94,7 +101,7 @@ export function SectionCard({
       if (section.key === "summary") {
         const currentSummary = resumeData.summary || "";
         const prompt = !currentSummary.trim()
-          ? `Generate a professional resume summary for a ${resumeData.personalDetails?.jobTitle || "professional"} with this background:\n${(resumeData.experience || []).map((e: any) => `${e.title} at ${e.company}: ${e.bullets?.join("; ") || ""}`).join("\n")}`
+          ? `Generate a professional resume summary for a ${resumeData.personalDetails?.jobTitle || "professional"} with this background:\n${(resumeData.experience || []).map((e: ExperienceEntry) => `${e.title} at ${e.company}: ${e.bullets?.join("; ") || ""}`).join("\n")}`
           : currentSummary;
 
         const result = await generateImprovedContent({
@@ -160,7 +167,7 @@ export function SectionCard({
         const currentSkills = resumeData.skills || [];
         const jobTitle = resumeData.personalDetails?.jobTitle || "";
         const experienceContext = (resumeData.experience || [])
-          .map((e: any) => `${e.title} at ${e.company}`)
+          .map((e: ExperienceEntry) => `${e.title} at ${e.company}`)
           .join(", ");
 
         if (currentSkills.length < 5) {

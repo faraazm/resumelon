@@ -10,8 +10,8 @@ export default function NotFound() {
           Page not found
         </h2>
         <p className="mt-2 text-muted-foreground max-w-md">
-          Sorry, we couldn't find the page you're looking for. It might have
-          been moved or doesn't exist.
+          Sorry, we couldn&apos;t find the page you&apos;re looking for. It might have
+          been moved or doesn&apos;t exist.
         </p>
         <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
           <Button asChild>

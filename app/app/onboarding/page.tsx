@@ -319,7 +319,7 @@ export default function OnboardingPage() {
                 transition={{ duration: 0.4, delay: 0.15 }}
               >
                 <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-                  Let's create your first resume
+                  Let&apos;s create your first resume
                 </h1>
                 <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground sm:text-base">
                   Start with a base resume, then tailor it for specific jobs

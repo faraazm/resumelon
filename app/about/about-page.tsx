@@ -69,10 +69,10 @@ export function AboutPage() {
               About resumeclone
             </h1>
             <p className="mt-6 text-lg text-muted-foreground leading-relaxed">
-              We started resumeclone because applying to jobs shouldn't be
+              We started resumeclone because applying to jobs shouldn&apos;t be
               harder than the job itself. The traditional process — rewriting
               resumes for every listing, guessing at ATS keywords, crafting
-              cover letters from scratch — is broken. We're here to fix it.
+              cover letters from scratch — is broken. We&apos;re here to fix it.
             </p>
           </motion.div>
         </SectionWrapper>
@@ -107,7 +107,7 @@ export function AboutPage() {
                   in seconds.
                 </p>
                 <p>
-                  We believe the playing field should be level. Whether you're a
+                  We believe the playing field should be level. Whether you&apos;re a
                   first-generation college student or a senior executive,
                   everyone deserves tools that make their application as strong
                   as possible.

@@ -1,12 +1,12 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Image from "next/image";
 import {
   Navbar,
   Footer,
   SectionWrapper,
   SectionHeader,
-  ImagePlaceholder,
   InlineCTA,
   BrandName,
   PageHero,
@@ -163,7 +163,8 @@ const showcaseFeatures = [
       "Single and multi-column ATS-safe layouts",
       "Real-time preview of every change",
     ],
-    imagePlaceholder: "Design customization panel",
+    image: "/images/feature-images/design-tab-customization.png",
+    imageAlt: "Design customization panel with color and font options",
   },
   {
     title: "ATS Compatibility You Can Trust",
@@ -175,7 +176,8 @@ const showcaseFeatures = [
       "No hidden text boxes, tables, or graphics that break parsing",
       "Built-in resume scoring to catch issues before you apply",
     ],
-    imagePlaceholder: "ATS compatibility score view",
+    image: "/images/feature-images/resume-scoring.png",
+    imageAlt: "ATS compatibility score and resume analysis view",
   },
   {
     title: "One-Click Export in Multiple Formats",
@@ -187,7 +189,8 @@ const showcaseFeatures = [
       "Optimized file sizes for email and upload portals",
       "US Letter and A4 paper size support",
     ],
-    imagePlaceholder: "Export options dialog",
+    image: "/images/feature-images/full-resume-editor.png",
+    imageAlt: "Full resume editor showing export options",
   },
 ];
 
@@ -321,12 +324,15 @@ export function ResumeTemplatesPage() {
                 variants={sectionVariants}
                 transition={{ duration: 0.4 }}
               >
-                <ImagePlaceholder
-                  label={`${template.name} template preview`}
-                  aspectRatio="video"
-                  rounded="lg"
-                  className="m-3 mb-0"
-                />
+                <div className="relative m-3 mb-0 aspect-video overflow-hidden rounded-lg bg-muted">
+                  <Image
+                    src="/images/feature-images/design-tab-templates.png"
+                    alt={`${template.name} template preview`}
+                    fill
+                    className="object-cover object-top"
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  />
+                </div>
                 <div className="flex flex-1 flex-col gap-2 p-5">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-semibold text-foreground">

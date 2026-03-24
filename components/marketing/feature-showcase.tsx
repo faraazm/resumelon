@@ -1,14 +1,15 @@
 "use client";
 
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { CheckIcon } from "@heroicons/react/24/outline";
-import { ImagePlaceholder } from "./image-placeholder";
 
 interface FeatureShowcaseItem {
   title: string;
   description: string;
   bullets: string[];
-  imagePlaceholder: string;
+  image: string;
+  imageAlt?: string;
 }
 
 interface FeatureShowcaseProps {
@@ -76,12 +77,16 @@ export function FeatureShowcase({ features }: FeatureShowcaseProps) {
                 ))}
               </motion.ul>
             </motion.div>
-            <div className="relative flex flex-col justify-center bg-muted/20 p-8 md:w-1/2 md:p-12 min-h-[300px]">
-              <ImagePlaceholder
-                label={feature.imagePlaceholder}
-                aspectRatio="auto"
-                className="h-full min-h-[250px]"
-              />
+            <div className="relative flex items-center justify-center bg-muted/20 p-6 md:w-1/2 md:p-8 min-h-[300px]">
+              <div className="relative w-full h-full min-h-[280px] rounded-xl overflow-hidden shadow-lg">
+                <Image
+                  src={feature.image}
+                  alt={feature.imageAlt || feature.title}
+                  fill
+                  className="object-cover object-top"
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                />
+              </div>
             </div>
           </motion.div>
         );

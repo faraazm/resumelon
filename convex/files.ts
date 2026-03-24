@@ -65,7 +65,7 @@ export const parseDocument = action({
 
     // Parse based on file type
     if (args.fileType === "application/pdf" || args.fileName.endsWith(".pdf")) {
-      const pdfParse = require("pdf-parse/lib/pdf-parse.js");
+      const pdfParse = (await import("pdf-parse/lib/pdf-parse.js")).default;
       try {
         const pdfData = await pdfParse(buffer);
         text = pdfData.text;
@@ -77,7 +77,7 @@ export const parseDocument = action({
       args.fileType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
       args.fileName.endsWith(".docx")
     ) {
-      const mammoth = require("mammoth");
+      const mammoth = await import("mammoth");
       try {
         const result = await mammoth.extractRawText({ buffer });
         text = result.value;
@@ -135,7 +135,7 @@ export const extractTextFromFile = action({
     let text = "";
 
     if (args.fileType === "application/pdf" || args.fileName.endsWith(".pdf")) {
-      const pdfParse = require("pdf-parse/lib/pdf-parse.js");
+      const pdfParse = (await import("pdf-parse/lib/pdf-parse.js")).default;
       try {
         const pdfData = await pdfParse(buffer);
         text = pdfData.text;
@@ -147,7 +147,7 @@ export const extractTextFromFile = action({
       args.fileType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
       args.fileName.endsWith(".docx")
     ) {
-      const mammoth = require("mammoth");
+      const mammoth = await import("mammoth");
       try {
         const result = await mammoth.extractRawText({ buffer });
         text = result.value;
@@ -200,14 +200,14 @@ export const extractText = action({
     let text = "";
 
     if (args.fileType === "application/pdf" || args.fileName.endsWith(".pdf")) {
-      const pdfParse = require("pdf-parse/lib/pdf-parse.js");
+      const pdfParse = (await import("pdf-parse/lib/pdf-parse.js")).default;
       const pdfData = await pdfParse(buffer);
       text = pdfData.text;
     } else if (
       args.fileType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
       args.fileName.endsWith(".docx")
     ) {
-      const mammoth = require("mammoth");
+      const mammoth = await import("mammoth");
       const result = await mammoth.extractRawText({ buffer });
       text = result.value;
     }

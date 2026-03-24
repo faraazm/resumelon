@@ -130,7 +130,8 @@ const showcaseFeatures = [
       "Professional typography that renders consistently across systems",
       "Customizable colors and spacing without breaking ATS compatibility",
     ],
-    imagePlaceholder: "ATS-safe template gallery preview",
+    image: "/images/feature-images/design-tab-templates.png",
+    imageAlt: "ATS-safe template gallery with multiple resume designs",
   },
   {
     title: "Intelligent Keyword Matching",
@@ -142,7 +143,8 @@ const showcaseFeatures = [
       "Context-aware keyword suggestions that read naturally",
       "Industry-specific terminology matching for specialized roles",
     ],
-    imagePlaceholder: "Keyword matching analysis dashboard",
+    image: "/images/feature-images/resume-scoring.png",
+    imageAlt: "Keyword matching and resume analysis dashboard",
   },
   {
     title: "Resume Scoring & Feedback",
@@ -154,7 +156,8 @@ const showcaseFeatures = [
       "Keyword density and placement evaluation",
       "Actionable improvement suggestions with one-click fixes",
     ],
-    imagePlaceholder: "Resume scoring dashboard with detailed feedback",
+    image: "/images/feature-images/resume-scoring.png",
+    imageAlt: "Resume scoring dashboard with detailed feedback",
   },
 ];
 

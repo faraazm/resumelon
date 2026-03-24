@@ -175,10 +175,13 @@ export function RichTextEditor({
   useEffect(() => {
     if (aiGenerations.length > 0) {
       const latestIndex = aiGenerations.length - 1;
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional sync when generations change
       setCurrentGenerationIndex(latestIndex);
       const latestGen = aiGenerations[latestIndex];
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional sync when generations change
       setSelectedTone(latestGen.tone);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Only react to length changes
   }, [aiGenerations.length]);
 
   const editor = useEditor({

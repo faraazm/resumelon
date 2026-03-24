@@ -1,13 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
 import { useUser } from "@clerk/nextjs";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
-import { PlusIcon, EnvelopeIcon } from "@heroicons/react/24/outline";
+import { SparklesIcon, EnvelopeIcon } from "@heroicons/react/24/outline";
 import { Id } from "@/convex/_generated/dataModel";
 import { UpgradeDialog } from "@/components/app/upgrade-dialog";
 import { CoverLetterCard } from "@/components/app/dashboard/cover-letter-card";
@@ -18,15 +17,19 @@ import { BulkActionBar } from "@/components/app/dashboard/bulk-action-bar";
 import { DeleteConfirmDialog } from "@/components/app/dashboard/delete-confirm-dialog";
 import { useSelection } from "@/hooks/use-selection";
 import { useViewPreference } from "@/hooks/use-view-preference";
+import { useCachedCoverLetters } from "@/hooks/use-document-cache";
 
 export default function CoverLettersPage() {
   const router = useRouter();
   const { user, isLoaded: isUserLoaded } = useUser();
 
-  const coverLetters = useQuery(
+  const freshCoverLetters = useQuery(
     api.coverLetters.getCoverLettersByUser,
     user?.id ? { clerkId: user.id } : "skip"
   );
+
+  // Use cached data while fresh data loads
+  const coverLetters = useCachedCoverLetters(freshCoverLetters);
 
   const currentMonth = new Date().toISOString().slice(0, 7);
   const generationLimit = useQuery(
@@ -88,23 +91,18 @@ export default function CoverLettersPage() {
     setBulkDeleteOpen(false);
   };
 
-  const isLoading = !isUserLoaded || coverLetters === undefined;
-
-  const sorted = coverLetters
-    ? [...coverLetters].sort((a, b) => b.updatedAt - a.updatedAt)
-    : [];
+  const sorted = useMemo(
+    () => (coverLetters ? [...coverLetters].sort((a, b) => b.updatedAt - a.updatedAt) : []),
+    [coverLetters]
+  );
   const hasLetters = sorted.length > 0;
-  const allIds = sorted.map((l) => l._id);
+  const allIds = useMemo(() => sorted.map((l) => l._id), [sorted]);
+  const isContentReady = isUserLoaded && coverLetters !== undefined;
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
       {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.05 }}
-        className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-      >
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">
             Cover Letters
@@ -114,35 +112,30 @@ export default function CoverLettersPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          {hasLetters && <ViewToggle view={view} onViewChange={setView} />}
+          {isContentReady && hasLetters && <ViewToggle view={view} onViewChange={setView} />}
           <Button onClick={handleNewCoverLetter}>
-            <PlusIcon className="h-4 w-4" />
-            New Cover Letter
+            <SparklesIcon className="h-4 w-4" />
+            Create Cover Letter
           </Button>
         </div>
-      </motion.div>
+      </div>
 
       {/* Cover Letter List / Table */}
-      {isLoading ? null : hasLetters ? (
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.1 }}
-        >
-          {view === "list" ? (
-            <div className="space-y-6">
-              {sorted.map((letter) => (
-                <CoverLetterCard
-                  key={letter._id}
-                  coverLetter={letter}
-                  onDelete={handleDelete}
-                  selected={selection.isSelected(letter._id)}
-                  onSelect={() => selection.toggle(letter._id)}
-                />
-              ))}
-            </div>
-          ) : (
-            <DocumentTable
+      {!isContentReady ? null : hasLetters ? (
+        view === "list" ? (
+          <div className="space-y-6">
+            {sorted.map((letter) => (
+              <CoverLetterCard
+                key={letter._id}
+                coverLetter={letter}
+                onDelete={handleDelete}
+                selected={selection.isSelected(letter._id)}
+                onSelect={() => selection.toggle(letter._id)}
+              />
+            ))}
+          </div>
+        ) : (
+          <DocumentTable
               columns={["Title", "Company", "Updated"]}
               allSelected={selection.isAllSelected(allIds)}
               onSelectAll={() =>
@@ -161,15 +154,9 @@ export default function CoverLettersPage() {
                 />
               ))}
             </DocumentTable>
-          )}
-        </motion.div>
+        )
       ) : (
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.1 }}
-          className="flex flex-col items-center justify-center py-16 text-center"
-        >
+        <div className="flex flex-col items-center justify-center py-16 text-center">
           <div className="mb-4 rounded-full bg-muted p-4">
             <EnvelopeIcon className="h-8 w-8 text-muted-foreground" />
           </div>
@@ -178,10 +165,10 @@ export default function CoverLettersPage() {
             Create your first cover letter to get started
           </p>
           <Button className="mt-4" onClick={handleNewCoverLetter}>
-            <PlusIcon className="h-4 w-4" />
+            <SparklesIcon className="h-4 w-4" />
             Create Cover Letter
           </Button>
-        </motion.div>
+        </div>
       )}
 
       {/* Bulk Action Bar */}

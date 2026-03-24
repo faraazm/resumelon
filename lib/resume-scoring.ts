@@ -101,12 +101,12 @@ function scoreContact(contact: ResumeInput["contact"]): SectionScore {
   const suggestions: string[] = [];
   let score = 0;
 
-  // Email + phone are essential (70 points)
+  // Email + phone are essential (100 points total)
   const hasEmail = !!contact.email.trim();
   const hasPhone = !!contact.phone.trim();
 
   if (hasEmail) {
-    score += 35;
+    score += 50;
     feedback.push({ field: "Email", status: "complete", message: "Provided" });
   } else {
     feedback.push({ field: "Email", status: "missing", message: "Missing — employers need a way to reach you" });
@@ -114,31 +114,27 @@ function scoreContact(contact: ResumeInput["contact"]): SectionScore {
   }
 
   if (hasPhone) {
-    score += 35;
+    score += 50;
     feedback.push({ field: "Phone", status: "complete", message: "Provided" });
   } else {
     feedback.push({ field: "Phone", status: "missing", message: "Missing — add a phone number for callbacks" });
     suggestions.push("Add your phone number");
   }
 
-  // LinkedIn + location are bonus (30 points)
+  // LinkedIn + location are optional — they don't affect the score
   if (contact.linkedin.trim()) {
-    score += 15;
     feedback.push({ field: "LinkedIn", status: "complete", message: "Provided" });
   } else {
-    feedback.push({ field: "LinkedIn", status: "needs-work", message: "Optional — LinkedIn profiles strengthen your application" });
-    suggestions.push("Add your LinkedIn profile URL");
+    feedback.push({ field: "LinkedIn", status: "complete", message: "Optional — LinkedIn profiles strengthen your application" });
   }
 
   if (contact.location.trim()) {
-    score += 15;
     feedback.push({ field: "Location", status: "complete", message: "Provided" });
   } else {
-    feedback.push({ field: "Location", status: "needs-work", message: "Optional — helps with location-based roles" });
-    suggestions.push("Add your city or region");
+    feedback.push({ field: "Location", status: "complete", message: "Optional — helps with location-based roles" });
   }
 
-  const status = score >= 70 ? "complete" : score > 0 ? "needs-work" : "missing";
+  const status = score === 100 ? "complete" : score > 0 ? "needs-work" : "missing";
 
   return { name: "Contact Info", key: "contact", weight: 15, score, status, feedback, suggestions };
 }

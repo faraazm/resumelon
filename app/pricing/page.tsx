@@ -81,7 +81,7 @@ export default function PricingPage() {
                 Simple, transparent pricing
               </h1>
               <p className="mt-4 text-lg text-muted-foreground">
-                Choose the plan that's right for you. Start free and upgrade
+                Choose the plan that&apos;s right for you. Start free and upgrade
                 anytime.
               </p>
             </motion.div>
@@ -158,7 +158,7 @@ export default function PricingPage() {
                     Can I cancel anytime?
                   </dt>
                   <dd className="mt-2 text-muted-foreground">
-                    Yes, you can cancel your subscription at any time. You'll
+                    Yes, you can cancel your subscription at any time. You&apos;ll
                     continue to have access until the end of your billing
                     period.
                   </dd>
@@ -177,7 +177,7 @@ export default function PricingPage() {
                     Is there a refund policy?
                   </dt>
                   <dd className="mt-2 text-muted-foreground">
-                    We offer a 14-day money-back guarantee. If you're not
+                    We offer a 14-day money-back guarantee. If you&apos;re not
                     satisfied with Pro, contact us within 14 days for a full
                     refund.
                   </dd>

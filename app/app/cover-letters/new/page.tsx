@@ -16,11 +16,11 @@ import {
   PlusIcon,
   DocumentTextIcon,
   SparklesIcon,
-  CheckIcon,
   BriefcaseIcon,
 } from "@heroicons/react/24/outline";
 import { DocumentLoading } from "@/components/app/document-loading";
 import { UpgradeDialog } from "@/components/app/upgrade-dialog";
+import { ResumeSelectList } from "@/components/app/resume-select-list";
 import { Id } from "@/convex/_generated/dataModel";
 
 type Step = "choose-method" | "generate" | "loading";
@@ -51,7 +51,6 @@ export default function NewCoverLetterPage() {
   const canGenerate = !generationLimit || generationLimit.remaining > 0;
 
   const createCoverLetter = useMutation(api.coverLetters.createCoverLetter);
-  const incrementGeneration = useMutation(api.users.incrementGenerationCount);
   const generateCoverLetterAI = useAction(api.ai.generateCoverLetter);
 
   const handleStartFromScratch = async () => {
@@ -81,7 +80,7 @@ export default function NewCoverLetterPage() {
         },
       });
 
-      await incrementGeneration({ clerkId: user.id });
+      // No increment here - "start from scratch" doesn't use AI
       router.push(`/app/cover-letters/${id}/edit`);
     } catch (err) {
       console.error("Error:", err);
@@ -190,7 +189,7 @@ export default function NewCoverLetterPage() {
         jobDescription: jobDescription.trim() || undefined,
       });
 
-      await incrementGeneration({ clerkId: user.id });
+      // No increment here - generateCoverLetterAI already increments count server-side
       router.push(`/app/cover-letters/${id}/edit`);
     } catch (err) {
       console.error("Error creating cover letter:", err);
@@ -405,59 +404,11 @@ export default function NewCoverLetterPage() {
                     <span className="text-xs text-muted-foreground">(optional)</span>
                   </div>
 
-                  <div className="max-h-[200px] overflow-y-auto rounded-lg border border-border">
-                    {resumes === undefined ? (
-                      <div className="p-3 space-y-2">
-                        {[1, 2].map((i) => (
-                          <div key={i} className="h-12 animate-pulse rounded-md bg-muted" />
-                        ))}
-                      </div>
-                    ) : resumes.length === 0 ? (
-                      <div className="py-6 text-center">
-                        <p className="text-sm text-muted-foreground">
-                          No resumes yet.
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="p-1.5 space-y-0.5">
-                        {[...resumes]
-                          .sort((a, b) => b.updatedAt - a.updatedAt)
-                          .map((resume) => {
-                            const isSelected = selectedResumeId === resume._id;
-                            return (
-                              <button
-                                key={resume._id}
-                                onClick={() =>
-                                  setSelectedResumeId(isSelected ? null : resume._id)
-                                }
-                                className={`flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left transition-colors ${
-                                  isSelected
-                                    ? "bg-primary/5 ring-1 ring-primary"
-                                    : "hover:bg-muted/50"
-                                }`}
-                              >
-                                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted">
-                                  <DocumentTextIcon className="h-4 w-4 text-muted-foreground" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-medium text-foreground truncate">
-                                    {resume.title}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground truncate">
-                                    {resume.personalDetails.jobTitle || "No job title"}
-                                  </p>
-                                </div>
-                                {isSelected && (
-                                  <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary">
-                                    <CheckIcon className="h-3 w-3 text-white" />
-                                  </div>
-                                )}
-                              </button>
-                            );
-                          })}
-                      </div>
-                    )}
-                  </div>
+                  <ResumeSelectList
+                    resumes={resumes}
+                    selectedResumeId={selectedResumeId}
+                    onSelect={setSelectedResumeId}
+                  />
                 </motion.div>
 
                 {/* Job description */}

@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
@@ -44,25 +43,29 @@ function SectionHeader({
   );
 }
 
+interface CoverLetterPersonalDetails {
+  firstName: string;
+  lastName: string;
+  jobTitle: string;
+  email: string;
+  phone: string;
+  address: string;
+}
+
+interface CoverLetterContent {
+  companyName: string;
+  hiringManagerName: string;
+  content: string;
+}
+
 interface CoverLetterWriteTabProps {
   coverLetterId: Id<"coverLetters">;
   coverLetterData: {
     title: string;
-    personalDetails: {
-      firstName: string;
-      lastName: string;
-      jobTitle: string;
-      email: string;
-      phone: string;
-      address: string;
-    };
-    letterContent: {
-      companyName: string;
-      hiringManagerName: string;
-      content: string;
-    };
+    personalDetails: CoverLetterPersonalDetails;
+    letterContent: CoverLetterContent;
   };
-  onUpdate: (section: string, data: any) => void;
+  onUpdate: (section: string, data: CoverLetterPersonalDetails | CoverLetterContent) => void;
   activeSection: string;
   onActiveSectionChange: (sectionId: string) => void;
 }
@@ -319,7 +322,7 @@ function PersonalDetailsSection({
 
 // Letter Content Section
 function LetterContentSection({
-  coverLetterId,
+  coverLetterId: _coverLetterId,
   data,
   onUpdate,
 }: {

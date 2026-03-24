@@ -4,7 +4,7 @@ import Link from "next/link";
 import { SignedIn, SignedOut, ClerkLoaded, ClerkLoading } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { ImagePlaceholder } from "./image-placeholder";
+import { HeroVisual } from "./hero-visual";
 
 const trustSignals = [
   "Used by 10,000+ job seekers",
@@ -118,26 +118,15 @@ export function Hero() {
             </motion.div>
           </motion.div>
 
-          {/* Right side - Image placeholder */}
+          {/* Right side - Interactive Visual */}
           <motion.div
-            className="hidden items-center justify-center lg:flex lg:justify-end"
+            className="w-full lg:w-auto items-center justify-center flex lg:justify-end"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            <div className="relative w-full max-w-lg">
-              <div className="absolute inset-0 rounded-3xl p-4 bg-primary">
-                <div className="h-full w-full rounded-2xl bg-gray-200 overflow-hidden">
-                  <ImagePlaceholder
-                    label="Bulk resume generation preview"
-                    aspectRatio="square"
-                    rounded="2xl"
-                    className="h-full border-0"
-                  />
-                </div>
-              </div>
-              {/* Maintain aspect ratio */}
-              <div className="aspect-square" />
+            <div className="relative w-full max-w-lg lg:max-w-xl">
+              <HeroVisual />
             </div>
           </motion.div>
         </div>

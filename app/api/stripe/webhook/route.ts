@@ -150,7 +150,10 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
 
 async function handlePaymentFailed(invoice: Stripe.Invoice) {
   // Try to find the clerkUserId via the subscription metadata
-  const subscriptionId = (invoice as any).subscription as string;
+  const subscriptionRef = invoice.parent?.subscription_details?.subscription;
+  const subscriptionId = typeof subscriptionRef === 'string'
+    ? subscriptionRef
+    : subscriptionRef?.id;
   if (!subscriptionId) return;
 
   try {
@@ -170,7 +173,10 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
 
 async function handleInvoicePaid(invoice: Stripe.Invoice) {
   // Ensure subscription stays active after successful payment
-  const subscriptionId = (invoice as any).subscription as string;
+  const subscriptionRef = invoice.parent?.subscription_details?.subscription;
+  const subscriptionId = typeof subscriptionRef === 'string'
+    ? subscriptionRef
+    : subscriptionRef?.id;
   if (!subscriptionId) return;
 
   try {

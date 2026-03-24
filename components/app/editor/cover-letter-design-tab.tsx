@@ -23,9 +23,23 @@ import {
   backgroundColors,
 } from "./design-shared";
 
+interface CoverLetterStyleOverrides {
+  font?: string;
+  headingFont?: string;
+  bodyFont?: string;
+  spacing?: "compact" | "normal" | "spacious";
+  accentColor?: string;
+  backgroundColor?: string;
+}
+
+interface EditorCoverLetterData extends CoverLetterData {
+  template?: string;
+  style?: CoverLetterStyleOverrides;
+}
+
 interface CoverLetterDesignTabProps {
-  coverLetterData: any;
-  onUpdate: (section: string, data: any) => void;
+  coverLetterData: EditorCoverLetterData;
+  onUpdate: (section: string, data: string | CoverLetterStyleOverrides) => void;
 }
 
 const templateOptions = getAllTemplates();
@@ -70,13 +84,13 @@ export function CoverLetterDesignTab({ coverLetterData, onUpdate }: CoverLetterD
   const defaultHeadingFont = getTemplateDefaultHeadingFont(currentTemplate);
   const defaultBodyFont = getTemplateDefaultBodyFont(currentTemplate);
 
-  const updateStyle = (field: string, value: any) => {
+  const updateStyle = (field: keyof CoverLetterStyleOverrides, value: string) => {
     onUpdate("style", { ...currentStyle, [field]: value });
   };
 
   const selectTemplate = (templateId: string) => {
     const t = getTemplate(templateId);
-    const newStyle = {
+    const newStyle: CoverLetterStyleOverrides = {
       font: t.typography.bodyFont,
       headingFont: t.typography.headingFont,
       bodyFont: t.typography.bodyFont,

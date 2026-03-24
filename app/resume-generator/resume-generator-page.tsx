@@ -127,7 +127,8 @@ const showcaseFeatures = [
       "Detects preferred certifications and tools to highlight in your resume",
       "Matches company tone, whether corporate, startup, or creative",
     ],
-    imagePlaceholder: "Job description analysis dashboard",
+    image: "/images/feature-images/resume-scoring.png",
+    imageAlt: "Resume scoring and job description analysis dashboard",
   },
   {
     title: "Professional Templates Built for ATS",
@@ -139,7 +140,8 @@ const showcaseFeatures = [
       "Print-ready PDF and editable DOCX export options",
       "Consistent, polished formatting across every device and viewer",
     ],
-    imagePlaceholder: "ATS-optimized resume templates",
+    image: "/images/feature-images/design-tab-templates.png",
+    imageAlt: "ATS-optimized resume template selection panel",
   },
   {
     title: "AI-Powered Bullet Point Rewriting",
@@ -151,7 +153,8 @@ const showcaseFeatures = [
       "Uses strong action verbs aligned with the target job description",
       "Maintains your authentic voice while elevating professional polish",
     ],
-    imagePlaceholder: "Before and after bullet point comparison",
+    image: "/images/feature-images/full-resume-editor.png",
+    imageAlt: "Full resume editor showing AI-powered bullet point editing",
   },
 ];
 

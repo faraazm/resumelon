@@ -47,7 +47,7 @@ export function ATSExplainer() {
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
             Over 90% of large companies use Applicant Tracking Systems to
-            filter resumes before a human ever sees them. If your resume isn't
+            filter resumes before a human ever sees them. If your resume isn&apos;t
             ATS-friendly, it might never reach a recruiter—no matter how
             qualified you are.
           </p>

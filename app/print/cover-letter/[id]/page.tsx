@@ -1,6 +1,6 @@
 import { getCoverLetterForPrint } from "@/lib/convex-server";
 import { getTemplate, TemplateConfig, getTemplateDefaultHeadingFont, getTemplateDefaultBodyFont } from "@/lib/templates";
-import { LETTER_WIDTH_PX, DEFAULT_MARGIN_PX, COMPACT_MARGIN_PX, SPACIOUS_MARGIN_PX } from "@/lib/pdf-constants";
+import { DEFAULT_MARGIN_PX, COMPACT_MARGIN_PX, SPACIOUS_MARGIN_PX } from "@/lib/pdf-constants";
 import { CoverLetterPrintClient } from "./print-client";
 
 const PRINT_FONT_FAMILIES: Record<string, string> = {

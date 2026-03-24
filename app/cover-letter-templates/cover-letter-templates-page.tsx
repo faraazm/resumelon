@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { motion } from "framer-motion";
 import {
   DocumentTextIcon,
@@ -20,7 +21,6 @@ import { SectionHeader } from "@/components/marketing/section-header";
 import { PageHero } from "@/components/marketing/page-hero";
 import { PageFAQ } from "@/components/marketing/page-faq";
 import { FeatureShowcase } from "@/components/marketing/feature-showcase";
-import { ImagePlaceholder } from "@/components/marketing/image-placeholder";
 import { InlineCTA } from "@/components/marketing/inline-cta";
 import { BrandName } from "@/components/marketing/logo";
 
@@ -82,7 +82,8 @@ const showcaseFeatures = [
       "Generates complete drafts in under thirty seconds",
       "Adapts tone for different industries and seniority levels",
     ],
-    imagePlaceholder: "AI cover letter generation preview",
+    image: "/images/feature-images/cover-letter-customization.png",
+    imageAlt: "AI cover letter generation and customization panel",
   },
   {
     title: "Seamless Resume Integration",
@@ -94,7 +95,8 @@ const showcaseFeatures = [
       "Updates automatically when you revise your resume",
       "Creates a unified application package for every job",
     ],
-    imagePlaceholder: "Resume and cover letter integration preview",
+    image: "/images/feature-images/cover-letter-editor.png",
+    imageAlt: "Cover letter editor with resume integration",
   },
   {
     title: "Professional Formatting, Every Time",
@@ -106,7 +108,8 @@ const showcaseFeatures = [
       "Automatic page balancing to avoid awkward page breaks",
       "Export to PDF or DOCX with perfect fidelity",
     ],
-    imagePlaceholder: "Cover letter formatting options preview",
+    image: "/images/feature-images/cover-letter-templates.png",
+    imageAlt: "Cover letter template formatting options preview",
   },
 ];
 
@@ -221,12 +224,15 @@ export function CoverLetterTemplatesPage() {
                 variants={sectionVariants}
                 transition={{ duration: 0.4 }}
               >
-                <ImagePlaceholder
-                  label={template.name}
-                  aspectRatio="video"
-                  rounded="lg"
-                  className="rounded-b-none border-b border-border"
-                />
+                <div className="relative aspect-video overflow-hidden border-b border-border bg-muted">
+                  <Image
+                    src="/images/feature-images/cover-letter-templates.png"
+                    alt={`${template.name} cover letter template preview`}
+                    fill
+                    className="object-cover object-top"
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  />
+                </div>
                 <div className="p-5">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-semibold text-foreground">

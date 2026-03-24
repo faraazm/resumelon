@@ -13,6 +13,7 @@ import Image from "next/image";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useSyncUser } from "@/hooks/use-sync-user";
 import { ViewPreferenceProvider } from "@/hooks/use-view-preference";
+import { DocumentCacheProvider } from "@/hooks/use-document-cache";
 
 const navigation = [
   { name: "Resumes", href: "/app/resumes", icon: DocumentTextIcon },
@@ -27,7 +28,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   useSyncUser();
 
   // Check if we're in the resume editor or onboarding (hide navigation)
-  const isEditorView = pathname.includes("/edit") || pathname.includes("/new") || pathname.includes("/optimize");
+  const isEditorView = pathname.includes("/edit") || pathname.includes("/new") || pathname.includes("/optimize") || pathname.includes("/tailor");
   const isOnboarding = pathname.includes("/onboarding");
   const showNav = !isEditorView && !isOnboarding;
 
@@ -47,6 +48,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <TooltipProvider>
       <ViewPreferenceProvider>
+      <DocumentCacheProvider>
       <div className="min-h-screen bg-muted/30">
         {/* Top Navigation */}
         <header className="sticky top-0 z-50 w-full border-b border-border bg-background">
@@ -98,8 +100,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </header>
 
         {/* Main Content */}
-        <main>{children}</main>
+        <main>
+          {children}
+        </main>
       </div>
+      </DocumentCacheProvider>
       </ViewPreferenceProvider>
     </TooltipProvider>
   );

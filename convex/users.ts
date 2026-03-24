@@ -1,5 +1,13 @@
 import { v } from "convex/values";
 import { mutation, query, internalQuery, internalMutation } from "./_generated/server";
+import { Id } from "./_generated/dataModel";
+
+// Type for onboarding completion update
+interface OnboardingCompleteUpdate {
+  hasCompletedOnboarding: boolean;
+  updatedAt: number;
+  primaryResumeId?: Id<"resumes">;
+}
 
 export const getOrCreateUser = mutation({
   args: {
@@ -53,6 +61,10 @@ export const getUserByClerkId = query({
   },
 });
 
+// Pro limits to prevent abuse
+const PRO_MONTHLY_GENERATION_LIMIT = 500;
+const PRO_TOTAL_OPTIMIZATION_LIMIT = 2000;
+
 export const getRemainingGenerations = query({
   args: { clerkId: v.string(), currentMonth: v.string() },
   handler: async (ctx, args) => {
@@ -65,37 +77,20 @@ export const getRemainingGenerations = query({
       return { remaining: 0, total: 5, used: 0, isPro: false };
     }
 
-    if (user.subscriptionStatus === "active") {
-      return { remaining: Infinity, total: Infinity, used: 0, isPro: true };
-    }
-
     const isCurrentMonth = user.lastGenerationMonth === args.currentMonth;
     const used = isCurrentMonth ? (user.monthlyGenerationCount || 0) : 0;
-    return { remaining: Math.max(0, 5 - used), total: 5, used, isPro: false };
-  },
-});
 
-export const incrementGenerationCount = mutation({
-  args: { clerkId: v.string() },
-  handler: async (ctx, args) => {
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
-      .first();
-
-    if (!user) {
-      throw new Error("User not found");
+    if (user.subscriptionStatus === "active") {
+      // Pro users have a high limit but not infinite (prevent abuse)
+      return {
+        remaining: Math.max(0, PRO_MONTHLY_GENERATION_LIMIT - used),
+        total: PRO_MONTHLY_GENERATION_LIMIT,
+        used,
+        isPro: true
+      };
     }
 
-    const currentMonth = new Date().toISOString().slice(0, 7);
-    const isCurrentMonth = user.lastGenerationMonth === currentMonth;
-    const currentCount = isCurrentMonth ? (user.monthlyGenerationCount || 0) : 0;
-
-    await ctx.db.patch(user._id, {
-      monthlyGenerationCount: currentCount + 1,
-      lastGenerationMonth: currentMonth,
-      updatedAt: Date.now(),
-    });
+    return { remaining: Math.max(0, 5 - used), total: 5, used, isPro: false };
   },
 });
 
@@ -111,31 +106,19 @@ export const getRemainingOptimizations = query({
       return { remaining: 0, total: 10, used: 0, isPro: false };
     }
 
-    if (user.subscriptionStatus === "active") {
-      return { remaining: Infinity, total: Infinity, used: 0, isPro: true };
-    }
-
     const used = user.optimizationCount || 0;
-    return { remaining: Math.max(0, 10 - used), total: 10, used, isPro: false };
-  },
-});
 
-export const incrementOptimizationCount = mutation({
-  args: { clerkId: v.string() },
-  handler: async (ctx, args) => {
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
-      .first();
-
-    if (!user) {
-      throw new Error("User not found");
+    if (user.subscriptionStatus === "active") {
+      // Pro users have a high limit but not infinite (prevent abuse)
+      return {
+        remaining: Math.max(0, PRO_TOTAL_OPTIMIZATION_LIMIT - used),
+        total: PRO_TOTAL_OPTIMIZATION_LIMIT,
+        used,
+        isPro: true
+      };
     }
 
-    await ctx.db.patch(user._id, {
-      optimizationCount: (user.optimizationCount || 0) + 1,
-      updatedAt: Date.now(),
-    });
+    return { remaining: Math.max(0, 10 - used), total: 10, used, isPro: false };
   },
 });
 
@@ -154,7 +137,7 @@ export const completeOnboarding = mutation({
       throw new Error("User not found");
     }
 
-    const patchData: Record<string, any> = {
+    const patchData: OnboardingCompleteUpdate = {
       hasCompletedOnboarding: true,
       updatedAt: Date.now(),
     };
@@ -233,11 +216,19 @@ export const internalCheckOptimizationLimit = internalQuery({
       .first();
 
     if (!user) return { allowed: false, reason: "User not found" };
-    if (user.subscriptionStatus === "active") return { allowed: true };
 
     const used = user.optimizationCount || 0;
+
+    if (user.subscriptionStatus === "active") {
+      // Pro users have a high limit but not infinite (prevent abuse)
+      if (used >= PRO_TOTAL_OPTIMIZATION_LIMIT) {
+        return { allowed: false, reason: `Optimization limit reached (${PRO_TOTAL_OPTIMIZATION_LIMIT}). Contact support if you need more.` };
+      }
+      return { allowed: true };
+    }
+
     if (used >= 10) {
-      return { allowed: false, reason: "Free optimization limit reached (10). Upgrade to Pro for unlimited." };
+      return { allowed: false, reason: "Free optimization limit reached (10). Upgrade to Pro for more." };
     }
     return { allowed: true };
   },
@@ -252,14 +243,21 @@ export const internalCheckGenerationLimit = internalQuery({
       .first();
 
     if (!user) return { allowed: false, reason: "User not found" };
-    if (user.subscriptionStatus === "active") return { allowed: true };
 
     const currentMonth = new Date().toISOString().slice(0, 7);
     const isCurrentMonth = user.lastGenerationMonth === currentMonth;
     const used = isCurrentMonth ? (user.monthlyGenerationCount || 0) : 0;
 
+    if (user.subscriptionStatus === "active") {
+      // Pro users have a high limit but not infinite (prevent abuse)
+      if (used >= PRO_MONTHLY_GENERATION_LIMIT) {
+        return { allowed: false, reason: `Monthly generation limit reached (${PRO_MONTHLY_GENERATION_LIMIT}/month). Limit resets next month.` };
+      }
+      return { allowed: true };
+    }
+
     if (used >= 5) {
-      return { allowed: false, reason: "Free monthly generation limit reached (5/month). Upgrade to Pro for unlimited." };
+      return { allowed: false, reason: "Free monthly generation limit reached (5/month). Upgrade to Pro for more." };
     }
     return { allowed: true };
   },

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useUser, useClerk } from "@clerk/nextjs";
 import { useMutation } from "convex/react";
@@ -27,7 +26,6 @@ import { SupportDialog } from "@/components/app/support-dialog";
 export default function SettingsPage() {
   const { user } = useUser();
   const { signOut } = useClerk();
-  const router = useRouter();
   const deleteAccountMutation = useMutation(api.users.deleteAccount);
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);

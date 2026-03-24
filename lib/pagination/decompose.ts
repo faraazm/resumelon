@@ -7,7 +7,10 @@ import {
   ExperienceMetaBlockData,
   BulletBlockData,
   EducationItemBlockData,
+  EducationDegreeBlockData,
+  EducationSchoolBlockData,
   SkillsBlockData,
+  SkillRowBlockData,
   SidebarBlockData,
 } from "./types";
 
@@ -155,13 +158,32 @@ function decomposeSection(
         measuredHeight: 0,
       });
       data.education.forEach((edu, index) => {
+        // Fine-grained: degree line (keeps with school line)
         blocks.push({
-          id: `edu-${index}`,
-          type: "education-item",
-          data: { edu } satisfies EducationItemBlockData as unknown as Record<string, unknown>,
+          id: `edu-degree-${index}`,
+          type: "education-degree",
+          data: {
+            degree: edu.degree || "",
+            field: "", // Field not in current schema
+          } satisfies EducationDegreeBlockData as unknown as Record<string, unknown>,
+          template,
+          keepWithNext: true, // Degree must stay with school
+          isFirst: index === 0,
+          measuredHeight: 0,
+        });
+        // Fine-grained: school + dates line
+        blocks.push({
+          id: `edu-school-${index}`,
+          type: "education-school",
+          data: {
+            school: edu.school || "",
+            location: "", // Location not in current schema
+            startDate: edu.startDate || "",
+            endDate: edu.endDate || "",
+            current: false, // Current not in current schema
+          } satisfies EducationSchoolBlockData as unknown as Record<string, unknown>,
           template,
           keepWithNext: false,
-          isFirst: index === 0,
           measuredHeight: 0,
         });
       });

@@ -7,7 +7,6 @@ import {
   getTemplateDefaultBodyFont,
 } from "@/lib/templates";
 import {
-  LETTER_WIDTH_PX,
   DEFAULT_MARGIN_PX,
   COMPACT_MARGIN_PX,
   SPACIOUS_MARGIN_PX,

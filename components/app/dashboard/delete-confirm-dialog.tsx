@@ -24,9 +24,6 @@ export function DeleteConfirmDialog({
   itemType: "resume" | "cover letter";
 }) {
   const plural = count > 1;
-  const label = plural
-    ? `${count} ${itemType}s`
-    : `this ${itemType}`;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

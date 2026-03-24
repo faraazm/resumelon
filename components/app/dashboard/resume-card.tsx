@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo, memo } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -70,7 +70,6 @@ interface ResumeCardData {
   sectionOrder?: string[];
 }
 
-import { Checkbox } from "@/components/ui/checkbox";
 import { formatRelativeDate } from "./format-date";
 
 function buildAdjustedTemplate(
@@ -157,7 +156,7 @@ function buildAdjustedTemplate(
   return { adjustedTemplate, headingFontId, bodyFontId };
 }
 
-export function ResumeCard({
+export const ResumeCard = memo(function ResumeCard({
   resume,
   userName,
   onDelete,
@@ -181,7 +180,7 @@ export function ResumeCard({
   const fallbackFirst = userName?.split(" ")[0] || "";
   const fallbackLast = userName?.split(" ").slice(1).join(" ") || "";
 
-  const resumeData: ResumeData = {
+  const resumeData: ResumeData = useMemo(() => ({
     personalDetails: {
       firstName: resume.personalDetails?.firstName || fallbackFirst,
       lastName: resume.personalDetails?.lastName || fallbackLast,
@@ -192,10 +191,13 @@ export function ResumeCard({
     experience: resume.experience || [],
     education: resume.education || [],
     skills: resume.skills || [],
-  };
+  }), [resume, fallbackFirst, fallbackLast]);
 
-  const baseTemplate = getTemplate(resume.template || "modern");
-  const { adjustedTemplate, headingFontId, bodyFontId } = buildAdjustedTemplate(resume, baseTemplate);
+  const baseTemplate = useMemo(() => getTemplate(resume.template || "modern"), [resume.template]);
+  const { adjustedTemplate, headingFontId, bodyFontId } = useMemo(
+    () => buildAdjustedTemplate(resume, baseTemplate),
+    [resume, baseTemplate]
+  );
   const backgroundColor = resume.style?.backgroundColor || "#ffffff";
 
   useEffect(() => {
@@ -229,11 +231,6 @@ export function ResumeCard({
     <Card className={`overflow-hidden !py-0 !gap-0 ${selected ? "ring-2 ring-primary" : ""}`}>
       <CardContent className="!p-0">
         <div className="flex flex-col sm:flex-row items-stretch">
-          {onSelect && (
-            <div className="flex items-start pt-4 pl-4 sm:pt-5 sm:pl-5">
-              <Checkbox checked={selected} onCheckedChange={onSelect} />
-            </div>
-          )}
           {/* Thumbnail */}
           <Link
             href={`/app/resumes/${resume._id}/edit`}
@@ -368,4 +365,4 @@ export function ResumeCard({
       </CardContent>
     </Card>
   );
-}
+});

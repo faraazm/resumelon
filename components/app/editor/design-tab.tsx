@@ -25,9 +25,25 @@ import {
   backgroundColors,
 } from "./design-shared";
 
+interface ResumeStyleOverrides {
+  font?: string;
+  headingFont?: string;
+  bodyFont?: string;
+  spacing?: "compact" | "normal" | "spacious";
+  accentColor?: string;
+  backgroundColor?: string;
+  showPhoto?: boolean;
+  showDividers?: boolean;
+}
+
+interface EditorResumeData extends ResumeData {
+  template?: string;
+  style?: ResumeStyleOverrides;
+}
+
 interface DesignTabProps {
-  resumeData: any;
-  onUpdate: (section: string, data: any) => void;
+  resumeData: EditorResumeData;
+  onUpdate: (section: string, data: string | ResumeStyleOverrides) => void;
 }
 
 const templateOptions = getAllTemplates();
@@ -142,13 +158,13 @@ export function DesignTab({ resumeData, onUpdate }: DesignTabProps) {
   const defaultHeadingFont = getTemplateDefaultHeadingFont(currentTemplate);
   const defaultBodyFont = getTemplateDefaultBodyFont(currentTemplate);
 
-  const updateStyle = (field: string, value: any) => {
+  const updateStyle = (field: keyof ResumeStyleOverrides, value: string | boolean) => {
     onUpdate("style", { ...currentStyle, [field]: value });
   };
 
   const selectTemplate = (templateId: string) => {
     const newTemplate = getTemplate(templateId);
-    const newStyle = {
+    const newStyle: ResumeStyleOverrides = {
       font: newTemplate.typography.bodyFont,
       headingFont: newTemplate.typography.headingFont,
       bodyFont: newTemplate.typography.bodyFont,

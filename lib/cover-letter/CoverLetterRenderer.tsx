@@ -69,11 +69,11 @@ export function CoverLetterRenderer({
         <div className="mb-6">
           {fullName && (
             <p
-              className="text-lg font-semibold"
+              className="text-2xl font-semibold"
               style={{
                 fontFamily: headingFont,
                 color: accentColor,
-                fontSize: template.typography.nameFontSize || "18px",
+                fontSize: template.typography.nameFontSize || "24px",
               }}
             >
               {fullName}
@@ -95,7 +95,7 @@ export function CoverLetterRenderer({
       )}
 
       {/* Date */}
-      <p className="mb-6 text-sm" style={{ color: template.colors.body }}>
+      <p className="mb-6 text-xs" style={{ color: template.colors.muted }}>
         {today}
       </p>
 

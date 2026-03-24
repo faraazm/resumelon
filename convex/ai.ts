@@ -6,6 +6,55 @@ import { api } from "./_generated/api";
 import { internal } from "./_generated/api";
 import OpenAI from "openai";
 
+// Type definitions for parsed resume data
+interface ParsedExperience {
+  title: string;
+  company: string;
+  location: string;
+  startDate: string;
+  endDate: string;
+  current: boolean;
+  bullets: string[];
+}
+
+interface ParsedEducation {
+  degree: string;
+  school: string;
+  startDate: string;
+  endDate: string;
+}
+
+interface ParsedResume {
+  personalDetails: {
+    firstName: string;
+    lastName: string;
+    jobTitle: string;
+  };
+  contact: {
+    email: string;
+    phone: string;
+    linkedin: string;
+    location: string;
+  };
+  summary: string;
+  experience: ParsedExperience[];
+  education: ParsedEducation[];
+  skills: string[];
+}
+
+interface ExperienceWithId extends ParsedExperience {
+  id: string;
+}
+
+interface EducationWithId extends ParsedEducation {
+  id: string;
+}
+
+interface ResumeDataWithIds extends Omit<ParsedResume, 'experience' | 'education'> {
+  experience: ExperienceWithId[];
+  education: EducationWithId[];
+}
+
 // Schema for job match analysis structured output
 const jobMatchAnalysisSchema = {
   type: "object" as const,
@@ -214,7 +263,7 @@ export const generateResumeFromDocuments = action({
     generateCoverLetter: v.optional(v.boolean()),
     jobDescription: v.optional(v.string()),
   },
-  handler: async (ctx, args): Promise<{ resumeData: any; coverLetterContent: string | null }> => {
+  handler: async (ctx, args): Promise<{ resumeData: ResumeDataWithIds; coverLetterContent: string | null }> => {
     const limitCheck = await ctx.runQuery(internal.users.internalCheckGenerationLimit, { clerkId: args.clerkId });
     if (!limitCheck.allowed) throw new Error(limitCheck.reason);
 
@@ -269,16 +318,16 @@ IMPORTANT GUIDELINES:
         throw new Error("No response from AI");
       }
 
-      const parsedResume = JSON.parse(content);
+      const parsedResume = JSON.parse(content) as ParsedResume;
 
       // Add IDs to experience and education entries
-      const resumeData = {
+      const resumeData: ResumeDataWithIds = {
         ...parsedResume,
-        experience: parsedResume.experience.map((exp: any, index: number) => ({
+        experience: parsedResume.experience.map((exp: ParsedExperience, index: number) => ({
           ...exp,
           id: `exp-${Date.now()}-${index}`,
         })),
-        education: parsedResume.education.map((edu: any, index: number) => ({
+        education: parsedResume.education.map((edu: ParsedEducation, index: number) => ({
           ...edu,
           id: `edu-${Date.now()}-${index}`,
         })),
@@ -302,7 +351,7 @@ IMPORTANT GUIDELINES:
                 location: resumeData.contact.location,
               },
               summary: resumeData.summary,
-              experience: resumeData.experience.map((exp: any) => ({
+              experience: resumeData.experience.map((exp: ExperienceWithId) => ({
                 title: exp.title,
                 company: exp.company,
                 bullets: exp.bullets,
@@ -386,16 +435,16 @@ The extracted text may have formatting issues from PDF extraction - intelligentl
         throw new Error("No response from AI");
       }
 
-      const parsedResume = JSON.parse(content);
+      const parsedResume = JSON.parse(content) as ParsedResume;
 
       // Add IDs to experience and education entries
-      const result = {
+      const result: ResumeDataWithIds = {
         ...parsedResume,
-        experience: parsedResume.experience.map((exp: any, index: number) => ({
+        experience: parsedResume.experience.map((exp: ParsedExperience, index: number) => ({
           ...exp,
           id: `exp-${Date.now()}-${index}`,
         })),
-        education: parsedResume.education.map((edu: any, index: number) => ({
+        education: parsedResume.education.map((edu: ParsedEducation, index: number) => ({
           ...edu,
           id: `edu-${Date.now()}-${index}`,
         })),

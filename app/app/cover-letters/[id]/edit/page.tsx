@@ -27,7 +27,35 @@ import { CoverLetterDesignTab } from "@/components/app/editor/cover-letter-desig
 import { CoverLetterPreview } from "@/components/app/editor/cover-letter-preview";
 import { generateCoverLetterPDF } from "@/lib/cover-letter-pdf-generator";
 
-const defaultCoverLetterData = {
+interface CoverLetterStyleOverrides {
+  font?: string;
+  headingFont?: string;
+  bodyFont?: string;
+  spacing?: "compact" | "normal" | "spacious";
+  accentColor?: string;
+  backgroundColor?: string;
+}
+
+interface CoverLetterLocalData {
+  title: string;
+  personalDetails: {
+    firstName: string;
+    lastName: string;
+    jobTitle: string;
+    email: string;
+    phone: string;
+    address: string;
+  };
+  letterContent: {
+    companyName: string;
+    hiringManagerName: string;
+    content: string;
+  };
+  template: string;
+  style: CoverLetterStyleOverrides;
+}
+
+const defaultCoverLetterData: CoverLetterLocalData = {
   title: "Untitled Cover Letter",
   personalDetails: {
     firstName: "",
@@ -74,11 +102,11 @@ function CoverLetterEditorContent() {
   const clerkId = user?.id;
 
   const [activeTab, setActiveTab] = useState<"write" | "design">("write");
-  const [isSaving, setIsSaving] = useState(false);
+  const [_isSaving, setIsSaving] = useState(false);
   const [showSaving, setShowSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const savingMinTimeRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [localData, setLocalData] = useState(defaultCoverLetterData);
+  const [localData, setLocalData] = useState<CoverLetterLocalData>(defaultCoverLetterData);
   const [showMobilePreview, setShowMobilePreview] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [activeWriteSection, setActiveWriteSection] = useState("personalDetails");
@@ -106,7 +134,7 @@ function CoverLetterEditorContent() {
         personalDetails: coverLetter.personalDetails || defaultCoverLetterData.personalDetails,
         letterContent: coverLetter.letterContent || defaultCoverLetterData.letterContent,
         template: coverLetter.template || "ats-classic",
-        style: coverLetter.style || defaultCoverLetterData.style,
+        style: (coverLetter.style as CoverLetterLocalData["style"]) || defaultCoverLetterData.style,
       });
       setLastSaved(new Date(coverLetter.updatedAt));
     }
@@ -157,7 +185,7 @@ function CoverLetterEditorContent() {
   }, [coverLetterId, updateCoverLetter]);
 
   const updateData = useCallback(
-    (section: string, data: any) => {
+    (section: string, data: unknown) => {
       setLocalData((prev) => ({ ...prev, [section]: data }));
       pendingUpdatesRef.current = { ...pendingUpdatesRef.current, [section]: data };
       scheduleSave();
@@ -217,14 +245,9 @@ function CoverLetterEditorContent() {
   ];
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.25 }} className="flex h-screen flex-col bg-background">
+    <div className="flex h-screen flex-col bg-background">
       {/* Top Bar */}
-      <motion.header
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.25, delay: 0.05 }}
-        className="relative flex h-14 shrink-0 items-center justify-between border-b border-border px-3 md:px-4"
-      >
+      <header className="relative flex h-14 shrink-0 items-center justify-between border-b border-border px-3 md:px-4">
         <div className="flex items-center gap-2 lg:gap-4">
           <Button variant="ghost" size="icon" className="lg:hidden cursor-pointer" onClick={() => setShowMobileMenu(true)}>
             <Bars3Icon className="h-5 w-5" />
@@ -267,7 +290,7 @@ function CoverLetterEditorContent() {
             <span className="hidden lg:inline">{isDownloading ? "Generating..." : "Download"}</span>
           </Button>
         </div>
-      </motion.header>
+      </header>
 
       {/* Mobile Menu */}
       <AnimatePresence>
@@ -324,11 +347,11 @@ function CoverLetterEditorContent() {
       </AnimatePresence>
 
       {/* Main Editor Area */}
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3, delay: 0.1 }} className="flex flex-1 overflow-hidden relative">
+      <div className="flex flex-1 overflow-hidden relative">
         <div className={`flex flex-1 min-w-0 overflow-hidden ${showMobilePreview ? "hidden lg:flex" : ""}`}>
           <AnimatePresence mode="wait" initial={false}>
             {activeTab === "write" && (
-              <motion.div key="write" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.2, ease: "easeInOut" }} className="flex flex-1 min-w-0 overflow-hidden">
+              <motion.div key="write" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2, ease: "easeOut" }} className="flex flex-1 min-w-0 overflow-hidden">
                 <CoverLetterWriteTab
                   coverLetterId={coverLetterId}
                   coverLetterData={localData}
@@ -339,7 +362,7 @@ function CoverLetterEditorContent() {
               </motion.div>
             )}
             {activeTab === "design" && (
-              <motion.div key="design" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.2, ease: "easeInOut" }} className="flex flex-1 min-w-0 overflow-hidden">
+              <motion.div key="design" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2, ease: "easeOut" }} className="flex flex-1 min-w-0 overflow-hidden">
                 <CoverLetterDesignTab coverLetterData={localData} onUpdate={updateData} />
               </motion.div>
             )}
@@ -355,7 +378,7 @@ function CoverLetterEditorContent() {
             <CoverLetterPreview data={localData} />
           </div>
         </div>
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 }

@@ -5,12 +5,12 @@ import { LETTER_HEIGHT_PX } from "@/lib/pdf-constants";
 import { sanitizeHtml } from "@/lib/sanitize";
 
 // The heading font style - uses CSS variable if set, otherwise falls back to class
-function getHeadingStyle(): React.CSSProperties {
+function _getHeadingStyle(): React.CSSProperties {
   return { fontFamily: "var(--heading-font, inherit)" };
 }
 
 // Utility to get font class (fallback when CSS variable not set)
-function getFontClass(fontType: "serif" | "sans"): string {
+function _getFontClass(fontType: "serif" | "sans"): string {
   return fontType === "serif" ? "font-serif" : "font-sans";
 }
 
