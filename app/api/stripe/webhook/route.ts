@@ -4,6 +4,7 @@ import Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
+import { getPostHogClient } from "@/lib/posthog-server";
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
@@ -102,6 +103,13 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     stripeSubscriptionId: subscriptionId,
     webhookSecret: process.env.WEBHOOK_SECRET!,
   });
+
+  const posthog = getPostHogClient();
+  posthog.capture({
+    distinctId: clerkUserId,
+    event: "subscription_activated",
+    properties: { interval: session.metadata?.interval },
+  });
 }
 
 async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
@@ -150,6 +158,13 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     stripeSubscriptionId: subscription.id,
     webhookSecret: process.env.WEBHOOK_SECRET!,
   });
+
+  const posthog = getPostHogClient();
+  posthog.capture({
+    distinctId: clerkUserId,
+    event: "subscription_canceled",
+    properties: { subscription_id: subscription.id },
+  });
 }
 
 async function handlePaymentFailed(invoice: Stripe.Invoice) {
@@ -169,6 +184,13 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
         clerkId: clerkUserId,
         subscriptionStatus: "past_due",
         webhookSecret: process.env.WEBHOOK_SECRET!,
+      });
+
+      const posthog = getPostHogClient();
+      posthog.capture({
+        distinctId: clerkUserId,
+        event: "payment_failed",
+        properties: { subscription_id: subscriptionId },
       });
     }
   } catch (error) {

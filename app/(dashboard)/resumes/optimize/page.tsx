@@ -15,6 +15,7 @@ import { AnalysisView } from "@/components/app/optimize/analysis-view";
 import { UpgradeDialog } from "@/components/app/upgrade-dialog";
 import { Id } from "@/convex/_generated/dataModel";
 import type { ResumeData } from "@/lib/templates/types";
+import posthog from "posthog-js";
 
 type Step = "job-description" | "analysis" | "loading";
 
@@ -81,6 +82,7 @@ function OptimizePageContent() {
 
   const checkUsageLimits = () => {
     if (!canGenerate) {
+      posthog.capture("upgrade_dialog_shown", { trigger: "resume_optimize" });
       setShowUpgrade(true);
       return false;
     }
@@ -91,6 +93,7 @@ function OptimizePageContent() {
     if (!resume || isAnalyzing) return;
     if (!checkUsageLimits()) return;
 
+    posthog.capture("resume_job_match_analyzed", { resume_id: resumeId });
     setIsAnalyzing(true);
     setError(null);
 
@@ -183,6 +186,11 @@ function OptimizePageContent() {
           })),
           skills: result.skills,
         },
+      });
+      posthog.capture("resume_tailored", {
+        source_resume_id: resumeId,
+        job_title: result.jobTitle,
+        company_name: result.companyName,
       });
 
       router.push(`/resumes/${newResumeId}/edit`);

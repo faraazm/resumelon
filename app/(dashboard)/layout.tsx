@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { UserButton } from "@clerk/nextjs";
+import { UserButton, useUser } from "@clerk/nextjs";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -14,6 +14,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useSyncUser } from "@/hooks/use-sync-user";
 import { ViewPreferenceProvider } from "@/hooks/use-view-preference";
 import { DocumentCacheProvider } from "@/hooks/use-document-cache";
+import posthog from "posthog-js";
 
 const navigation = [
   { name: "Resumes", href: "/resumes", icon: DocumentTextIcon },
@@ -23,9 +24,20 @@ const navigation = [
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { user, isLoaded } = useUser();
 
   // Sync Clerk user with Convex
   useSyncUser();
+
+  // Identify user in PostHog
+  useEffect(() => {
+    if (isLoaded && user) {
+      posthog.identify(user.id, {
+        email: user.primaryEmailAddress?.emailAddress,
+        name: user.fullName,
+      });
+    }
+  }, [isLoaded, user]);
 
   // Check if we're in the resume editor or onboarding (hide navigation)
   const isEditorView = pathname.includes("/edit") || pathname.includes("/new") || pathname.includes("/optimize") || pathname.includes("/tailor");

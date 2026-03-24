@@ -23,6 +23,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { SupportDialog } from "@/components/app/support-dialog";
 import { UpgradeDialog } from "@/components/app/upgrade-dialog";
+import posthog from "posthog-js";
 
 interface SubscriptionData {
   subscribed: boolean;
@@ -98,6 +99,8 @@ export default function SettingsPage() {
 
     setIsDeleting(true);
     try {
+      posthog.capture("account_deleted");
+      posthog.reset();
       await deleteAccountMutation({});
       await signOut({ redirectUrl: "/" });
     } catch (error) {

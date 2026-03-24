@@ -1,6 +1,7 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { stripe, PLANS, PlanInterval } from "@/lib/stripe";
+import { getPostHogClient } from "@/lib/posthog-server";
 
 export async function POST(req: Request) {
   try {
@@ -64,6 +65,13 @@ export async function POST(req: Request) {
           clerkUserId: userId,
         },
       },
+    });
+
+    const posthog = getPostHogClient();
+    posthog.capture({
+      distinctId: userId,
+      event: "checkout_initiated",
+      properties: { interval, plan_id: plan.priceId },
     });
 
     return NextResponse.json({ url: session.url });

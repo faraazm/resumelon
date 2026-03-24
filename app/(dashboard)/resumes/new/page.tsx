@@ -18,6 +18,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { DocumentLoading } from "@/components/app/document-loading";
 import { UpgradeDialog } from "@/components/app/upgrade-dialog";
+import posthog from "posthog-js";
 
 type Step = "choose-method" | "loading";
 
@@ -53,6 +54,7 @@ export default function NewResumePage() {
         title: "Untitled Resume",
         source: "scratch",
       });
+      posthog.capture("resume_created", { source: "scratch" });
       router.push(`/resumes/${resumeId}/edit`);
     } catch (err) {
       console.error("Error creating resume:", err);
@@ -64,6 +66,7 @@ export default function NewResumePage() {
   const handleFileUpload = async (file: File) => {
     if (!isLoaded) return;
     if (!canGenerate) {
+      posthog.capture("upgrade_dialog_shown", { trigger: "resume_upload" });
       setShowUpgrade(true);
       return;
     }
@@ -71,6 +74,7 @@ export default function NewResumePage() {
     setIsUploading(true);
     setError(null);
     setStep("loading");
+    posthog.capture("resume_uploaded", { file_type: file.type });
 
     try {
       const uploadUrl = await generateUploadUrl();
@@ -119,6 +123,7 @@ export default function NewResumePage() {
         source: "upload",
         initialData: parsedResumeData,
       });
+      posthog.capture("resume_created", { source: "upload" });
 
       router.push(`/resumes/${resumeId}/edit`);
     } catch (err) {
@@ -135,6 +140,7 @@ export default function NewResumePage() {
 
   const handleChooseUpload = () => {
     if (!canGenerate) {
+      posthog.capture("upgrade_dialog_shown", { trigger: "resume_upload" });
       setShowUpgrade(true);
       return;
     }
@@ -199,6 +205,7 @@ export default function NewResumePage() {
 
   const handleGenerateWithAI = () => {
     if (!canGenerate) {
+      posthog.capture("upgrade_dialog_shown", { trigger: "resume_ai_generate" });
       setShowUpgrade(true);
       return;
     }

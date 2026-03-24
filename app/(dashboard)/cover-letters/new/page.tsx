@@ -22,6 +22,7 @@ import { DocumentLoading } from "@/components/app/document-loading";
 import { UpgradeDialog } from "@/components/app/upgrade-dialog";
 import { ResumeSelectList } from "@/components/app/resume-select-list";
 import { Id } from "@/convex/_generated/dataModel";
+import posthog from "posthog-js";
 
 type Step = "choose-method" | "generate" | "loading";
 
@@ -56,6 +57,7 @@ export default function NewCoverLetterPage() {
   const handleStartFromScratch = async () => {
     if (!isLoaded || isCreating) return;
     if (!canGenerate) {
+      posthog.capture("upgrade_dialog_shown", { trigger: "cover_letter_create" });
       setShowUpgrade(true);
       return;
     }
@@ -79,6 +81,7 @@ export default function NewCoverLetterPage() {
         },
       });
 
+      posthog.capture("cover_letter_created", { source: "scratch" });
       // No increment here - "start from scratch" doesn't use AI
       router.push(`/cover-letters/${id}/edit`);
     } catch (err) {
@@ -90,6 +93,7 @@ export default function NewCoverLetterPage() {
 
   const handleGenerateOption = () => {
     if (!canGenerate) {
+      posthog.capture("upgrade_dialog_shown", { trigger: "cover_letter_ai_generate" });
       setShowUpgrade(true);
       return;
     }
@@ -104,6 +108,7 @@ export default function NewCoverLetterPage() {
   const handleGenerate = async () => {
     if (!canCreate) return;
     if (!canGenerate) {
+      posthog.capture("upgrade_dialog_shown", { trigger: "cover_letter_ai_generate" });
       setShowUpgrade(true);
       return;
     }
@@ -186,6 +191,11 @@ export default function NewCoverLetterPage() {
         jobDescription: jobDescription.trim() || undefined,
       });
 
+      if (hasResume && hasJobDescription) {
+        posthog.capture("cover_letter_ai_generated", { has_resume: true, company_name: companyName.trim() || null });
+      } else {
+        posthog.capture("cover_letter_created", { source: "generate_form" });
+      }
       // No increment here - generateCoverLetterAI already increments count server-side
       router.push(`/cover-letters/${id}/edit`);
     } catch (err) {

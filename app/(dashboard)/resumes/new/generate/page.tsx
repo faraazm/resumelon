@@ -18,6 +18,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { DocumentLoading } from "@/components/app/document-loading";
 import { UpgradeDialog } from "@/components/app/upgrade-dialog";
+import posthog from "posthog-js";
 
 type Step = "upload" | "loading";
 
@@ -113,10 +114,12 @@ export default function GenerateResumePage() {
   const handleGenerate = async () => {
     if (!isLoaded || files.length === 0) return;
     if (!canGenerate) {
+      posthog.capture("upgrade_dialog_shown", { trigger: "resume_ai_generate" });
       setShowUpgrade(true);
       return;
     }
 
+    posthog.capture("resume_ai_generation_started", { file_count: files.length });
     setError(null);
     setStep("loading");
 
@@ -170,6 +173,7 @@ export default function GenerateResumePage() {
           skills: resumeData.skills,
         },
       });
+      posthog.capture("resume_created", { source: "ai_generated" });
 
       router.push(`/resumes/${resumeId}/edit`);
     } catch (err) {

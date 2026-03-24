@@ -18,6 +18,7 @@ import {
   CheckCircleIcon,
 } from "@heroicons/react/24/outline";
 import { DocumentLoading } from "@/components/app/document-loading";
+import posthog from "posthog-js";
 
 type OnboardingStep = "welcome" | "create-resume" | "loading";
 
@@ -69,6 +70,7 @@ export default function OnboardingPage() {
     if (!user) return;
     try {
       await completeOnboarding({});
+      posthog.capture("onboarding_completed", { method: "skipped" });
       router.push("/resumes");
     } catch (err) {
       console.error("Error skipping onboarding:", err);
@@ -85,6 +87,7 @@ export default function OnboardingPage() {
         source: "scratch",
       });
       await completeOnboarding({});
+      posthog.capture("onboarding_completed", { method: "scratch" });
       router.push(`/resumes/${resumeId}/edit`);
     } catch (err) {
       console.error("Error creating resume:", err);
@@ -149,6 +152,7 @@ export default function OnboardingPage() {
       });
 
       await completeOnboarding({});
+      posthog.capture("onboarding_completed", { method: "upload" });
       router.push(`/resumes/${resumeId}/edit`);
     } catch (err) {
       console.error("Error uploading document:", err);

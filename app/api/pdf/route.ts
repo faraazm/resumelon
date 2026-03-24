@@ -4,6 +4,7 @@ import { auth } from "@clerk/nextjs/server";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
+import { getPostHogClient } from "@/lib/posthog-server";
 import {
   LETTER_WIDTH_PX,
   LETTER_HEIGHT_PX,
@@ -207,6 +208,13 @@ export async function POST(request: NextRequest) {
     const pdfArray = new Uint8Array(pdfBuffer);
 
     console.log("PDF generated successfully, size:", pdfArray.length);
+
+    const posthog = getPostHogClient();
+    posthog.capture({
+      distinctId: clerkId,
+      event: "pdf_exported",
+      properties: { resume_id: resumeId },
+    });
 
     // Return the PDF as a downloadable file
     return new NextResponse(pdfArray, {
